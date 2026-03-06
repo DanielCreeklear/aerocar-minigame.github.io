@@ -28,6 +28,10 @@ class EnergyManager {
   reset() {
     this.battery = BATTERY_MAX;
   }
+
+  getCurrentCharge() {
+    return this.battery;
+  }
 }
 
 export { EnergyManager };

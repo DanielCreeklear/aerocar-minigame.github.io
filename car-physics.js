@@ -6,6 +6,12 @@ import {
   BOOST_SLIP_EFFECT_FACTOR,
   CENTRIFUGAL_SCALE_C,
   CENTRIFUGAL_DIRECT_PUSH_X,
+  EDGE_PRESSURE_RATIO_RANGE,
+  EDGE_PRESSURE_RATIO_START,
+  EDGE_RATIO_CLAMP_MAX,
+  EDGE_VX_DAMPING_FACTOR,
+  GRIP_MIN_FLOOR,
+  LATERAL_VX_DEAD_ZONE,
   MANUAL_BRAKE_DECEL,
   MAX_LATERAL_VX,
   OFF_TRACK_CENTERING_BONUS,
@@ -16,9 +22,13 @@ import {
   OFF_TRACK_VZ_DRAG,
   SLIP_BLEND_RANGE,
   SLIP_BLEND_START,
+  SLIP_FORCE_BASE_SCALE,
+  SLIP_FORCE_BLEND_SCALE,
+  SLIP_GRIP_EROSION,
   SLIP_PENALTY_THRESHOLD,
   STEERING_VX_FACTOR,
   TRACK_WIDTH,
+  WALL_BOUNCE_DAMPING,
 } from "./constants/index.js";
 
 function clamp(value, min, max) {
@@ -76,48 +86,46 @@ function updateForwardVelocity(gameState, curvature) {
   return clamp(vz, 0, strategy.maxVz * BOOST_OVERCAP_RATIO);
 }
 
-function updateTrackSpaceLateral(gameState, curvature, vz) {
-  let x = gameState.lateralOffset || 0;
-  let vx = gameState.lateralVelocity || 0;
-  const trackLimit = TRACK_WIDTH * 0.5;
+function calculateLateralForces(gameState, curvature, vz) {
   const strategy = getAeroStrategy(gameState.aeroMode);
-
   const centrifugalForce = vz * vz * curvature * CENTRIFUGAL_SCALE_C;
   const absCentrifugalForce = Math.abs(centrifugalForce);
-  const safeGrip = Math.max(strategy.maxGrip, 0.0001);
+  const safeGrip = Math.max(strategy.maxGrip, GRIP_MIN_FLOOR);
   const slipRatio = absCentrifugalForce / safeGrip;
   const slipBlend = clamp(
     (slipRatio - SLIP_BLEND_START) / SLIP_BLEND_RANGE,
     0,
     1,
   );
-
-  const effectiveGrip = safeGrip * (1 - slipBlend * 0.28);
+  const effectiveGrip = safeGrip * (1 - slipBlend * SLIP_GRIP_EROSION);
   const slipOutwardForce =
     Math.sign(centrifugalForce) *
     Math.max(0, absCentrifugalForce - effectiveGrip);
-  const edgeRatio = clamp(Math.abs(x) / Math.max(trackLimit, 1), 0, 1.2);
-  const edgePressure = clamp((edgeRatio - 0.82) / 0.18, 0, 1);
+  return { centrifugalForce, absCentrifugalForce, effectiveGrip, slipBlend, slipOutwardForce };
+}
+
+function applyLateralForces(gameState, vx, vz, x, trackLimit, forces) {
+  const strategy = getAeroStrategy(gameState.aeroMode);
+  const { centrifugalForce, slipBlend, slipOutwardForce } = forces;
   const wasOffTrack = Math.abs(x) > trackLimit;
 
-  const steeringInput = gameState.steeringInput || 0;
-  vx += steeringInput * vz * STEERING_VX_FACTOR;
+  vx += (gameState.steeringInput || 0) * vz * STEERING_VX_FACTOR;
 
   if (!wasOffTrack) {
     if (strategy.useCentrifugalPush) {
       vx += centrifugalForce * CENTRIFUGAL_DIRECT_PUSH_X;
     }
-
-    vx += slipOutwardForce * (0.45 + slipBlend * 0.25);
+    vx += slipOutwardForce * (SLIP_FORCE_BASE_SCALE + slipBlend * SLIP_FORCE_BLEND_SCALE);
   }
 
+  const edgeRatio = clamp(Math.abs(x) / Math.max(trackLimit, 1), 0, EDGE_RATIO_CLAMP_MAX);
+  const edgePressure = clamp(
+    (edgeRatio - EDGE_PRESSURE_RATIO_START) / EDGE_PRESSURE_RATIO_RANGE,
+    0,
+    1,
+  );
   const damping = lerp(strategy.lateralFriction, strategy.slipDamping, slipBlend);
-  vx *= damping * (1 - edgePressure * 0.18);
-
-  // Forward velocity is only reduced by off-track drag or manual braking — never by
-  // edge proximity.  Removing the edgePressure vz multiplier eliminates the "ghost
-  // brake" that bled forward speed whenever centrifugal force pushed the car near
-  // the track edge during a corner.
+  vx *= damping * (1 - edgePressure * EDGE_VX_DAMPING_FACTOR);
 
   if (wasOffTrack) {
     if (Math.sign(vx) === Math.sign(x)) vx = 0;
@@ -127,14 +135,22 @@ function updateTrackSpaceLateral(gameState, curvature, vz) {
       (OFF_TRACK_CENTERING_BONUS + overflow * OFF_TRACK_RECOVERY_PER_UNIT);
   }
 
-  if (Math.abs(vx) < 0.01) vx = 0;
+  if (Math.abs(vx) < LATERAL_VX_DEAD_ZONE) vx = 0;
   vx = clamp(vx, -MAX_LATERAL_VX, MAX_LATERAL_VX);
   x += vx;
 
+  return { x, vx, wasOffTrack };
+}
+
+function applyOffTrackBehavior(gameState, x, vx, vz, trackLimit, wasOffTrack) {
+  // Forward velocity is only reduced by off-track drag or manual braking — never by
+  // edge proximity.  Removing the edgePressure vz multiplier eliminates the "ghost
+  // brake" that bled forward speed whenever centrifugal force pushed the car near
+  // the track edge during a corner.
   const maxOffset = trackLimit + OFF_TRACK_MAX_OFFSET_MARGIN;
   if (Math.abs(x) > maxOffset) {
     x = Math.sign(x) * maxOffset;
-    vx *= 0.35;
+    vx *= WALL_BOUNCE_DAMPING;
   }
 
   const isOffTrack = Math.abs(x) > trackLimit;
@@ -151,7 +167,27 @@ function updateTrackSpaceLateral(gameState, curvature, vz) {
     );
   }
 
-  gameState.currentSlip = Math.max(0, absCentrifugalForce - effectiveGrip);
+  return { x, vx, nextVz, isOffTrack };
+}
+
+function updateTrackSpaceLateral(gameState, curvature, vz) {
+  let x = gameState.lateralOffset || 0;
+  let vx = gameState.lateralVelocity || 0;
+  const trackLimit = TRACK_WIDTH * 0.5;
+
+  const forces = calculateLateralForces(gameState, curvature, vz);
+
+  const lateralResult = applyLateralForces(gameState, vx, vz, x, trackLimit, forces);
+  x = lateralResult.x;
+  vx = lateralResult.vx;
+  const { wasOffTrack } = lateralResult;
+
+  const offTrackResult = applyOffTrackBehavior(gameState, x, vx, vz, trackLimit, wasOffTrack);
+  x = offTrackResult.x;
+  vx = offTrackResult.vx;
+  const { nextVz, isOffTrack } = offTrackResult;
+
+  gameState.currentSlip = Math.max(0, forces.absCentrifugalForce - forces.effectiveGrip);
   gameState.isPenalized = gameState.currentSlip > SLIP_PENALTY_THRESHOLD;
   gameState.curveForce = Math.abs(curvature);
   gameState.lateralOffset = x;
