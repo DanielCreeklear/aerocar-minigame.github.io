@@ -31,6 +31,7 @@ class Game {
         if (this.gameState.currentScreen === SCREENS.RACE) {
           setCarBrake(this.gameState, active);
         } else if (!active) {
+          // Always release on key-up so state doesn't leak across screen transitions.
           setCarBrake(this.gameState, false);
         }
       },
@@ -38,6 +39,7 @@ class Game {
         if (this.gameState.currentScreen === SCREENS.RACE) {
           setCarBoost(this.gameState, active);
         } else if (!active) {
+          // Always release on key-up so state doesn't leak across screen transitions.
           setCarBoost(this.gameState, false);
         }
       },

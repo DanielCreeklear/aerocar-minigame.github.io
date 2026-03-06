@@ -53,6 +53,8 @@ class InputController {
 
     Array.from(touchList).forEach((touch) => {
       const { x, y } = this.getCanvasCoords(touch.clientX, touch.clientY);
+      // Mode-corner touches are handled as a one-shot toggle in touchstart;
+      // they do not count as brake or boost holds.
       if (this.isInModeCorner(x, y)) return;
       if (this.isInBoostZone(x)) hasBoost = true;
       else if (this.isInBrakeZone(x)) hasBrake = true;
