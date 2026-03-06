@@ -1,5 +1,9 @@
 import {
   AERO_MODES,
+  AUTO_BRAKE_LOAD_THRESHOLD_X,
+  AUTO_BRAKE_LOAD_THRESHOLD_Z,
+  AUTO_BRAKE_MIN_FACTOR_X,
+  AUTO_BRAKE_MIN_FACTOR_Z,
   AUTO_BRAKE_EXCESS_FACTOR,
   AUTO_BRAKE_LOAD_FACTOR,
   AUTO_BRAKE_MIN_FACTOR,
@@ -26,6 +30,7 @@ import {
   OFF_TRACK_RECOVERY_PER_UNIT,
   OFF_TRACK_VX_DRAG,
   OFF_TRACK_VZ_DRAG,
+  CENTRIFUGAL_DIRECT_PUSH_X,
   SLIP_BLEND_RANGE,
   SLIP_BLEND_START,
   SLIP_CURVE_RECOVERY_BONUS,
@@ -145,10 +150,15 @@ function updateTrackSpaceLateral(gameState, curvature, vz) {
   const edgePressure = clamp((edgeRatio - 0.82) / 0.18, 0, 1);
   const wasOffTrack = Math.abs(x) > trackLimit;
 
-  vx += -x * centeringForce * centeringAssist;
+  const centeringMult = isModeX ? 1.0 : centeringAssist;
+  vx += -x * centeringForce * centeringMult;
 
   if (!wasOffTrack) {
-    vx += slipOutwardForce * (0.55 + slipBlend * 0.35);
+    if (isModeX) {
+      vx += centrifugalForce * CENTRIFUGAL_DIRECT_PUSH_X;
+    }
+
+    vx += slipOutwardForce * (0.45 + slipBlend * 0.25);
     vx += -Math.sign(x || 1) * edgePressure * (0.3 + slipBlend * 0.5);
   }
 
@@ -158,7 +168,9 @@ function updateTrackSpaceLateral(gameState, curvature, vz) {
   if (wasOffTrack) {
     if (Math.sign(vx) === Math.sign(x)) vx = 0;
     const overflow = Math.abs(x) - trackLimit;
-    vx += -Math.sign(x) * (OFF_TRACK_CENTERING_BONUS + overflow * OFF_TRACK_RECOVERY_PER_UNIT);
+    vx +=
+      -Math.sign(x) *
+      (OFF_TRACK_CENTERING_BONUS + overflow * OFF_TRACK_RECOVERY_PER_UNIT);
   }
 
   if (Math.abs(vx) < 0.01) vx = 0;
@@ -177,9 +189,15 @@ function updateTrackSpaceLateral(gameState, curvature, vz) {
   const loadRatio = absCentrifugalForce / safeGrip;
   const gripExcessRatio = Math.max(0, loadRatio - 1);
   const entryAggression = clamp(deltaCurvature / 0.003, 0, 1);
+  const autobrakeThreshold = isModeX
+    ? AUTO_BRAKE_LOAD_THRESHOLD_X
+    : AUTO_BRAKE_LOAD_THRESHOLD_Z;
+  const minBrakeFactor = isModeX
+    ? AUTO_BRAKE_MIN_FACTOR_X
+    : AUTO_BRAKE_MIN_FACTOR_Z;
   let autoBrakeFactor = 1;
 
-  if (loadRatio > 0.68 || isCurveEntryPhase || edgePressure > 0) {
+  if (loadRatio > autobrakeThreshold || (!isModeX && isCurveEntryPhase) || edgePressure > 0) {
     const entryWeight = isCurveEntryPhase
       ? 1 + entryAggression * CURVE_BRAKE_ENTRY_GAIN
       : 0.72;
@@ -195,7 +213,7 @@ function updateTrackSpaceLateral(gameState, curvature, vz) {
       );
 
     autoBrakeFactor = Math.max(
-      AUTO_BRAKE_MIN_FACTOR,
+      minBrakeFactor,
       Math.min(brakeFromLoad, brakeFromExcess),
     );
   }

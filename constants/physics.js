@@ -10,23 +10,30 @@ export const VZ_DRAG_MODE_Z = 0.975;
 export const VZ_MAX_MODE_X = 30;
 export const VZ_MAX_MODE_Z = 17;
 
-export const MAX_GRIP_MODE_X = 6.4;
+export const MAX_GRIP_MODE_X = 2.8;
 export const MAX_GRIP_MODE_Z = 12.5;
 
-export const LATERAL_FRICTION_GRIP_X = 0.78;
-export const LATERAL_FRICTION_GRIP_Z = 0.66;
+
+export const CENTRIFUGAL_DIRECT_PUSH_X = 0.22;
+
+export const LATERAL_FRICTION_GRIP_X = 0.91;
+export const LATERAL_FRICTION_GRIP_Z = 0.54;
 
 export const SLIP_BLEND_START = 0.82;
 export const SLIP_BLEND_RANGE = 0.92;
-export const SLIP_DAMPING_MODE_X = 0.84;
-export const SLIP_DAMPING_MODE_Z = 0.74;
+export const SLIP_DAMPING_MODE_X = 0.88;
+export const SLIP_DAMPING_MODE_Z = 0.60;
 export const SLIP_CURVE_RECOVERY_BONUS = 0.7;
 
-export const TRACK_CENTERING_FORCE_X = 0.0085;
-export const TRACK_CENTERING_FORCE_Z = 0.0105;
+export const TRACK_CENTERING_FORCE_X = 0.006;
+export const TRACK_CENTERING_FORCE_Z = 0.016;
 export const OFF_TRACK_CENTERING_BONUS = 1.4;
 export const OFF_TRACK_RECOVERY_PER_UNIT = 0.022;
 
+export const AUTO_BRAKE_LOAD_THRESHOLD_X = 1.05;
+export const AUTO_BRAKE_LOAD_THRESHOLD_Z = 0.94;
+export const AUTO_BRAKE_MIN_FACTOR_X = 0.82;
+export const AUTO_BRAKE_MIN_FACTOR_Z = 0.88;
 export const AUTO_BRAKE_LOAD_FACTOR = 0.038;
 export const AUTO_BRAKE_EXCESS_FACTOR = 0.11;
 export const AUTO_BRAKE_MIN_FACTOR = 0.7;
