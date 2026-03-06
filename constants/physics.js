@@ -84,3 +84,5 @@ export const BOOST_OVERCAP_RATIO = 1.1;
 export const MANUAL_BRAKE_DECEL = 0.90;
 export const BRAKE_REGEN_BASE = 0.2;
 export const BRAKE_REGEN_SPEED_FACTOR = 0.025;
+
+export const STEERING_VX_FACTOR = 0.040;

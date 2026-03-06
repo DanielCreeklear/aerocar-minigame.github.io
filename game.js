@@ -7,6 +7,7 @@ import { updateCarPhysics } from "./car-physics.js";
 import { EnergyManager } from "./energy.js";
 import {
   SCREENS,
+  STEER_RATE,
   TARGET_LAPS,
   TOTAL_SEGMENTS,
   TRACK_SEED,
@@ -25,6 +26,8 @@ class Game {
     this.trackSeed = TRACK_SEED;
     this.totalSegments = TOTAL_SEGMENTS;
     this.track.init(this.totalSegments, this.trackSeed);
+
+    this.steeringTarget = 0;
 
     this.input = new InputController(canvas, {
       onBrakeChange: (active) => {
@@ -47,6 +50,9 @@ class Game {
         if (this.gameState.currentScreen === SCREENS.RACE) {
           toggleCarMode(this.gameState);
         }
+      },
+      onSteerChange: (value) => {
+        this.steeringTarget = value;
       },
       onScreenTap: (x, y) => {
         this.handleScreenTap(x, y);
@@ -133,6 +139,10 @@ class Game {
     if (this.gameState.currentScreen !== SCREENS.RACE) return;
 
     this.gameState.currentTime = Date.now() - this.gameState.startTime;
+
+    // Smoothly interpolate steering input toward the current target.
+    const steer = this.gameState.steeringInput || 0;
+    this.gameState.steeringInput = steer + (this.steeringTarget - steer) * STEER_RATE;
 
     this.energyManager.update(this.gameState);
     this.gameState.battery = this.energyManager.battery;
