@@ -269,9 +269,22 @@ class Track {
     let wrappedZ = z % lap;
     if (wrappedZ < 0) wrappedZ += lap;
 
-    let index = Math.floor(wrappedZ / Z_RESOLUTION);
-    if (index >= this.trackData.length) index = this.trackData.length - 1;
-    return this.trackData[index];
+    const baseIndex = Math.floor(wrappedZ / Z_RESOLUTION);
+    const currentIndex = Math.min(baseIndex, this.trackData.length - 1);
+    const nextIndex = (currentIndex + 1) % this.trackData.length;
+
+    const currentPoint = this.trackData[currentIndex];
+    const nextPoint = this.trackData[nextIndex];
+    const t = (wrappedZ - currentIndex * Z_RESOLUTION) / Z_RESOLUTION;
+
+    return {
+      z: wrappedZ,
+      x: currentPoint.x + (nextPoint.x - currentPoint.x) * t,
+      yaw: currentPoint.yaw + (nextPoint.yaw - currentPoint.yaw) * t,
+      curve: currentPoint.curve + (nextPoint.curve - currentPoint.curve) * t,
+      type: currentPoint.type,
+      marker: currentPoint.marker,
+    };
   }
 }
 

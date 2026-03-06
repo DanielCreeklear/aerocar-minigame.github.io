@@ -22,10 +22,13 @@ function createCarStateFields() {
     lateralVelocity: 0,
     currentCurvature: 0,
     currentTrackPoint: null,
+    lastModeToggleAt: 0,
     isOffTrack: false,
     offTrackDustTimer: 0,
   };
 }
+
+const MODE_TOGGLE_COOLDOWN_MS = 220;
 
 function applyCarRaceInput(gameState, x, isDown, canvasWidth, canvasHeight) {
   const ratios = getInputRatios(canvasWidth, canvasHeight);
@@ -33,8 +36,14 @@ function applyCarRaceInput(gameState, x, isDown, canvasWidth, canvasHeight) {
   const rightBoundary = canvasWidth * ratios.right;
 
   if (x <= leftBoundary && isDown) {
-    gameState.aeroMode =
-      gameState.aeroMode === AERO_MODES.Z ? AERO_MODES.X : AERO_MODES.Z;
+    const now = Date.now();
+    const elapsed = now - (gameState.lastModeToggleAt || 0);
+
+    if (elapsed >= MODE_TOGGLE_COOLDOWN_MS) {
+      gameState.aeroMode =
+        gameState.aeroMode === AERO_MODES.Z ? AERO_MODES.X : AERO_MODES.Z;
+      gameState.lastModeToggleAt = now;
+    }
   } else if (x >= rightBoundary) {
     gameState.isBoosting = isDown;
   } else if (!isDown) {

@@ -71,6 +71,10 @@ class Game {
       this.setScreen(SCREENS.GAME_OVER);
     }
 
+    if (this.renderer) {
+      this.renderer.displayedSpeedKmh = 0;
+    }
+
     this.statusText.innerText = "";
   }
 

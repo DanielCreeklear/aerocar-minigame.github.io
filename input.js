@@ -104,6 +104,10 @@ class InputController {
       this.game.handleInput(this.getCanvasX(e.clientX), false);
     });
 
+    this.canvas.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+    });
+
     window.addEventListener("keydown", (e) => {
       const ratios = getRatios();
       if (PREVENT_DEFAULT_KEYS.includes(e.code)) e.preventDefault();
@@ -155,6 +159,12 @@ class InputController {
       event.preventDefault();
       event.stopPropagation();
     };
+
+    [leftBtn, rightBtn, boostBtn].forEach((button) => {
+      button.addEventListener("contextmenu", (event) => {
+        blockEvent(event);
+      });
+    });
 
     const bindPressButton = (button, onPress) => {
       button.addEventListener("pointerdown", (event) => {

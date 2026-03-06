@@ -1,5 +1,8 @@
 import {
   AERO_MODES,
+  AUTO_BRAKE_EXCESS_FACTOR,
+  AUTO_BRAKE_LOAD_FACTOR,
+  AUTO_BRAKE_MIN_FACTOR,
   CENTRIFUGAL_SCALE_C,
   LATERAL_FRICTION_GRIP_X,
   LATERAL_FRICTION_GRIP_Z,
@@ -7,9 +10,12 @@ import {
   MAX_GRIP_MODE_Z,
   MAX_LATERAL_VX,
   OFF_TRACK_DUST_FRAMES,
+  OFF_TRACK_CENTERING_BONUS,
   OFF_TRACK_VX_DRAG,
   OFF_TRACK_VZ_DRAG,
   SLIP_PENALTY_THRESHOLD,
+  TRACK_CENTERING_FORCE_X,
+  TRACK_CENTERING_FORCE_Z,
   TRACK_WIDTH,
   VZ_ACCEL_MODE_X,
   VZ_ACCEL_MODE_Z,
@@ -64,10 +70,14 @@ function updateTrackSpaceLateral(gameState, curvature, vz) {
   const underGripFriction = isModeX
     ? LATERAL_FRICTION_GRIP_X
     : LATERAL_FRICTION_GRIP_Z;
+  const centeringForce = isModeX
+    ? TRACK_CENTERING_FORCE_X
+    : TRACK_CENTERING_FORCE_Z;
 
   const centrifugalForce = vz * vz * curvature * CENTRIFUGAL_SCALE_C;
   const absCentrifugalForce = Math.abs(centrifugalForce);
   const isWithinGrip = absCentrifugalForce <= maxGrip;
+  vx += -x * centeringForce;
 
   if (isWithinGrip) {
     vx *= underGripFriction;
@@ -84,9 +94,21 @@ function updateTrackSpaceLateral(gameState, curvature, vz) {
   const isOffTrack = Math.abs(x) > trackLimit;
   let nextVz = vz;
 
+  const gripExcess = Math.max(0, absCentrifugalForce - maxGrip);
+  const loadRatio = absCentrifugalForce / Math.max(maxGrip, 0.0001);
+  const brakeFromLoad = 1 - Math.min(0.08, loadRatio * AUTO_BRAKE_LOAD_FACTOR);
+  const brakeFromExcess = 1 - gripExcess * AUTO_BRAKE_EXCESS_FACTOR;
+  const autoBrakeFactor = Math.max(
+    AUTO_BRAKE_MIN_FACTOR,
+    Math.min(brakeFromLoad, brakeFromExcess),
+  );
+
+  nextVz *= autoBrakeFactor;
+
   if (isOffTrack) {
     nextVz *= OFF_TRACK_VZ_DRAG;
     vx *= OFF_TRACK_VX_DRAG;
+    vx += -Math.sign(x) * OFF_TRACK_CENTERING_BONUS;
     gameState.offTrackDustTimer = OFF_TRACK_DUST_FRAMES;
   } else {
     gameState.offTrackDustTimer = Math.max(
