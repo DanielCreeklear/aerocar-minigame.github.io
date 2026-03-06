@@ -7,7 +7,7 @@ export const VZ_DRAG_MODE_Z = 0.975;
 export const VZ_MAX_MODE_X = 30;
 export const VZ_MAX_MODE_Z = 17;
 
-export const MAX_GRIP_MODE_X = 2.8;
+export const MAX_GRIP_MODE_X = 4.5;
 export const MAX_GRIP_MODE_Z = 12.5;
 
 export const CENTRIFUGAL_DIRECT_PUSH_X = 0.22;
@@ -31,14 +31,14 @@ export const EDGE_PRESSURE_RATIO_RANGE = 0.18;
 export const EDGE_VX_DAMPING_FACTOR = 0.18;
 
 export const LATERAL_VX_DEAD_ZONE = 0.01;
-export const WALL_BOUNCE_DAMPING = 0.35;
+export const WALL_BOUNCE_DAMPING = 0.5;
 
 export const OFF_TRACK_CENTERING_BONUS = 1.4;
 export const OFF_TRACK_RECOVERY_PER_UNIT = 0.022;
 
 export const MAX_LATERAL_VX = 34;
 
-export const OFF_TRACK_VZ_DRAG = 0.72;
+export const OFF_TRACK_VZ_DRAG = 0.82;
 export const OFF_TRACK_VX_DRAG = 0.45;
 
 export const CURVE_DRAG_FACTOR_X = 0.03;
@@ -59,4 +59,4 @@ export const MANUAL_BRAKE_DECEL = 0.90;
 export const BRAKE_REGEN_BASE = 0.2;
 export const BRAKE_REGEN_SPEED_FACTOR = 0.025;
 
-export const STEERING_VX_FACTOR = 0.040;
+export const STEERING_VX_FACTOR = 0.055;
