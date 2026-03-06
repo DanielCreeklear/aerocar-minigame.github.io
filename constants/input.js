@@ -2,6 +2,9 @@ export const SCREEN_HALF_RATIO = 0.5;
 export const LEFT_INPUT_RATIO = 0.25;
 export const RIGHT_INPUT_RATIO = 0.75;
 
+export const MODE_CORNER_X_RATIO = 0.72;
+export const MODE_CORNER_Y_RATIO = 0.14;
+
 export function getInputRatios(width, height) {
   if (height <= width) {
     return {
@@ -27,6 +30,9 @@ export const ACTION_KEYS = {
   ARROW_RIGHT: "ArrowRight",
   KEY_A: "KeyA",
   KEY_D: "KeyD",
+  KEY_S: "KeyS",
+  KEY_Z: "KeyZ",
+  KEY_X: "KeyX",
 };
 
 export const PREVENT_DEFAULT_KEYS = [
