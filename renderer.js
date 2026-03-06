@@ -230,7 +230,7 @@ class Renderer {
     const btnH = Math.max(28, Math.min(48, height * 0.065));
     const margin = Math.max(8, Math.min(18, width * 0.02));
     const x = width - btnW - margin;
-    const y = margin;
+    const y = height / 2 - btnH / 2;
     const radius = btnH * 0.35;
 
     ctx.save();

@@ -3,7 +3,8 @@ export const LEFT_INPUT_RATIO = 0.25;
 export const RIGHT_INPUT_RATIO = 0.75;
 
 export const MODE_CORNER_X_RATIO = 0.72;
-export const MODE_CORNER_Y_RATIO = 0.14;
+export const MODE_CORNER_Y_MIN_RATIO = 0.38;
+export const MODE_CORNER_Y_MAX_RATIO = 0.62;
 
 export function getInputRatios(width, height) {
   if (height <= width) {
