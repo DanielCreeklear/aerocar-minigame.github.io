@@ -23,21 +23,8 @@ export const SLIP_BLEND_START = 0.82;
 export const SLIP_BLEND_RANGE = 0.92;
 export const SLIP_DAMPING_MODE_X = 0.88;
 export const SLIP_DAMPING_MODE_Z = 0.60;
-export const SLIP_CURVE_RECOVERY_BONUS = 0.7;
-
-export const TRACK_CENTERING_FORCE_X = 0.006;
-export const TRACK_CENTERING_FORCE_Z = 0.016;
 export const OFF_TRACK_CENTERING_BONUS = 1.4;
 export const OFF_TRACK_RECOVERY_PER_UNIT = 0.022;
-
-export const AUTO_BRAKE_LOAD_THRESHOLD_X = 1.05;
-export const AUTO_BRAKE_LOAD_THRESHOLD_Z = 0.94;
-export const AUTO_BRAKE_MIN_FACTOR_X = 0.82;
-export const AUTO_BRAKE_MIN_FACTOR_Z = 0.88;
-export const AUTO_BRAKE_LOAD_FACTOR = 0.038;
-export const AUTO_BRAKE_EXCESS_FACTOR = 0.11;
-export const AUTO_BRAKE_MIN_FACTOR = 0.7;
-export const CURVE_BRAKE_ENTRY_GAIN = 0.08;
 
 export const MAX_LATERAL_VX = 34;
 
