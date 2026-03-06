@@ -52,12 +52,10 @@ function updateCurrentSegmentIndex(gameState, track, lapZ) {
 
 function updateForwardVelocity(gameState, curvature) {
   const strategy = getAeroStrategy(gameState.aeroMode);
-  const absCurvature = Math.abs(curvature || 0);
-  const curveLoad = clamp(absCurvature / 10, 0, 1);
 
   let vz = gameState.speed || 0;
   vz = Math.min(strategy.maxVz, Math.max(0, vz + strategy.accel));
-  vz *= strategy.drag * (1 - curveLoad * strategy.curveDragFactor);
+  vz *= strategy.drag;
 
   const battery = gameState.battery || 0;
   if (gameState.isBoosting && battery > 0) {

@@ -2,7 +2,8 @@ import {
   ACTION_KEYS,
   getInputRatios,
   MODE_CORNER_X_RATIO,
-  MODE_CORNER_Y_RATIO,
+  MODE_CORNER_Y_MIN_RATIO,
+  MODE_CORNER_Y_MAX_RATIO,
   PREVENT_DEFAULT_KEYS,
 } from "./constants/index.js";
 
@@ -29,7 +30,8 @@ class InputController {
   isInModeCorner(x, y) {
     return (
       x >= this.canvas.width * MODE_CORNER_X_RATIO &&
-      y <= this.canvas.height * MODE_CORNER_Y_RATIO
+      y >= this.canvas.height * MODE_CORNER_Y_MIN_RATIO &&
+      y <= this.canvas.height * MODE_CORNER_Y_MAX_RATIO
     );
   }
 
