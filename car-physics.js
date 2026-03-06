@@ -117,6 +117,11 @@ function updateTrackSpaceLateral(gameState, curvature, vz) {
   const damping = lerp(strategy.lateralFriction, strategy.slipDamping, slipBlend);
   vx *= damping * (1 - edgePressure * 0.18);
 
+  // Forward velocity is only reduced by off-track drag or manual braking — never by
+  // edge proximity.  Removing the edgePressure vz multiplier eliminates the "ghost
+  // brake" that bled forward speed whenever centrifugal force pushed the car near
+  // the track edge during a corner.
+
   if (wasOffTrack) {
     if (Math.sign(vx) === Math.sign(x)) vx = 0;
     const overflow = Math.abs(x) - trackLimit;
@@ -137,8 +142,6 @@ function updateTrackSpaceLateral(gameState, curvature, vz) {
 
   const isOffTrack = Math.abs(x) > trackLimit;
   let nextVz = vz;
-
-  nextVz *= 1 - edgePressure * 0.07;
 
   if (isOffTrack) {
     nextVz *= OFF_TRACK_VZ_DRAG;

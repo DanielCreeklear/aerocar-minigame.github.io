@@ -101,7 +101,7 @@ export const UI_TEXT = {
   controlsTitle: "CONTROLES",
   controlsLeft: "<- ESQUERDA (segurar): Freio / ERS",
   controlsRight: "-> DIREITA (segurar): Boost",
-  controlsTip: "Canto sup. direito / Z ou X: Alterna Modo",
+  controlsTip: "Meio-direita / Z ou X: Alterna Modo",
   goalTitle: "OBJETIVO",
   goalLine1: "Conclua o trajeto em menor tempo",
   goalLine2: "equilibrando curvas e retas",
