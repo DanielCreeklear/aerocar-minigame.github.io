@@ -2,8 +2,9 @@ import { resizeCanvas } from "./utils.js";
 import { Track } from "./track.js";
 import { InputController } from "./input.js";
 import { Renderer } from "./renderer.js";
-import { applyCarRaceInput, createCarStateFields, setCarBoost } from "./car.js";
+import { createCarStateFields, toggleCarMode, setCarBoost, setCarBrake } from "./car.js";
 import { updateCarPhysics } from "./car-physics.js";
+import { EnergyManager } from "./energy.js";
 import {
   SCREENS,
   TARGET_LAPS,
@@ -18,12 +19,39 @@ class Game {
     this.statusText = statusText;
 
     this.track = new Track();
-    this.input = new InputController(canvas, this);
     this.renderer = new Renderer(this.canvas, this.ctx, this.statusText);
+    this.energyManager = new EnergyManager();
 
     this.trackSeed = TRACK_SEED;
     this.totalSegments = TOTAL_SEGMENTS;
     this.track.init(this.totalSegments, this.trackSeed);
+
+    this.input = new InputController(canvas, {
+      onBrakeChange: (active) => {
+        if (this.gameState.currentScreen === SCREENS.RACE) {
+          setCarBrake(this.gameState, active);
+        } else if (!active) {
+          // Always release on key-up so state doesn't leak across screen transitions.
+          setCarBrake(this.gameState, false);
+        }
+      },
+      onBoostChange: (active) => {
+        if (this.gameState.currentScreen === SCREENS.RACE) {
+          setCarBoost(this.gameState, active);
+        } else if (!active) {
+          // Always release on key-up so state doesn't leak across screen transitions.
+          setCarBoost(this.gameState, false);
+        }
+      },
+      onModeToggle: () => {
+        if (this.gameState.currentScreen === SCREENS.RACE) {
+          toggleCarMode(this.gameState);
+        }
+      },
+      onScreenTap: (x, y) => {
+        this.handleScreenTap(x, y);
+      },
+    });
 
     this.handleViewportResize = this.handleViewportResize.bind(this);
     window.addEventListener("resize", this.handleViewportResize);
@@ -67,6 +95,9 @@ class Game {
       finalTime: 0,
     };
 
+    this.energyManager.reset();
+    this.gameState.battery = this.energyManager.battery;
+
     if (initialScreen === SCREENS.GAME_OVER) {
       this.setScreen(SCREENS.GAME_OVER);
     }
@@ -91,36 +122,21 @@ class Game {
     }
   }
 
-  handleInput(x, isDown) {
-    if (isDown) {
-      if (this.gameState.currentScreen === SCREENS.PREVIEW) {
-        return this.advanceIntroScreen();
-      }
-      if (this.gameState.currentScreen === SCREENS.START) return this.start();
-      if (this.gameState.currentScreen === SCREENS.GAME_OVER) {
-        return this.reset(SCREENS.START);
-      }
-    }
-
-    if (this.gameState.currentScreen === SCREENS.RACE) {
-      applyCarRaceInput(
-        this.gameState,
-        x,
-        isDown,
-        this.canvas.width,
-        this.canvas.height,
-      );
-    }
-  }
-
-  setBoost(isBoosting) {
-    setCarBoost(this.gameState, isBoosting);
+  handleScreenTap(x, y) {
+    const screen = this.gameState.currentScreen;
+    if (screen === SCREENS.PREVIEW) return this.advanceIntroScreen();
+    if (screen === SCREENS.START) return this.start();
+    if (screen === SCREENS.GAME_OVER) return this.reset(SCREENS.START);
   }
 
   update() {
     if (this.gameState.currentScreen !== SCREENS.RACE) return;
 
     this.gameState.currentTime = Date.now() - this.gameState.startTime;
+
+    this.energyManager.update(this.gameState);
+    this.gameState.battery = this.energyManager.battery;
+
     const currentTrackPoint = this.track.getTrackPoint(this.gameState.currentZ);
     this.gameState.currentTrackPoint = currentTrackPoint;
     this.gameState.currentCurvature = currentTrackPoint.curve || 0;
@@ -149,3 +165,4 @@ class Game {
 }
 
 export { Game };
+

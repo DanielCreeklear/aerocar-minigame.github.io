@@ -80,3 +80,7 @@ export const BOOST_BATTERY_DRAIN = 1.0;
 export const BOOST_BATTERY_REGEN_X = 0.22;
 export const BOOST_BATTERY_REGEN_Z = 0.34;
 export const BOOST_OVERCAP_RATIO = 1.1;
+
+export const MANUAL_BRAKE_DECEL = 0.90;
+export const BRAKE_REGEN_BASE = 0.2;
+export const BRAKE_REGEN_SPEED_FACTOR = 0.025;
