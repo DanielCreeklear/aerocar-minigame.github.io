@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start local server",
+      "type": "shell",
+      "command": "npx --yes kill-port 8080 2>nul & npx --yes http-server -p 8080 -c-1",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}
