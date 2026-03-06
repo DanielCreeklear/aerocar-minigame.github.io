@@ -16,7 +16,6 @@ import {
   OFF_TRACK_VZ_DRAG,
   SLIP_BLEND_RANGE,
   SLIP_BLEND_START,
-  SLIP_CURVE_RECOVERY_BONUS,
   SLIP_PENALTY_THRESHOLD,
   STEERING_VX_FACTOR,
   TRACK_WIDTH,
@@ -80,7 +79,6 @@ function updateForwardVelocity(gameState, curvature) {
 function updateTrackSpaceLateral(gameState, curvature, vz) {
   let x = gameState.lateralOffset || 0;
   let vx = gameState.lateralVelocity || 0;
-  const absCurvature = Math.abs(curvature);
   const trackLimit = TRACK_WIDTH * 0.5;
   const strategy = getAeroStrategy(gameState.aeroMode);
 
@@ -98,13 +96,9 @@ function updateTrackSpaceLateral(gameState, curvature, vz) {
   const slipOutwardForce =
     Math.sign(centrifugalForce) *
     Math.max(0, absCentrifugalForce - effectiveGrip);
-  const centeringAssist = 1 + slipBlend * SLIP_CURVE_RECOVERY_BONUS;
   const edgeRatio = clamp(Math.abs(x) / Math.max(trackLimit, 1), 0, 1.2);
   const edgePressure = clamp((edgeRatio - 0.82) / 0.18, 0, 1);
   const wasOffTrack = Math.abs(x) > trackLimit;
-
-  const centeringMult = strategy.useCenteringAssist ? centeringAssist : 1.0;
-  vx += -x * strategy.centeringForce * centeringMult;
 
   const steeringInput = gameState.steeringInput || 0;
   vx += steeringInput * vz * STEERING_VX_FACTOR;
@@ -115,7 +109,6 @@ function updateTrackSpaceLateral(gameState, curvature, vz) {
     }
 
     vx += slipOutwardForce * (0.45 + slipBlend * 0.25);
-    vx += -Math.sign(x || 1) * edgePressure * (0.3 + slipBlend * 0.5);
   }
 
   const damping = lerp(strategy.lateralFriction, strategy.slipDamping, slipBlend);
