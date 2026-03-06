@@ -1,5 +1,7 @@
 import { formatTime } from "./utils.js";
 import {
+  getResponsiveUILayout,
+  getViewportProfile,
   UI_COLORS,
   UI_FONT,
   UI_LAYOUT,
@@ -14,6 +16,12 @@ function responsiveSize(width, spec) {
 function responsiveFont(width, spec, weight = "") {
   const weightPrefix = weight ? `${weight} ` : "";
   return `${weightPrefix}${responsiveSize(width, spec)}px ${UI_FONT.family}`;
+}
+
+function getLayoutContext(width, height) {
+  const profile = getViewportProfile(width, height);
+  const layout = getResponsiveUILayout(UI_LAYOUT, profile);
+  return { layout, profile };
 }
 
 function drawRoundedRect(ctx, x, y, width, height, radius) {
@@ -32,19 +40,20 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
 }
 
 export function drawStartScreen(ctx, width, height) {
-  const centerX = width * UI_LAYOUT.halfRatio;
+  const { layout, profile } = getLayoutContext(width, height);
+  const centerX = width * layout.halfRatio;
   const panelWidth = Math.min(
-    width * UI_LAYOUT.startPanelWidthRatio,
-    UI_LAYOUT.startPanelMaxWidth,
+    width * layout.startPanelWidthRatio,
+    layout.startPanelMaxWidth,
   );
   const panelHeight = Math.min(
-    height * UI_LAYOUT.startPanelHeightRatio,
-    UI_LAYOUT.startPanelMaxHeight,
+    height * layout.startPanelHeightRatio,
+    layout.startPanelMaxHeight,
   );
-  const panelX = (width - panelWidth) * UI_LAYOUT.halfRatio;
+  const panelX = (width - panelWidth) * layout.halfRatio;
   const panelY = Math.max(
-    UI_LAYOUT.startPanelMinTopMargin,
-    (height - panelHeight) * UI_LAYOUT.halfRatio,
+    layout.startPanelMinTopMargin,
+    (height - panelHeight) * layout.halfRatio,
   );
 
   const backgroundGradient = ctx.createLinearGradient(0, 0, width, height);
@@ -56,11 +65,11 @@ export function drawStartScreen(ctx, width, height) {
 
   const vignette = ctx.createRadialGradient(
     centerX,
-    height * UI_LAYOUT.startVignetteCenterYRatio,
-    width * UI_LAYOUT.startVignetteInnerRatio,
+    height * layout.startVignetteCenterYRatio,
+    width * layout.startVignetteInnerRatio,
     centerX,
-    height * UI_LAYOUT.startVignetteCenterYRatio,
-    width * UI_LAYOUT.startVignetteOuterRatio,
+    height * layout.startVignetteCenterYRatio,
+    width * layout.startVignetteOuterRatio,
   );
   vignette.addColorStop(0, UI_COLORS.transparentBlack);
   vignette.addColorStop(1, UI_COLORS.vignette);
@@ -100,7 +109,7 @@ export function drawStartScreen(ctx, width, height) {
   ctx.fillText(
     UI_TEXT.gameTitle,
     centerX,
-    panelY + panelHeight * UI_LAYOUT.titleYRatio,
+    panelY + panelHeight * layout.titleYRatio,
   );
 
   ctx.shadowBlur = UI_SHAPE.shadowSoft;
@@ -109,14 +118,15 @@ export function drawStartScreen(ctx, width, height) {
   ctx.fillText(
     UI_TEXT.startSubtitle,
     centerX,
-    panelY + panelHeight * UI_LAYOUT.subtitleYRatio,
+    panelY + panelHeight * layout.subtitleYRatio,
   );
 
   ctx.shadowBlur = UI_SHAPE.shadowOff;
   ctx.textAlign = "left";
-  const textX = panelX + panelWidth * UI_LAYOUT.leftColumnXRatio;
-  const rightX = panelX + panelWidth * UI_LAYOUT.rightColumnXRatio;
-  const sectionTop = panelY + panelHeight * UI_LAYOUT.sectionTopYRatio;
+  const textX = panelX + panelWidth * layout.leftColumnXRatio;
+  const rightX = panelX + panelWidth * layout.rightColumnXRatio;
+  const sectionTop = panelY + panelHeight * layout.sectionTopYRatio;
+  const useSingleColumn = profile.isPortrait && profile.isCompactWidth;
 
   ctx.fillStyle = UI_COLORS.infoBlue;
   ctx.font = responsiveFont(width, UI_FONT.startSection, UI_FONT.bold);
@@ -124,37 +134,41 @@ export function drawStartScreen(ctx, width, height) {
 
   ctx.fillStyle = UI_COLORS.textLight;
   ctx.font = responsiveFont(width, UI_FONT.startBody, UI_FONT.bold);
-  ctx.fillText(
-    UI_TEXT.controlsLeft,
-    textX,
-    sectionTop + UI_LAYOUT.lineSpacing1,
-  );
-  ctx.fillText(
-    UI_TEXT.controlsRight,
-    textX,
-    sectionTop + UI_LAYOUT.lineSpacing2,
-  );
+  ctx.fillText(UI_TEXT.controlsLeft, textX, sectionTop + layout.lineSpacing1);
+  ctx.fillText(UI_TEXT.controlsRight, textX, sectionTop + layout.lineSpacing2);
 
   ctx.fillStyle = UI_COLORS.tipGray;
   ctx.font = responsiveFont(width, UI_FONT.startTip);
-  ctx.fillText(UI_TEXT.controlsTip, textX, sectionTop + UI_LAYOUT.lineSpacing3);
+  ctx.fillText(UI_TEXT.controlsTip, textX, sectionTop + layout.lineSpacing3);
 
-  ctx.fillStyle = UI_COLORS.success;
-  ctx.font = responsiveFont(width, UI_FONT.startSection, UI_FONT.bold);
-  ctx.fillText(UI_TEXT.goalTitle, rightX, sectionTop);
+  if (useSingleColumn) {
+    const goalTop = sectionTop + layout.lineSpacing3 + 38;
+    ctx.fillStyle = UI_COLORS.success;
+    ctx.font = responsiveFont(width, UI_FONT.startSection, UI_FONT.bold);
+    ctx.fillText(UI_TEXT.goalTitle, textX, goalTop);
 
-  ctx.fillStyle = UI_COLORS.textLight;
-  ctx.font = responsiveFont(width, UI_FONT.startBody);
-  ctx.fillText(UI_TEXT.goalLine1, rightX, sectionTop + UI_LAYOUT.lineSpacing1);
-  ctx.fillText(UI_TEXT.goalLine2, rightX, sectionTop + UI_LAYOUT.lineSpacing2);
+    ctx.fillStyle = UI_COLORS.textLight;
+    ctx.font = responsiveFont(width, UI_FONT.startBody);
+    ctx.fillText(UI_TEXT.goalLine1, textX, goalTop + layout.lineSpacing1);
+    ctx.fillText(UI_TEXT.goalLine2, textX, goalTop + layout.lineSpacing2);
 
-  ctx.fillStyle = UI_COLORS.accentOrange;
-  ctx.font = responsiveFont(width, UI_FONT.startTip);
-  ctx.fillText(
-    UI_TEXT.goalTagline,
-    rightX,
-    sectionTop + UI_LAYOUT.lineSpacing3,
-  );
+    ctx.fillStyle = UI_COLORS.accentOrange;
+    ctx.font = responsiveFont(width, UI_FONT.startTip);
+    ctx.fillText(UI_TEXT.goalTagline, textX, goalTop + layout.lineSpacing3);
+  } else {
+    ctx.fillStyle = UI_COLORS.success;
+    ctx.font = responsiveFont(width, UI_FONT.startSection, UI_FONT.bold);
+    ctx.fillText(UI_TEXT.goalTitle, rightX, sectionTop);
+
+    ctx.fillStyle = UI_COLORS.textLight;
+    ctx.font = responsiveFont(width, UI_FONT.startBody);
+    ctx.fillText(UI_TEXT.goalLine1, rightX, sectionTop + layout.lineSpacing1);
+    ctx.fillText(UI_TEXT.goalLine2, rightX, sectionTop + layout.lineSpacing2);
+
+    ctx.fillStyle = UI_COLORS.accentOrange;
+    ctx.font = responsiveFont(width, UI_FONT.startTip);
+    ctx.fillText(UI_TEXT.goalTagline, rightX, sectionTop + layout.lineSpacing3);
+  }
 
   ctx.fillStyle = UI_COLORS.success;
   ctx.textAlign = "center";
@@ -162,7 +176,7 @@ export function drawStartScreen(ctx, width, height) {
   ctx.fillText(
     UI_TEXT.startCta,
     centerX,
-    panelY + panelHeight * UI_LAYOUT.startCtaYRatio,
+    panelY + panelHeight * layout.startCtaYRatio,
   );
 
   ctx.fillStyle = UI_COLORS.subtleText;
@@ -170,7 +184,7 @@ export function drawStartScreen(ctx, width, height) {
   ctx.fillText(
     UI_TEXT.startFootnote,
     centerX,
-    panelY + panelHeight * UI_LAYOUT.startTipYRatio,
+    panelY + panelHeight * layout.startTipYRatio,
   );
   ctx.textAlign = "left";
 }

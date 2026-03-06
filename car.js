@@ -20,6 +20,8 @@ function createCarStateFields() {
     currentSegmentIndex: 1,
     lateralOffset: 0,
     lateralVelocity: 0,
+    currentCurvature: 0,
+    currentTrackPoint: null,
     isOffTrack: false,
     offTrackDustTimer: 0,
   };

@@ -1,34 +1,22 @@
 import {
   AERO_MODES,
-  BATTERY_MAX,
-  BOOST_BASE_GAIN,
-  BOOST_BATTERY_DRAIN,
-  BOOST_MIN_EFFECT,
-  BOOST_SLIP_EFFECT_FACTOR,
-  CURVE_X_BASE_SPEED,
-  CURVE_Z_BASE_SPEED,
-  LATERAL_ACCEL_FACTOR_X,
-  LATERAL_ACCEL_FACTOR_Z,
-  LATERAL_DAMPING_X,
-  LATERAL_DAMPING_Z,
-  LATERAL_RECOVERY_Z,
-  MAX_LATERAL_VELOCITY,
-  MIN_CURVE_SPEED,
-  MODE_X_GRIP_LIMIT,
-  MODE_Z_GRIP_LIMIT,
-  OFF_TRACK_DRAG,
+  CENTRIFUGAL_SCALE_C,
+  LATERAL_FRICTION_GRIP_X,
+  LATERAL_FRICTION_GRIP_Z,
+  MAX_GRIP_MODE_X,
+  MAX_GRIP_MODE_Z,
+  MAX_LATERAL_VX,
   OFF_TRACK_DUST_FRAMES,
-  OFF_TRACK_LATERAL_DAMPING,
-  OFF_TRACK_MAX_OFFSET_MARGIN,
-  OFF_TRACK_MIN_SPEED,
+  OFF_TRACK_VX_DRAG,
+  OFF_TRACK_VZ_DRAG,
   SLIP_PENALTY_THRESHOLD,
-  STRAIGHT_X_BASE_SPEED,
-  STRAIGHT_Z_BASE_SPEED,
-  TRACK_TYPES,
   TRACK_WIDTH,
-  Z_BRAKE_CURVE_LOAD_FACTOR,
-  Z_BRAKE_RECHARGE_FACTOR,
-  Z_BRAKE_SLIP_LOAD_FACTOR,
+  VZ_ACCEL_MODE_X,
+  VZ_ACCEL_MODE_Z,
+  VZ_DRAG_MODE_X,
+  VZ_DRAG_MODE_Z,
+  VZ_MAX_MODE_X,
+  VZ_MAX_MODE_Z,
 } from "./constants/index.js";
 
 function getLapData(currentZ, lapLength) {
@@ -40,18 +28,13 @@ function getLapData(currentZ, lapLength) {
 function getCurveState(gameState, currentTrackInfo) {
   gameState.trackType = currentTrackInfo.type;
 
-  const curve = currentTrackInfo.curve || 0;
-  const curveDirection = Math.sign(curve);
-  const curveForce = Math.abs(curve);
-  const isCurve = gameState.trackType === TRACK_TYPES.CURVE;
-  const currentGripLimit =
-    gameState.aeroMode === AERO_MODES.Z ? MODE_Z_GRIP_LIMIT : MODE_X_GRIP_LIMIT;
-  const slip = isCurve ? Math.max(0, curveForce - currentGripLimit) : 0;
+  const curvature = currentTrackInfo.curve || 0;
+  const curveForce = Math.abs(curvature);
 
-  gameState.currentSlip = slip;
+  gameState.currentSlip = 0;
   gameState.curveForce = curveForce;
 
-  return { curveDirection, curveForce, isCurve, slip };
+  return { curvature };
 }
 
 function updateCurrentSegmentIndex(gameState, track, lapZ) {
@@ -59,140 +42,51 @@ function updateCurrentSegmentIndex(gameState, track, lapZ) {
   if (seg) gameState.currentSegmentIndex = seg.index;
 }
 
-function calculateBaseSpeed(gameState, isCurve) {
-  if (gameState.trackType === TRACK_TYPES.STRAIGHT) {
-    return gameState.aeroMode === AERO_MODES.X
-      ? STRAIGHT_X_BASE_SPEED
-      : STRAIGHT_Z_BASE_SPEED;
-  }
-
-  if (isCurve) {
-    const baseCurveSpeed =
-      gameState.aeroMode === AERO_MODES.X
-        ? CURVE_X_BASE_SPEED
-        : CURVE_Z_BASE_SPEED;
-    return Math.max(MIN_CURVE_SPEED, baseCurveSpeed);
-  }
-
-  return 0;
-}
-
-function applyBatteryAndBoost(
-  gameState,
-  baseSpeed,
-  speedBeforeUpdate,
-  isCurve,
-  slip,
-  curveForce,
-) {
-  gameState.isPenalized = slip > SLIP_PENALTY_THRESHOLD;
-
-  const isVirtualBraking =
-    isCurve &&
-    gameState.aeroMode === AERO_MODES.Z &&
-    !gameState.isBoosting &&
-    speedBeforeUpdate > baseSpeed;
-  gameState.isVirtualBraking = isVirtualBraking;
-
-  if (isVirtualBraking && gameState.battery < BATTERY_MAX) {
-    const brakeLoad = Math.max(
-      0,
-      curveForce * Z_BRAKE_CURVE_LOAD_FACTOR + slip * Z_BRAKE_SLIP_LOAD_FACTOR,
-    );
-    gameState.battery += brakeLoad * Z_BRAKE_RECHARGE_FACTOR;
-  }
-
-  if (gameState.isBoosting && gameState.battery > 0) {
-    const boostEffect = Math.max(
-      BOOST_MIN_EFFECT,
-      1 - slip * BOOST_SLIP_EFFECT_FACTOR,
-    );
-    baseSpeed += BOOST_BASE_GAIN * boostEffect;
-    gameState.battery -= BOOST_BATTERY_DRAIN;
-  }
-
-  gameState.battery = Math.max(0, Math.min(BATTERY_MAX, gameState.battery));
-  return baseSpeed;
-}
-
-function updateLateralAndOffTrack(
-  gameState,
-  baseSpeed,
-  speedBeforeUpdate,
-  slip,
-  curveDirection,
-) {
-  let lateralOffset = gameState.lateralOffset || 0;
-  let lateralVelocity = gameState.lateralVelocity || 0;
-  const trackLimit = TRACK_WIDTH * 0.5;
-  const maxLateralOffset = trackLimit + OFF_TRACK_MAX_OFFSET_MARGIN;
-  const wasOffTrack = Math.abs(lateralOffset) > trackLimit;
+function updateForwardVelocity(gameState) {
   const isModeX = gameState.aeroMode === AERO_MODES.X;
-  const lateralAccelFactor = isModeX
-    ? LATERAL_ACCEL_FACTOR_X
-    : LATERAL_ACCEL_FACTOR_Z;
-  const lateralDamping = isModeX ? LATERAL_DAMPING_X : LATERAL_DAMPING_Z;
+  const accel = isModeX ? VZ_ACCEL_MODE_X : VZ_ACCEL_MODE_Z;
+  const drag = isModeX ? VZ_DRAG_MODE_X : VZ_DRAG_MODE_Z;
+  const maxVz = isModeX ? VZ_MAX_MODE_X : VZ_MAX_MODE_Z;
 
-  if (slip > 0 && curveDirection !== 0) {
-    lateralVelocity +=
-      slip *
-      Math.max(speedBeforeUpdate, 1) *
-      lateralAccelFactor *
-      -curveDirection;
+  let vz = gameState.speed || 0;
+  vz = Math.min(maxVz, Math.max(0, vz + accel));
+  vz *= drag;
+
+  return Math.max(0, Math.min(maxVz, vz));
+}
+
+function updateTrackSpaceLateral(gameState, curvature, vz) {
+  let x = gameState.lateralOffset || 0;
+  let vx = gameState.lateralVelocity || 0;
+  const trackLimit = TRACK_WIDTH * 0.5;
+  const isModeX = gameState.aeroMode === AERO_MODES.X;
+  const maxGrip = isModeX ? MAX_GRIP_MODE_X : MAX_GRIP_MODE_Z;
+  const underGripFriction = isModeX
+    ? LATERAL_FRICTION_GRIP_X
+    : LATERAL_FRICTION_GRIP_Z;
+
+  const centrifugalForce = vz * vz * curvature * CENTRIFUGAL_SCALE_C;
+  const absCentrifugalForce = Math.abs(centrifugalForce);
+  const isWithinGrip = absCentrifugalForce <= maxGrip;
+
+  if (isWithinGrip) {
+    vx *= underGripFriction;
+    if (Math.abs(vx) < 0.01) vx = 0;
+  } else {
+    const axleLimit = maxGrip * Math.sign(centrifugalForce);
+    const ax = centrifugalForce - axleLimit;
+    vx += ax;
   }
 
-  if (!isModeX && lateralOffset !== 0) {
-    const recovery = LATERAL_RECOVERY_Z * Math.max(baseSpeed, 1);
-    if (Math.abs(lateralOffset) <= recovery) {
-      lateralOffset = 0;
-      lateralVelocity *= 0.5;
-    } else {
-      lateralVelocity += lateralOffset > 0 ? -recovery : recovery;
-    }
-  }
+  vx = Math.max(-MAX_LATERAL_VX, Math.min(MAX_LATERAL_VX, vx));
+  x += vx;
 
-  lateralVelocity *= lateralDamping;
-  if (wasOffTrack) {
-    lateralVelocity *= OFF_TRACK_LATERAL_DAMPING;
-  }
-
-  lateralVelocity = Math.max(
-    -MAX_LATERAL_VELOCITY,
-    Math.min(MAX_LATERAL_VELOCITY, lateralVelocity),
-  );
-  lateralOffset += lateralVelocity;
-
-  lateralOffset = Math.max(
-    -maxLateralOffset,
-    Math.min(maxLateralOffset, lateralOffset),
-  );
-  if (
-    (lateralOffset >= maxLateralOffset && lateralVelocity > 0) ||
-    (lateralOffset <= -maxLateralOffset && lateralVelocity < 0)
-  ) {
-    lateralVelocity = 0;
-  }
-
-  const isOffTrack = Math.abs(lateralOffset) > trackLimit;
-  if (isOffTrack) {
-    lateralVelocity *= OFF_TRACK_LATERAL_DAMPING;
-  }
-
-  if (
-    !isModeX &&
-    Math.abs(lateralOffset) < 0.2 &&
-    Math.abs(lateralVelocity) < 0.2
-  ) {
-    lateralOffset = 0;
-    lateralVelocity = 0;
-  }
+  const isOffTrack = Math.abs(x) > trackLimit;
+  let nextVz = vz;
 
   if (isOffTrack) {
-    const draggedSpeed = Math.max(
-      OFF_TRACK_MIN_SPEED,
-      Math.max(speedBeforeUpdate, OFF_TRACK_MIN_SPEED) * OFF_TRACK_DRAG,
-    );
-    baseSpeed = Math.min(baseSpeed, draggedSpeed);
+    nextVz *= OFF_TRACK_VZ_DRAG;
+    vx *= OFF_TRACK_VX_DRAG;
     gameState.offTrackDustTimer = OFF_TRACK_DUST_FRAMES;
   } else {
     gameState.offTrackDustTimer = Math.max(
@@ -201,11 +95,15 @@ function updateLateralAndOffTrack(
     );
   }
 
-  gameState.lateralOffset = lateralOffset;
-  gameState.lateralVelocity = lateralVelocity;
+  gameState.currentSlip = Math.max(0, absCentrifugalForce - maxGrip);
+  gameState.isPenalized = gameState.currentSlip > SLIP_PENALTY_THRESHOLD;
+  gameState.isVirtualBraking = false;
+  gameState.curveForce = Math.abs(curvature);
+  gameState.lateralOffset = x;
+  gameState.lateralVelocity = vx;
   gameState.isOffTrack = isOffTrack;
 
-  return baseSpeed;
+  return nextVz;
 }
 
 function advanceCarPosition(gameState, lapLength) {
@@ -219,38 +117,23 @@ function advanceCarPosition(gameState, lapLength) {
   return { lapCompleted };
 }
 
-function updateCarPhysics(gameState, track) {
-  gameState.isPenalized = false;
+function updateCarPhysics(gameState, track, sampledTrackPoint = null) {
   const lapLength = track.lapLength || track.totalDistance;
-  const speedBeforeUpdate = gameState.speed;
 
-  const currentTrackInfo = track.getTrackPoint(gameState.currentZ);
+  const currentTrackInfo =
+    sampledTrackPoint || track.getTrackPoint(gameState.currentZ);
   const { lapZ } = getLapData(gameState.currentZ, lapLength);
-  const { curveDirection, curveForce, isCurve, slip } = getCurveState(
-    gameState,
-    currentTrackInfo,
-  );
+  const { curvature } = getCurveState(gameState, currentTrackInfo);
+
+  gameState.currentTrackPoint = currentTrackInfo;
+  gameState.currentCurvature = curvature;
 
   updateCurrentSegmentIndex(gameState, track, lapZ);
 
-  let baseSpeed = calculateBaseSpeed(gameState, isCurve);
-  baseSpeed = applyBatteryAndBoost(
-    gameState,
-    baseSpeed,
-    speedBeforeUpdate,
-    isCurve,
-    slip,
-    curveForce,
-  );
-  baseSpeed = updateLateralAndOffTrack(
-    gameState,
-    baseSpeed,
-    speedBeforeUpdate,
-    slip,
-    curveDirection,
-  );
+  let vz = updateForwardVelocity(gameState);
+  vz = updateTrackSpaceLateral(gameState, curvature, vz);
 
-  gameState.speed = baseSpeed;
+  gameState.speed = vz;
   return advanceCarPosition(gameState, lapLength);
 }
 

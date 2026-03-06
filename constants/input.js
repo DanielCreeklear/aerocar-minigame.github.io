@@ -2,6 +2,22 @@ export const SCREEN_HALF_RATIO = 0.5;
 export const LEFT_INPUT_RATIO = 0.25;
 export const RIGHT_INPUT_RATIO = 0.75;
 
+export function getInputRatios(width, height) {
+  if (height <= width) {
+    return {
+      screenHalf: SCREEN_HALF_RATIO,
+      left: LEFT_INPUT_RATIO,
+      right: RIGHT_INPUT_RATIO,
+    };
+  }
+
+  return {
+    screenHalf: SCREEN_HALF_RATIO,
+    left: 0.35,
+    right: 0.65,
+  };
+}
+
 export const ACTION_KEYS = {
   SPACE: "Space",
   ENTER: "Enter",

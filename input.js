@@ -1,10 +1,8 @@
 import {
   ACTION_KEYS,
-  LEFT_INPUT_RATIO,
+  getInputRatios,
   PREVENT_DEFAULT_KEYS,
-  RIGHT_INPUT_RATIO,
   SCREENS,
-  SCREEN_HALF_RATIO,
 } from "./constants/index.js";
 
 class InputController {
@@ -16,14 +14,17 @@ class InputController {
   }
 
   bindEvents() {
+    const getRatios = () => getInputRatios(this.canvas.width, this.canvas.height);
+
     this.canvas.addEventListener("touchstart", (e) => {
       for (let i = 0; i < e.touches.length; i++)
         this.game.handleInput(e.touches[i].clientX, true);
     });
 
     this.canvas.addEventListener("touchend", (e) => {
+      const ratios = getRatios();
       let rightSideTouched = Array.from(e.touches).some(
-        (t) => t.clientX >= this.canvas.width * SCREEN_HALF_RATIO,
+        (t) => t.clientX >= this.canvas.width * ratios.screenHalf,
       );
       if (!rightSideTouched) this.game.setBoost(false);
     });
@@ -36,21 +37,22 @@ class InputController {
     );
 
     window.addEventListener("keydown", (e) => {
+      const ratios = getRatios();
       if (PREVENT_DEFAULT_KEYS.includes(e.code))
         e.preventDefault();
       if (e.code === ACTION_KEYS.SPACE || e.code === ACTION_KEYS.ENTER) {
-        this.game.handleInput(this.canvas.width * SCREEN_HALF_RATIO, true);
+        this.game.handleInput(this.canvas.width * ratios.screenHalf, true);
         return;
       }
       if (this.game.gameState.currentScreen === SCREENS.RACE) {
         if (e.code === ACTION_KEYS.ARROW_LEFT || e.code === ACTION_KEYS.KEY_A) {
           if (!this.isLeftKeyPressed) {
-            this.game.handleInput(this.canvas.width * LEFT_INPUT_RATIO, true);
+            this.game.handleInput(this.canvas.width * ratios.left, true);
             this.isLeftKeyPressed = true;
           }
         }
         if (e.code === ACTION_KEYS.ARROW_RIGHT || e.code === ACTION_KEYS.KEY_D)
-          this.game.handleInput(this.canvas.width * RIGHT_INPUT_RATIO, true);
+          this.game.handleInput(this.canvas.width * ratios.right, true);
       }
     });
 
@@ -58,7 +60,8 @@ class InputController {
       if (e.code === ACTION_KEYS.ARROW_LEFT || e.code === ACTION_KEYS.KEY_A)
         this.isLeftKeyPressed = false;
       if (e.code === ACTION_KEYS.ARROW_RIGHT || e.code === ACTION_KEYS.KEY_D) {
-        this.game.handleInput(this.canvas.width * RIGHT_INPUT_RATIO, false);
+        const ratios = getRatios();
+        this.game.handleInput(this.canvas.width * ratios.right, false);
         this.game.setBoost(false);
       }
     });

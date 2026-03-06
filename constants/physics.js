@@ -1,6 +1,26 @@
 export const MODE_X_GRIP_LIMIT = 4.2;
 export const MODE_Z_GRIP_LIMIT = 999.0;
 
+export const CENTRIFUGAL_SCALE_C = 0.001;
+
+export const VZ_ACCEL_MODE_X = 1.05;
+export const VZ_ACCEL_MODE_Z = 0.55;
+export const VZ_DRAG_MODE_X = 0.996;
+export const VZ_DRAG_MODE_Z = 0.975;
+export const VZ_MAX_MODE_X = 34;
+export const VZ_MAX_MODE_Z = 17;
+
+export const MAX_GRIP_MODE_X = 1.25;
+export const MAX_GRIP_MODE_Z = 8.5;
+
+export const LATERAL_FRICTION_GRIP_X = 0.72;
+export const LATERAL_FRICTION_GRIP_Z = 0.58;
+
+export const MAX_LATERAL_VX = 40;
+
+export const OFF_TRACK_VZ_DRAG = 0.9;
+export const OFF_TRACK_VX_DRAG = 0.8;
+
 export const STRAIGHT_X_BASE_SPEED = 26;
 export const STRAIGHT_Z_BASE_SPEED = 7;
 export const CURVE_X_BASE_SPEED = 24;

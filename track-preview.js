@@ -1,4 +1,6 @@
 import {
+  getResponsiveUILayout,
+  getViewportProfile,
   UI_COLORS,
   UI_FONT,
   UI_LAYOUT,
@@ -76,25 +78,27 @@ function samplePathIndexes(pointsLength) {
 }
 
 export function drawTrackPreviewScreen(ctx, width, height, track) {
-  const centerX = width * UI_LAYOUT.halfRatio;
+  const profile = getViewportProfile(width, height);
+  const layout = getResponsiveUILayout(UI_LAYOUT, profile);
+  const centerX = width * layout.halfRatio;
   const panelWidth = Math.min(
-    width * UI_LAYOUT.previewPanelWidthRatio,
-    UI_LAYOUT.previewPanelMaxWidth,
+    width * layout.previewPanelWidthRatio,
+    layout.previewPanelMaxWidth,
   );
   const panelHeight = Math.min(
-    height * UI_LAYOUT.previewPanelHeightRatio,
-    UI_LAYOUT.previewPanelMaxHeight,
+    height * layout.previewPanelHeightRatio,
+    layout.previewPanelMaxHeight,
   );
-  const panelX = (width - panelWidth) * UI_LAYOUT.halfRatio;
-  const panelY = (height - panelHeight) * UI_LAYOUT.halfRatio;
+  const panelX = (width - panelWidth) * layout.halfRatio;
+  const panelY = (height - panelHeight) * layout.halfRatio;
   const mapPadding = Math.min(
-    UI_LAYOUT.mapPaddingMax,
-    panelWidth * UI_LAYOUT.mapPaddingRatio,
+    layout.mapPaddingMax,
+    panelWidth * layout.mapPaddingRatio,
   );
   const mapX = panelX + mapPadding;
-  const mapY = panelY + panelHeight * UI_LAYOUT.previewMapYRatio;
+  const mapY = panelY + panelHeight * layout.previewMapYRatio;
   const mapWidth = panelWidth - mapPadding * 2;
-  const mapHeight = panelHeight * UI_LAYOUT.previewMapHeightRatio;
+  const mapHeight = panelHeight * layout.previewMapHeightRatio;
 
   const bg = ctx.createLinearGradient(0, 0, 0, height);
   bg.addColorStop(0, UI_COLORS.previewBgA);
@@ -122,7 +126,7 @@ export function drawTrackPreviewScreen(ctx, width, height, track) {
   ctx.fillText(
     UI_TEXT.previewTitle,
     centerX,
-    panelY + panelHeight * UI_LAYOUT.previewTitleYRatio,
+    panelY + panelHeight * layout.previewTitleYRatio,
   );
 
   const totalKm = ((track.lapLength || 0) / 1000).toFixed(2);
@@ -135,7 +139,7 @@ export function drawTrackPreviewScreen(ctx, width, height, track) {
   ctx.fillText(
     previewInfo,
     centerX,
-    panelY + panelHeight * UI_LAYOUT.previewInfoYRatio,
+    panelY + panelHeight * layout.previewInfoYRatio,
   );
 
   drawRoundedRect(ctx, mapX, mapY, mapWidth, mapHeight, UI_SHAPE.mapRadius);
@@ -207,7 +211,7 @@ export function drawTrackPreviewScreen(ctx, width, height, track) {
     ctx.fillStyle = UI_COLORS.textLight;
     ctx.font = responsiveFont(width, UI_FONT.previewLabel);
     const labelXMax = mapX + mapWidth - UI_SHAPE.mapDrawPadding;
-    const defaultLabelX = startPoint.x + UI_LAYOUT.launchLabelXOffset;
+    const defaultLabelX = startPoint.x + layout.launchLabelXOffset;
     const labelX = Math.min(labelXMax, defaultLabelX);
     ctx.fillText(UI_TEXT.launchLabel, labelX, startPoint.y + 5);
   }
@@ -217,7 +221,7 @@ export function drawTrackPreviewScreen(ctx, width, height, track) {
   ctx.fillText(
     UI_TEXT.previewCta,
     centerX,
-    panelY + panelHeight * UI_LAYOUT.previewCtaYRatio,
+    panelY + panelHeight * layout.previewCtaYRatio,
   );
 
   ctx.textAlign = "left";

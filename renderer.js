@@ -23,6 +23,7 @@ import {
   TRACK_TYPES,
   TRACK_WIDTH,
   CURVE_STRIPE_LENGTH,
+  getViewportProfile,
 } from "./constants/index.js";
 
 function fillRoundedRect(ctx, x, y, width, height, radius) {
@@ -50,6 +51,48 @@ const SPEEDOMETER_SCALE_TO_KMH = 8;
 const SPEEDOMETER_MAX_KMH = 399;
 const SPEEDOMETER_SMOOTHING = 0.18;
 
+function getRenderMetrics(width, height) {
+  const profile = getViewportProfile(width, height);
+
+  if (!profile.isPortrait) {
+    return {
+      borderWidth: BORDER_WIDTH,
+      carHeight: CAR_HEIGHT,
+      carWidth: CAR_WIDTH,
+      roadSampleStep: ROAD_SAMPLE_STEP,
+      trackWidth: TRACK_WIDTH,
+      speedometer: {
+        widthRatio: 0.22,
+        heightRatio: 0.15,
+        minWidth: 136,
+        maxWidth: 220,
+        minHeight: 72,
+        maxHeight: 110,
+        minMargin: 10,
+        maxMargin: 24,
+      },
+    };
+  }
+
+  return {
+    borderWidth: Math.max(12, Math.min(BORDER_WIDTH, width * 0.045)),
+    carHeight: Math.max(78, Math.min(CAR_HEIGHT, height * 0.14)),
+    carWidth: Math.max(38, Math.min(CAR_WIDTH, width * 0.12)),
+    roadSampleStep: profile.isCompactWidth ? 4 : ROAD_SAMPLE_STEP,
+    trackWidth: Math.min(TRACK_WIDTH, width * 0.86),
+    speedometer: {
+      widthRatio: 0.18,
+      heightRatio: 0.11,
+      minWidth: 110,
+      maxWidth: 180,
+      minHeight: 58,
+      maxHeight: 90,
+      minMargin: 8,
+      maxMargin: 16,
+    },
+  };
+}
+
 class Renderer {
   constructor(canvas, ctx, statusText) {
     this.canvas = canvas;
@@ -58,7 +101,7 @@ class Renderer {
     this.displayedSpeedKmh = 0;
   }
 
-  drawSpeedometer(gameState, width, height) {
+  drawSpeedometer(gameState, width, height, speedometerMetrics) {
     const ctx = this.ctx;
     const rawSpeed = Math.max(0, gameState.speed || 0);
     const targetSpeedKmh = Math.min(
@@ -70,9 +113,24 @@ class Renderer {
       (targetSpeedKmh - this.displayedSpeedKmh) * SPEEDOMETER_SMOOTHING;
 
     const shownSpeed = Math.round(this.displayedSpeedKmh);
-    const panelWidth = Math.max(136, Math.min(220, width * 0.22));
-    const panelHeight = Math.max(72, Math.min(110, height * 0.15));
-    const margin = Math.max(10, Math.min(24, width * 0.02));
+    const panelWidth = Math.max(
+      speedometerMetrics.minWidth,
+      Math.min(
+        speedometerMetrics.maxWidth,
+        width * speedometerMetrics.widthRatio,
+      ),
+    );
+    const panelHeight = Math.max(
+      speedometerMetrics.minHeight,
+      Math.min(
+        speedometerMetrics.maxHeight,
+        height * speedometerMetrics.heightRatio,
+      ),
+    );
+    const margin = Math.max(
+      speedometerMetrics.minMargin,
+      Math.min(speedometerMetrics.maxMargin, width * 0.02),
+    );
     const x = width - panelWidth - margin;
     const y = height - panelHeight - margin;
 
@@ -111,6 +169,7 @@ class Renderer {
     const canvas = this.canvas;
     const width = canvas.width;
     const height = canvas.height;
+    const renderMetrics = getRenderMetrics(width, height);
 
     if (gameState.currentScreen === SCREENS.PREVIEW) {
       this.statusText.innerText = "";
@@ -131,15 +190,16 @@ class Renderer {
     }
 
     const carY = height * CAR_Y_RATIO;
-    const carTrackInfo = track.getTrackPoint(gameState.currentZ);
+    const carTrackInfo =
+      gameState.currentTrackPoint || track.getTrackPoint(gameState.currentZ);
     const cameraX = carTrackInfo.x;
 
     ctx.fillStyle = RENDER_COLORS.grass;
     ctx.fillRect(0, 0, width, height);
 
-    const halfRoad = TRACK_WIDTH * HALF_RATIO;
+    const halfRoad = renderMetrics.trackWidth * HALF_RATIO;
 
-    for (let y = 0; y < height; y += ROAD_SAMPLE_STEP) {
+    for (let y = 0; y < height; y += renderMetrics.roadSampleStep) {
       const sliceZ = gameState.currentZ + (carY - y);
       const info = track.getTrackPoint(sliceZ);
       const centerX = width * HALF_RATIO + (info.x - cameraX);
@@ -164,15 +224,35 @@ class Renderer {
           : RENDER_COLORS.red;
 
       ctx.fillStyle = stripeColor;
-      ctx.fillRect(left - BORDER_WIDTH, y, BORDER_WIDTH, ROAD_SAMPLE_STEP);
-      ctx.fillRect(right, y, BORDER_WIDTH, ROAD_SAMPLE_STEP);
+      ctx.fillRect(
+        left - renderMetrics.borderWidth,
+        y,
+        renderMetrics.borderWidth,
+        renderMetrics.roadSampleStep,
+      );
+      ctx.fillRect(
+        right,
+        y,
+        renderMetrics.borderWidth,
+        renderMetrics.roadSampleStep,
+      );
 
       ctx.fillStyle = asphaltColor;
-      ctx.fillRect(left, y, TRACK_WIDTH, ROAD_SAMPLE_STEP);
+      ctx.fillRect(
+        left,
+        y,
+        renderMetrics.trackWidth,
+        renderMetrics.roadSampleStep,
+      );
 
       if (info.marker) {
         ctx.fillStyle = RENDER_COLORS.white;
-        ctx.fillRect(left, y, TRACK_WIDTH, ROAD_SAMPLE_STEP);
+        ctx.fillRect(
+          left,
+          y,
+          renderMetrics.trackWidth,
+          renderMetrics.roadSampleStep,
+        );
       }
     }
 
@@ -199,11 +279,11 @@ class Renderer {
       gameState.offTrackDustTimer > 0
     ) {
       const dustAlpha = Math.min(0.72, gameState.offTrackDustTimer / 24);
-      const sprayWidth = CAR_WIDTH + 110;
+      const sprayWidth = renderMetrics.carWidth + 110;
 
       for (let i = 0; i < 16; i += 1) {
         const px = drawX + (Math.random() - 0.5) * sprayWidth;
-        const py = drawY + CAR_HEIGHT * 0.38 + Math.random() * 42;
+        const py = drawY + renderMetrics.carHeight * 0.38 + Math.random() * 42;
         const size = 8 + Math.random() * 24;
 
         if (Math.random() < 0.5) {
@@ -245,11 +325,13 @@ class Renderer {
       );
     }
 
-    ctx.rotate(carTrackInfo.curve * CAR_CURVE_ROTATION_FACTOR);
+    const currentCurvature =
+      gameState.currentCurvature ?? carTrackInfo.curve ?? 0;
+    ctx.rotate(currentCurvature * CAR_CURVE_ROTATION_FACTOR);
 
-    const halfHeight = CAR_HEIGHT / 2;
-    const bodyWidth = CAR_WIDTH * 0.78;
-    const bodyHeight = CAR_HEIGHT * 0.9;
+    const halfHeight = renderMetrics.carHeight / 2;
+    const bodyWidth = renderMetrics.carWidth * 0.78;
+    const bodyHeight = renderMetrics.carHeight * 0.9;
     const bodyX = -bodyWidth / 2;
     const bodyY = -bodyHeight / 2;
 
@@ -307,18 +389,23 @@ class Renderer {
     if (gameState.isBoosting && gameState.battery > 0) {
       ctx.fillStyle = RENDER_COLORS.boost;
       const flameHeight =
-        BOOST_FLAME_HEIGHT_MIN + Math.random() * BOOST_FLAME_HEIGHT_RANDOM;
+        (BOOST_FLAME_HEIGHT_MIN + Math.random() * BOOST_FLAME_HEIGHT_RANDOM) *
+        (renderMetrics.carHeight / CAR_HEIGHT);
+      const flameWidth =
+        BOOST_FLAME_WIDTH * (renderMetrics.carWidth / CAR_WIDTH);
+      const flameX =
+        BOOST_FLAME_X_OFFSET * (renderMetrics.carWidth / CAR_WIDTH);
       ctx.fillRect(
-        BOOST_FLAME_X_OFFSET,
-        CAR_HEIGHT / 2,
-        BOOST_FLAME_WIDTH,
+        flameX,
+        renderMetrics.carHeight / 2,
+        flameWidth,
         flameHeight,
       );
     }
 
     ctx.restore();
 
-    this.drawSpeedometer(gameState, width, height);
+    this.drawSpeedometer(gameState, width, height, renderMetrics.speedometer);
 
     const timeStr = formatTime(gameState.currentTime);
     const alertMsg =
