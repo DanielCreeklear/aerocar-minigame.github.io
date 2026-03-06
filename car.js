@@ -1,6 +1,5 @@
 import {
   AERO_MODES,
-  BATTERY_MAX,
   TRACK_TYPES,
 } from "./constants/index.js";
 
@@ -9,7 +8,6 @@ function createCarStateFields() {
     aeroMode: AERO_MODES.X,
     isBoosting: false,
     isBraking: false,
-    battery: BATTERY_MAX,
     speed: 0,
     currentZ: 0,
     trackType: TRACK_TYPES.STRAIGHT,

@@ -102,7 +102,7 @@ class Game {
     };
 
     this.energyManager.reset();
-    this.gameState.battery = this.energyManager.battery;
+    this.gameState.battery = this.energyManager.getCurrentCharge();
 
     if (initialScreen === SCREENS.GAME_OVER) {
       this.setScreen(SCREENS.GAME_OVER);
@@ -145,7 +145,7 @@ class Game {
     this.gameState.steeringInput = steer + (this.steeringTarget - steer) * STEER_RATE;
 
     this.energyManager.update(this.gameState);
-    this.gameState.battery = this.energyManager.battery;
+    this.gameState.battery = this.energyManager.getCurrentCharge();
 
     const currentTrackPoint = this.track.getTrackPoint(this.gameState.currentZ);
     this.gameState.currentTrackPoint = currentTrackPoint;
