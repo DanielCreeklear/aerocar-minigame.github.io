@@ -5,7 +5,16 @@ import {
   MODE_CORNER_Y_MIN_RATIO,
   MODE_CORNER_Y_MAX_RATIO,
   PREVENT_DEFAULT_KEYS,
+  STEER_DEADZONE_DEG,
+  STEER_MAX_TILT_DEG,
 } from "./constants/index.js";
+
+function normalizeTilt(raw) {
+  const sign = Math.sign(raw);
+  const abs = Math.abs(raw);
+  if (abs < STEER_DEADZONE_DEG) return 0;
+  return sign * Math.min(1, (abs - STEER_DEADZONE_DEG) / (STEER_MAX_TILT_DEG - STEER_DEADZONE_DEG));
+}
 
 class InputController {
   constructor(canvas, handlers) {
@@ -14,6 +23,7 @@ class InputController {
     this.lastTouchTimestamp = 0;
     this.isKeyBraking = false;
     this.isKeyBoosting = false;
+    this._iosPermissionRequested = false;
     this.bindEvents();
   }
 
@@ -66,12 +76,54 @@ class InputController {
     this.handlers.onBoostChange(hasBoost);
   }
 
+  _bindDeviceOrientationEvent() {
+    window.addEventListener("deviceorientation", (e) => {
+      const screenAngle =
+        (screen.orientation && screen.orientation.angle) ||
+        window.orientation ||
+        0;
+
+      let raw;
+      if (screenAngle === 90) {
+        raw = -e.beta;
+      } else if (screenAngle === -90 || screenAngle === 270) {
+        raw = e.beta;
+      } else {
+        raw = e.gamma;
+      }
+
+      if (raw === null || raw === undefined) return;
+      const value = normalizeTilt(raw);
+      this.handlers.onSteerChange(value);
+    });
+  }
+
+  _requestIOSOrientationPermission() {
+    if (this._iosPermissionRequested) return;
+    this._iosPermissionRequested = true;
+
+    if (
+      typeof DeviceOrientationEvent !== "undefined" &&
+      typeof DeviceOrientationEvent.requestPermission === "function"
+    ) {
+      DeviceOrientationEvent.requestPermission()
+        .then((state) => {
+          if (state === "granted") {
+            this._bindDeviceOrientationEvent();
+          }
+        })
+        .catch(() => {});
+    }
+  }
+
   bindEvents() {
     this.canvas.addEventListener(
       "touchstart",
       (e) => {
         this.lastTouchTimestamp = Date.now();
         e.preventDefault();
+
+        this._requestIOSOrientationPermission();
 
         for (let i = 0; i < e.changedTouches.length; i += 1) {
           const { x, y } = this.getCanvasCoords(
@@ -179,14 +231,13 @@ class InputController {
         return;
       }
 
-      if (
-        e.code === ACTION_KEYS.ARROW_RIGHT ||
-        e.code === ACTION_KEYS.KEY_D
-      ) {
-        if (!this.isKeyBoosting) {
-          this.isKeyBoosting = true;
-          this.handlers.onBoostChange(true);
-        }
+      if (e.code === ACTION_KEYS.ARROW_LEFT || e.code === ACTION_KEYS.KEY_A) {
+        this.handlers.onSteerChange(-1);
+        return;
+      }
+
+      if (e.code === ACTION_KEYS.ARROW_RIGHT || e.code === ACTION_KEYS.KEY_D) {
+        this.handlers.onSteerChange(1);
       }
     });
 
@@ -199,15 +250,29 @@ class InputController {
         this.handlers.onBrakeChange(false);
       }
 
-      if (
-        e.code === ACTION_KEYS.SPACE ||
-        e.code === ACTION_KEYS.ARROW_RIGHT ||
-        e.code === ACTION_KEYS.KEY_D
-      ) {
+      if (e.code === ACTION_KEYS.SPACE) {
         this.isKeyBoosting = false;
         this.handlers.onBoostChange(false);
       }
+
+      if (
+        e.code === ACTION_KEYS.ARROW_LEFT ||
+        e.code === ACTION_KEYS.KEY_A ||
+        e.code === ACTION_KEYS.ARROW_RIGHT ||
+        e.code === ACTION_KEYS.KEY_D
+      ) {
+        this.handlers.onSteerChange(0);
+      }
     });
+
+    // Bind device orientation for non-iOS devices immediately.
+    // iOS requires explicit permission requested on first user interaction (see touchstart).
+    if (
+      typeof DeviceOrientationEvent !== "undefined" &&
+      typeof DeviceOrientationEvent.requestPermission !== "function"
+    ) {
+      this._bindDeviceOrientationEvent();
+    }
   }
 }
 

@@ -17,6 +17,7 @@ function createCarStateFields() {
     currentSlip: 0,
     curveForce: 0,
     currentSegmentIndex: 1,
+    steeringInput: 0,
     lateralOffset: 0,
     lateralVelocity: 0,
     currentCurvature: 0,

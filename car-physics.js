@@ -18,6 +18,7 @@ import {
   SLIP_BLEND_START,
   SLIP_CURVE_RECOVERY_BONUS,
   SLIP_PENALTY_THRESHOLD,
+  STEERING_VX_FACTOR,
   TRACK_WIDTH,
 } from "./constants/index.js";
 
@@ -104,6 +105,9 @@ function updateTrackSpaceLateral(gameState, curvature, vz) {
 
   const centeringMult = strategy.useCenteringAssist ? centeringAssist : 1.0;
   vx += -x * strategy.centeringForce * centeringMult;
+
+  const steeringInput = gameState.steeringInput || 0;
+  vx += steeringInput * vz * STEERING_VX_FACTOR;
 
   if (!wasOffTrack) {
     if (strategy.useCentrifugalPush) {
