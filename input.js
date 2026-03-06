@@ -11,7 +11,6 @@ class InputController {
     this.game = game;
     this.isLeftKeyPressed = false;
     this.lastTouchTimestamp = 0;
-    this.virtualBoostHoldCount = 0;
     this.bindEvents();
   }
 
@@ -136,98 +135,6 @@ class InputController {
         this.game.setBoost(false);
       }
     });
-
-    this.bindVirtualControls(getRatios);
-  }
-
-  bindVirtualControls(getRatios) {
-    const leftBtn = document.getElementById("control-left");
-    const rightBtn = document.getElementById("control-right");
-    const boostBtn = document.getElementById("control-boost");
-
-    if (!leftBtn || !rightBtn || !boostBtn) {
-      return;
-    }
-
-    const leftX = () => this.canvas.width * getRatios().left;
-    const rightX = () => this.canvas.width * getRatios().right;
-    const isRaceScreen = () =>
-      this.game.gameState.currentScreen === SCREENS.RACE;
-
-    const blockEvent = (event) => {
-      this.lastTouchTimestamp = Date.now();
-      event.preventDefault();
-      event.stopPropagation();
-    };
-
-    [leftBtn, rightBtn, boostBtn].forEach((button) => {
-      button.addEventListener("contextmenu", (event) => {
-        blockEvent(event);
-      });
-    });
-
-    const bindPressButton = (button, onPress) => {
-      button.addEventListener("pointerdown", (event) => {
-        blockEvent(event);
-        button.classList.add("active");
-        onPress();
-      });
-
-      const release = (event) => {
-        blockEvent(event);
-        button.classList.remove("active");
-      };
-
-      button.addEventListener("pointerup", release);
-      button.addEventListener("pointercancel", release);
-      button.addEventListener("pointerleave", release);
-    };
-
-    const bindHoldButton = (button, onDown, onUp) => {
-      button.addEventListener("pointerdown", (event) => {
-        blockEvent(event);
-        button.classList.add("active");
-        onDown();
-      });
-
-      const release = (event) => {
-        blockEvent(event);
-        button.classList.remove("active");
-        onUp();
-      };
-
-      button.addEventListener("pointerup", release);
-      button.addEventListener("pointercancel", release);
-      button.addEventListener("pointerleave", release);
-    };
-
-    bindPressButton(leftBtn, () => {
-      this.game.handleInput(leftX(), true);
-    });
-
-    const holdBoostStart = () => {
-      if (!isRaceScreen()) {
-        this.game.handleInput(rightX(), true);
-        return;
-      }
-
-      this.virtualBoostHoldCount += 1;
-      this.game.setBoost(true);
-    };
-
-    const holdBoostEnd = () => {
-      if (!isRaceScreen()) {
-        return;
-      }
-
-      this.virtualBoostHoldCount = Math.max(0, this.virtualBoostHoldCount - 1);
-      if (this.virtualBoostHoldCount === 0) {
-        this.game.setBoost(false);
-      }
-    };
-
-    bindHoldButton(rightBtn, holdBoostStart, holdBoostEnd);
-    bindHoldButton(boostBtn, holdBoostStart, holdBoostEnd);
   }
 }
 
