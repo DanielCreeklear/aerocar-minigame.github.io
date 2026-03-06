@@ -3,16 +3,34 @@ import {
   AUTO_BRAKE_EXCESS_FACTOR,
   AUTO_BRAKE_LOAD_FACTOR,
   AUTO_BRAKE_MIN_FACTOR,
+  BATTERY_MAX,
+  BOOST_BASE_GAIN,
+  BOOST_BATTERY_DRAIN,
+  BOOST_BATTERY_REGEN_X,
+  BOOST_BATTERY_REGEN_Z,
+  BOOST_MIN_EFFECT,
+  BOOST_OVERCAP_RATIO,
+  BOOST_SLIP_EFFECT_FACTOR,
   CENTRIFUGAL_SCALE_C,
+  CURVE_BRAKE_ENTRY_GAIN,
+  CURVE_DRAG_FACTOR_X,
+  CURVE_DRAG_FACTOR_Z,
   LATERAL_FRICTION_GRIP_X,
   LATERAL_FRICTION_GRIP_Z,
   MAX_GRIP_MODE_X,
   MAX_GRIP_MODE_Z,
   MAX_LATERAL_VX,
-  OFF_TRACK_DUST_FRAMES,
   OFF_TRACK_CENTERING_BONUS,
+  OFF_TRACK_DUST_FRAMES,
+  OFF_TRACK_MAX_OFFSET_MARGIN,
+  OFF_TRACK_RECOVERY_PER_UNIT,
   OFF_TRACK_VX_DRAG,
   OFF_TRACK_VZ_DRAG,
+  SLIP_BLEND_RANGE,
+  SLIP_BLEND_START,
+  SLIP_CURVE_RECOVERY_BONUS,
+  SLIP_DAMPING_MODE_X,
+  SLIP_DAMPING_MODE_Z,
   SLIP_PENALTY_THRESHOLD,
   TRACK_CENTERING_FORCE_X,
   TRACK_CENTERING_FORCE_Z,
@@ -25,6 +43,14 @@ import {
   VZ_MAX_MODE_Z,
 } from "./constants/index.js";
 
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function lerp(start, end, t) {
+  return start + (end - start) * t;
+}
+
 function getLapData(currentZ, lapLength) {
   let lapZ = lapLength > 0 ? currentZ % lapLength : 0;
   if (lapZ < 0) lapZ += lapLength;
@@ -35,10 +61,8 @@ function getCurveState(gameState, currentTrackInfo) {
   gameState.trackType = currentTrackInfo.type;
 
   const curvature = currentTrackInfo.curve || 0;
-  const curveForce = Math.abs(curvature);
-
   gameState.currentSlip = 0;
-  gameState.curveForce = curveForce;
+  gameState.curveForce = Math.abs(curvature);
 
   return { curvature };
 }
@@ -48,22 +72,49 @@ function updateCurrentSegmentIndex(gameState, track, lapZ) {
   if (seg) gameState.currentSegmentIndex = seg.index;
 }
 
-function updateForwardVelocity(gameState) {
+function updateForwardVelocity(gameState, curvature) {
   const isModeX = gameState.aeroMode === AERO_MODES.X;
   const accel = isModeX ? VZ_ACCEL_MODE_X : VZ_ACCEL_MODE_Z;
   const drag = isModeX ? VZ_DRAG_MODE_X : VZ_DRAG_MODE_Z;
+  const curveDragFactor = isModeX ? CURVE_DRAG_FACTOR_X : CURVE_DRAG_FACTOR_Z;
   const maxVz = isModeX ? VZ_MAX_MODE_X : VZ_MAX_MODE_Z;
+  const batteryRegen = isModeX ? BOOST_BATTERY_REGEN_X : BOOST_BATTERY_REGEN_Z;
+  const absCurvature = Math.abs(curvature || 0);
+  const curveLoad = clamp(absCurvature / 10, 0, 1);
 
   let vz = gameState.speed || 0;
   vz = Math.min(maxVz, Math.max(0, vz + accel));
-  vz *= drag;
+  vz *= drag * (1 - curveLoad * curveDragFactor);
 
-  return Math.max(0, Math.min(maxVz, vz));
+  const battery = gameState.battery || 0;
+  if (gameState.isBoosting && battery > 0) {
+    const slip = Math.max(0, gameState.currentSlip || 0);
+    const slipPenalty = clamp(
+      slip * BOOST_SLIP_EFFECT_FACTOR,
+      0,
+      1 - BOOST_MIN_EFFECT,
+    );
+    const boostFactor = 1 + (BOOST_BASE_GAIN / 100) * (1 - slipPenalty);
+    vz = Math.min(maxVz * BOOST_OVERCAP_RATIO, vz * boostFactor);
+    gameState.battery = Math.max(0, battery - BOOST_BATTERY_DRAIN);
+  } else {
+    gameState.battery = Math.min(BATTERY_MAX, battery + batteryRegen);
+  }
+
+  if (gameState.battery <= 0.001) {
+    gameState.isBoosting = false;
+  }
+
+  return clamp(vz, 0, maxVz * BOOST_OVERCAP_RATIO);
 }
 
 function updateTrackSpaceLateral(gameState, curvature, vz) {
   let x = gameState.lateralOffset || 0;
   let vx = gameState.lateralVelocity || 0;
+  const absCurvature = Math.abs(curvature);
+  const previousAbsCurvature = Math.abs(gameState.previousCurvature || 0);
+  const deltaCurvature = absCurvature - previousAbsCurvature;
+  const isCurveEntryPhase = deltaCurvature > 0.0001;
   const trackLimit = TRACK_WIDTH * 0.5;
   const isModeX = gameState.aeroMode === AERO_MODES.X;
   const maxGrip = isModeX ? MAX_GRIP_MODE_X : MAX_GRIP_MODE_Z;
@@ -73,42 +124,88 @@ function updateTrackSpaceLateral(gameState, curvature, vz) {
   const centeringForce = isModeX
     ? TRACK_CENTERING_FORCE_X
     : TRACK_CENTERING_FORCE_Z;
+  const slipDamping = isModeX ? SLIP_DAMPING_MODE_X : SLIP_DAMPING_MODE_Z;
 
   const centrifugalForce = vz * vz * curvature * CENTRIFUGAL_SCALE_C;
   const absCentrifugalForce = Math.abs(centrifugalForce);
-  const isWithinGrip = absCentrifugalForce <= maxGrip;
-  vx += -x * centeringForce;
+  const safeGrip = Math.max(maxGrip, 0.0001);
+  const slipRatio = absCentrifugalForce / safeGrip;
+  const slipBlend = clamp(
+    (slipRatio - SLIP_BLEND_START) / SLIP_BLEND_RANGE,
+    0,
+    1,
+  );
 
-  if (isWithinGrip) {
-    vx *= underGripFriction;
-    if (Math.abs(vx) < 0.01) vx = 0;
-  } else {
-    const axleLimit = maxGrip * Math.sign(centrifugalForce);
-    const ax = centrifugalForce - axleLimit;
-    vx += ax;
+  const effectiveGrip = safeGrip * (1 - slipBlend * 0.28);
+  const slipOutwardForce =
+    Math.sign(centrifugalForce) *
+    Math.max(0, absCentrifugalForce - effectiveGrip);
+  const centeringAssist = 1 + slipBlend * SLIP_CURVE_RECOVERY_BONUS;
+  const edgeRatio = clamp(Math.abs(x) / Math.max(trackLimit, 1), 0, 1.2);
+  const edgePressure = clamp((edgeRatio - 0.82) / 0.18, 0, 1);
+  const wasOffTrack = Math.abs(x) > trackLimit;
+
+  vx += -x * centeringForce * centeringAssist;
+
+  if (!wasOffTrack) {
+    vx += slipOutwardForce * (0.55 + slipBlend * 0.35);
+    vx += -Math.sign(x || 1) * edgePressure * (0.3 + slipBlend * 0.5);
   }
 
-  vx = Math.max(-MAX_LATERAL_VX, Math.min(MAX_LATERAL_VX, vx));
+  const damping = lerp(underGripFriction, slipDamping, slipBlend);
+  vx *= damping * (1 - edgePressure * 0.18);
+
+  if (wasOffTrack) {
+    if (Math.sign(vx) === Math.sign(x)) vx = 0;
+    const overflow = Math.abs(x) - trackLimit;
+    vx += -Math.sign(x) * (OFF_TRACK_CENTERING_BONUS + overflow * OFF_TRACK_RECOVERY_PER_UNIT);
+  }
+
+  if (Math.abs(vx) < 0.01) vx = 0;
+  vx = clamp(vx, -MAX_LATERAL_VX, MAX_LATERAL_VX);
   x += vx;
+
+  const maxOffset = trackLimit + OFF_TRACK_MAX_OFFSET_MARGIN;
+  if (Math.abs(x) > maxOffset) {
+    x = Math.sign(x) * maxOffset;
+    vx *= 0.35;
+  }
 
   const isOffTrack = Math.abs(x) > trackLimit;
   let nextVz = vz;
 
-  const gripExcess = Math.max(0, absCentrifugalForce - maxGrip);
-  const loadRatio = absCentrifugalForce / Math.max(maxGrip, 0.0001);
-  const brakeFromLoad = 1 - Math.min(0.08, loadRatio * AUTO_BRAKE_LOAD_FACTOR);
-  const brakeFromExcess = 1 - gripExcess * AUTO_BRAKE_EXCESS_FACTOR;
-  const autoBrakeFactor = Math.max(
-    AUTO_BRAKE_MIN_FACTOR,
-    Math.min(brakeFromLoad, brakeFromExcess),
-  );
+  const loadRatio = absCentrifugalForce / safeGrip;
+  const gripExcessRatio = Math.max(0, loadRatio - 1);
+  const entryAggression = clamp(deltaCurvature / 0.003, 0, 1);
+  let autoBrakeFactor = 1;
 
+  if (loadRatio > 0.68 || isCurveEntryPhase || edgePressure > 0) {
+    const entryWeight = isCurveEntryPhase
+      ? 1 + entryAggression * CURVE_BRAKE_ENTRY_GAIN
+      : 0.72;
+    const brakeFromLoad =
+      1 - Math.min(0.22, loadRatio * AUTO_BRAKE_LOAD_FACTOR * entryWeight);
+    const brakeFromExcess =
+      1 -
+      Math.min(
+        0.35,
+        gripExcessRatio *
+          AUTO_BRAKE_EXCESS_FACTOR *
+          (0.7 + entryAggression * 0.7),
+      );
+
+    autoBrakeFactor = Math.max(
+      AUTO_BRAKE_MIN_FACTOR,
+      Math.min(brakeFromLoad, brakeFromExcess),
+    );
+  }
+
+  nextVz *= 1 - edgePressure * 0.07;
   nextVz *= autoBrakeFactor;
 
   if (isOffTrack) {
     nextVz *= OFF_TRACK_VZ_DRAG;
-    vx *= OFF_TRACK_VX_DRAG;
-    vx += -Math.sign(x) * OFF_TRACK_CENTERING_BONUS;
+    if (!wasOffTrack) vx *= OFF_TRACK_VX_DRAG;
     gameState.offTrackDustTimer = OFF_TRACK_DUST_FRAMES;
   } else {
     gameState.offTrackDustTimer = Math.max(
@@ -117,9 +214,9 @@ function updateTrackSpaceLateral(gameState, curvature, vz) {
     );
   }
 
-  gameState.currentSlip = Math.max(0, absCentrifugalForce - maxGrip);
+  gameState.currentSlip = Math.max(0, absCentrifugalForce - effectiveGrip);
   gameState.isPenalized = gameState.currentSlip > SLIP_PENALTY_THRESHOLD;
-  gameState.isVirtualBraking = false;
+  gameState.isVirtualBraking = autoBrakeFactor < 0.985;
   gameState.curveForce = Math.abs(curvature);
   gameState.lateralOffset = x;
   gameState.lateralVelocity = vx;
@@ -152,10 +249,12 @@ function updateCarPhysics(gameState, track, sampledTrackPoint = null) {
 
   updateCurrentSegmentIndex(gameState, track, lapZ);
 
-  let vz = updateForwardVelocity(gameState);
+  let vz = updateForwardVelocity(gameState, curvature);
   vz = updateTrackSpaceLateral(gameState, curvature, vz);
 
   gameState.speed = vz;
+  gameState.previousCurvature = curvature;
+
   return advanceCarPosition(gameState, lapLength);
 }
 

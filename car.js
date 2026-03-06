@@ -21,6 +21,7 @@ function createCarStateFields() {
     lateralOffset: 0,
     lateralVelocity: 0,
     currentCurvature: 0,
+    previousCurvature: 0,
     currentTrackPoint: null,
     lastModeToggleAt: 0,
     isOffTrack: false,
