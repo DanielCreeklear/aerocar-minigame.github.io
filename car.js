@@ -1,7 +1,7 @@
 import {
   AERO_MODES,
   BATTERY_MAX,
-  SCREEN_HALF_RATIO,
+  getInputRatios,
   TRACK_TYPES,
 } from "./constants/index.js";
 
@@ -27,14 +27,18 @@ function createCarStateFields() {
   };
 }
 
-function applyCarRaceInput(gameState, x, isDown, canvasWidth) {
-  const halfScreen = canvasWidth * SCREEN_HALF_RATIO;
+function applyCarRaceInput(gameState, x, isDown, canvasWidth, canvasHeight) {
+  const ratios = getInputRatios(canvasWidth, canvasHeight);
+  const leftBoundary = canvasWidth * ratios.left;
+  const rightBoundary = canvasWidth * ratios.right;
 
-  if (x < halfScreen && isDown) {
+  if (x <= leftBoundary && isDown) {
     gameState.aeroMode =
       gameState.aeroMode === AERO_MODES.Z ? AERO_MODES.X : AERO_MODES.Z;
-  } else if (x >= halfScreen) {
+  } else if (x >= rightBoundary) {
     gameState.isBoosting = isDown;
+  } else if (!isDown) {
+    gameState.isBoosting = false;
   }
 }
 

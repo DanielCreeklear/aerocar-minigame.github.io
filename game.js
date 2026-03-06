@@ -99,7 +99,13 @@ class Game {
     }
 
     if (this.gameState.currentScreen === SCREENS.RACE) {
-      applyCarRaceInput(this.gameState, x, isDown, this.canvas.width);
+      applyCarRaceInput(
+        this.gameState,
+        x,
+        isDown,
+        this.canvas.width,
+        this.canvas.height,
+      );
     }
   }
 
