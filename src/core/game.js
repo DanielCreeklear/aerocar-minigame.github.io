@@ -6,9 +6,9 @@ import { createCarStateFields, toggleCarMode, setCarBoost, setCarBrake } from ".
 import { updateCarPhysics } from "../systems/physics.js";
 import { EnergyManager } from "../systems/energy.js";
 import { GameLoop } from "./game-loop.js";
+import { TelemetryManager } from "../telemetry/telemetry-manager.js";
 import {
   SCREENS,
-  STEER_RATE,
   TARGET_LAPS,
   TOTAL_SEGMENTS,
   TRACK_SEED,
@@ -24,12 +24,11 @@ class Game {
     this.renderer = new Renderer(this.canvas, this.ctx, this.statusText);
     this.energyManager = new EnergyManager();
     this.gameLoop = new GameLoop();
+    this.telemetry = new TelemetryManager();
 
     this.trackSeed = TRACK_SEED;
     this.totalSegments = TOTAL_SEGMENTS;
     this.track.init(this.totalSegments, this.trackSeed);
-
-    this.steeringTarget = 0;
 
     this.input = new InputController(canvas, {
       onBrakeChange: (active) => {
@@ -51,12 +50,11 @@ class Game {
           toggleCarMode(this.gameState);
         }
       },
-      onSteerChange: (value) => {
-        this.steeringTarget = value;
-      },
       onScreenTap: (x, y) => {
         this.handleScreenTap(x, y);
       },
+      onTelemetryExport: () => this.telemetry.exportJSON(),
+      onTelemetryHudToggle: () => this.telemetry.toggleHUD(),
     });
 
     this._handleViewportResize = this._handleViewportResize.bind(this);
@@ -101,6 +99,7 @@ class Game {
     };
 
     this.energyManager.reset();
+    this.telemetry.reset();
     this.gameState.battery = this.energyManager.getCurrentCharge();
 
     if (initialScreen === SCREENS.GAME_OVER) {
@@ -136,10 +135,6 @@ class Game {
 
     this.gameState.currentTime = Date.now() - this.gameState.startTime;
 
-    const steer = this.gameState.steeringInput || 0;
-    const smoothingRate = Math.min(1, STEER_RATE * dt);
-    this.gameState.steeringInput = steer + (this.steeringTarget - steer) * smoothingRate;
-
     this.energyManager.update(this.gameState, dt);
     this.gameState.battery = this.energyManager.getCurrentCharge();
 
@@ -153,6 +148,7 @@ class Game {
       dt,
       currentTrackPoint,
     );
+    this.telemetry.log(this.gameState);
 
     if (lapCompleted) {
       this.gameState.lapCount += 1;
@@ -167,7 +163,7 @@ class Game {
   start() {
     this.gameLoop.start((dt) => {
       this.update(dt);
-      this.renderer.draw(this.gameState, this.track);
+      this.renderer.draw(this.gameState, this.track, this.telemetry);
     });
   }
 }

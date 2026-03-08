@@ -22,6 +22,7 @@ import {
   TRACK_TYPES,
   YAW_FACTOR,
   Z_RESOLUTION,
+  RACING_LINE_STEP,
 } from "../constants/index.js";
 
 function clamp01(value) {
@@ -47,6 +48,7 @@ class Track {
   constructor() {
     this.segments = [];
     this.trackData = [];
+    this.racingLine = [];
     this.totalDistance = 0;
     this.lapLength = 0;
     this.seed = TRACK_SEED;
@@ -131,6 +133,7 @@ class Track {
 
     this.normalizeTrackData(rawData);
     this.markStartFinish();
+    this._buildRacingLine();
   }
 
   getSegmentType(index) {
@@ -253,6 +256,14 @@ class Track {
   markStartFinish() {
     if (this.trackData.length > 0) {
       this.trackData[0].marker = "start-finish";
+    }
+  }
+
+  _buildRacingLine() {
+    this.racingLine = [];
+    for (let z = 0; z < this.lapLength; z += RACING_LINE_STEP) {
+      const pt = this.getTrackPoint(z);
+      this.racingLine.push({ z, targetX: 0, curve: pt.curve });
     }
   }
 

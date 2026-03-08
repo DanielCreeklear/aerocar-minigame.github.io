@@ -21,6 +21,8 @@ export const CURVE_STRENGTH_VARIATION = 4;
 
 export const YAW_FACTOR = 0.01;
 
+export const RACING_LINE_STEP = 100;
+
 export const RNG_MULTIPLIER = 1664525;
 export const RNG_INCREMENT = 1013904223;
 export const RNG_DIVISOR = 4294967296;

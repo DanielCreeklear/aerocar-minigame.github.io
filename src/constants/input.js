@@ -34,6 +34,8 @@ export const ACTION_KEYS = {
   KEY_S: "KeyS",
   KEY_Z: "KeyZ",
   KEY_X: "KeyX",
+  KEY_T: "KeyT",
+  KEY_H: "KeyH",
 };
 
 export const PREVENT_DEFAULT_KEYS = [

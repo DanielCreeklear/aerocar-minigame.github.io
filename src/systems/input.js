@@ -256,6 +256,14 @@ class InputController {
       if (e.code === ACTION_KEYS.ARROW_RIGHT || e.code === ACTION_KEYS.KEY_D) {
         this.handlers.onSteerChange(1);
       }
+
+      if (e.code === ACTION_KEYS.KEY_T && !e.repeat) {
+        this.handlers.onTelemetryExport?.();
+      }
+
+      if (e.code === ACTION_KEYS.KEY_H && !e.repeat) {
+        this.handlers.onTelemetryHudToggle?.();
+      }
     });
 
     window.addEventListener("keyup", (e) => {

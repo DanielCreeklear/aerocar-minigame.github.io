@@ -17,7 +17,6 @@ import {
   MAX_LATERAL_VX,
   OFF_TRACK_CENTERING_BONUS,
   OFF_TRACK_DUST_FRAMES,
-  OFF_TRACK_MAX_OFFSET_MARGIN,
   OFF_TRACK_RECOVERY_PER_UNIT,
   OFF_TRACK_VX_DRAG,
   OFF_TRACK_VZ_DRAG,
@@ -26,9 +25,27 @@ import {
   SLIP_GRIP_EROSION,
   SLIP_PENALTY_THRESHOLD,
   COUNTERSTEER_DAMPING_BONUS,
-  STEERING_VX_FACTOR,
   TRACK_WIDTH,
-  WALL_BOUNCE_DAMPING,
+  AUTOSTEER_LOOKAHEAD_N,
+  AUTOSTEER_FEEDFORWARD_K,
+  AUTOSTEER_HEADING_KH,
+  AUTOSTEER_MAX_HEADING,
+  AUTOSTEER_HEADING_RATE,
+  AUTOSTEER_KP,
+  AUTOSTEER_KD,
+  AUTOSTEER_EDGE_GUARD_RATIO,
+  AUTOSTEER_OFFSET_DEADZONE,
+  AUTOSTEER_SLIP_SUPPRESS,
+  AUTOSTEER_SPEED_SENSITIVITY,
+  AUTOSTEER_MIN_HEADING,
+  AUTOSTEER_CURVATURE_REF,
+  AUTOSTEER_VISUAL_LERP_RATE,
+  AUTOSTEER_KP_FLOOR_RATIO,
+  AUTOSTEER_RECOVERY_THRESHOLD,
+  SLIP_LATERAL_KINETIC_DAMPING,
+  CURVATURE_DEADZONE,
+  OFF_TRACK_OUTWARD_VX_DAMP,
+  RACING_LINE_STEP,
 } from "../constants/index.js";
 
 function resolveTrackType(gameState, currentTrackInfo) {
@@ -84,6 +101,8 @@ function computeLateralForces(gameState, curvature, vz) {
   const slipOutwardForce =
     Math.sign(centrifugalForce) *
     Math.max(0, absCentrifugalForce - effectiveGrip);
+  gameState._telCentrifugalForce = centrifugalForce;
+  gameState._telEffectiveGrip = effectiveGrip;
   return {
     centrifugalForce,
     absCentrifugalForce,
@@ -93,12 +112,124 @@ function computeLateralForces(gameState, curvature, vz) {
   };
 }
 
-function applyLateralDynamics(gameState, vx, vz, x, trackLimit, forces, dt) {
+function computeAutoSteer(gameState, track, vz, dt) {
+  const rl = track.racingLine;
+  const lapLength = track.lapLength || track.totalDistance;
+  const lapZ = ((gameState.currentZ % lapLength) + lapLength) % lapLength;
+
+  let idx = gameState.wpIdx || 0;
+
+  if (lapZ + RACING_LINE_STEP < rl[idx].z) {
+    idx = 0;
+  }
+
+  while (idx < rl.length - 1 && rl[idx + 1].z <= lapZ) {
+    idx++;
+  }
+  gameState.wpIdx = idx;
+
+  const la = rl[(idx + AUTOSTEER_LOOKAHEAD_N) % rl.length];
+
+  const safeCurve = Math.abs(la.curve) < CURVATURE_DEADZONE ? 0 : la.curve;
+  const feedfwd = -safeCurve * AUTOSTEER_FEEDFORWARD_K * vz;
+
+  const trackHalf = TRACK_WIDTH * 0.5;
+  const currentOffset = gameState.lateralOffset || 0;
+  const edgeBlend = clamp(
+    (Math.abs(currentOffset) / trackHalf - AUTOSTEER_EDGE_GUARD_RATIO) /
+      (1 - AUTOSTEER_EDGE_GUARD_RATIO),
+    0,
+    1,
+  );
+
+  if (
+    Math.abs(currentOffset - la.targetX) < AUTOSTEER_OFFSET_DEADZONE &&
+    Math.abs(currentOffset) < AUTOSTEER_OFFSET_DEADZONE
+  ) {
+    const pushingOutwardFwd =
+      currentOffset !== 0 && Math.sign(feedfwd) === Math.sign(currentOffset);
+    const earlyForce = feedfwd * (pushingOutwardFwd ? 1 - edgeBlend : 1.0);
+    gameState._telTargetHeading = 0;
+    gameState._telKpForce = 0;
+    gameState._telAutoSteerForce = earlyForce;
+    return earlyForce;
+  }
+
+  const offsetError = la.targetX - currentOffset;
+
+  const curvatureScale = clamp(
+    Math.abs(la.curve) / AUTOSTEER_CURVATURE_REF,
+    0,
+    1,
+  );
+  let effectiveMaxHeading = lerp(
+    AUTOSTEER_MIN_HEADING,
+    AUTOSTEER_MAX_HEADING,
+    curvatureScale,
+  );
+
+  // Recovery Authority: when the car is far from the racing line (large |offsetError|),
+  // expand the heading cap toward AUTOSTEER_MAX_HEADING regardless of track curvature.
+  // This prevents the curvature-based cap from blocking recovery after going off-track.
+  const recoveryBlend = clamp(
+    (Math.abs(offsetError) - AUTOSTEER_RECOVERY_THRESHOLD) /
+      AUTOSTEER_RECOVERY_THRESHOLD,
+    0,
+    1,
+  );
+  effectiveMaxHeading = lerp(
+    effectiveMaxHeading,
+    AUTOSTEER_MAX_HEADING,
+    recoveryBlend,
+  );
+  const targetHeading = clamp(
+    offsetError * AUTOSTEER_HEADING_KH,
+    -effectiveMaxHeading,
+    effectiveMaxHeading,
+  );
+  const currentHeading = gameState.carHeadingDelta || 0;
+  const headingError = targetHeading - currentHeading;
+  const speedFactor = 1 / (1 + vz * vz * AUTOSTEER_SPEED_SENSITIVITY);
+  const maxDelta = AUTOSTEER_HEADING_RATE * speedFactor * dt;
+  const dHeading = clamp(headingError, -maxDelta, maxDelta);
+  gameState.carHeadingDelta = clamp(
+    currentHeading + dHeading,
+    -effectiveMaxHeading,
+    effectiveMaxHeading,
+  );
+  const effectiveKp =
+    AUTOSTEER_KP *
+    lerp(AUTOSTEER_KP_FLOOR_RATIO, 1.0, curvatureScale) *
+    speedFactor;
+  const rawForce = gameState.carHeadingDelta * vz * effectiveKp;
+
+  const dampingForce = -(gameState.lateralVelocity || 0) * AUTOSTEER_KD;
+
+  const totalForce = rawForce + feedfwd + dampingForce;
+  const pushingOutward =
+    currentOffset !== 0 && Math.sign(totalForce) === Math.sign(currentOffset);
+  const finalForce = totalForce * (pushingOutward ? 1 - edgeBlend : 1.0);
+  gameState._telTargetHeading = targetHeading;
+  gameState._telKpForce = rawForce;
+  gameState._telAutoSteerForce = finalForce;
+  return finalForce;
+}
+
+function applyLateralDynamics(
+  gameState,
+  autoSteerForce,
+  vx,
+  vz,
+  x,
+  trackLimit,
+  forces,
+  dt,
+) {
   const strategy = getAeroStrategy(gameState.aeroMode);
   const { centrifugalForce, slipBlend, slipOutwardForce } = forces;
   const wasOffTrack = Math.abs(x) > trackLimit;
 
-  vx += (gameState.steeringInput || 0) * vz * STEERING_VX_FACTOR * dt;
+  vx += autoSteerForce * (1 - forces.slipBlend * AUTOSTEER_SLIP_SUPPRESS) * dt;
 
   if (!wasOffTrack) {
     if (strategy.useCentrifugalPush) {
@@ -122,17 +253,28 @@ function applyLateralDynamics(gameState, vx, vz, x, trackLimit, forces, dt) {
     strategy.slipDamping,
     slipBlend,
   );
+  const headingDelta = gameState.carHeadingDelta || 0;
   const isCountersteering =
-    gameState.steeringInput !== 0 &&
-    Math.sign(gameState.steeringInput) !== Math.sign(vx) &&
+    headingDelta !== 0 &&
+    Math.sign(headingDelta) !== Math.sign(vx) &&
     Math.abs(vx) > LATERAL_VX_DEAD_ZONE;
   const effectiveDamping = isCountersteering
     ? damping * COUNTERSTEER_DAMPING_BONUS
     : damping;
-  vx *= Math.pow(effectiveDamping * (1 - edgePressure * EDGE_VX_DAMPING_FACTOR), dt);
+  vx *= Math.pow(
+    effectiveDamping * (1 - edgePressure * EDGE_VX_DAMPING_FACTOR),
+    dt,
+  );
+
+  // Slip lateral kinetic damping: applies additional exponential decay to vx
+  // proportional to slip intensity. Models kinetic friction energy dissipation
+  // during a slide — prevents unbounded vx accumulation ("lateral cannon" bug).
+  if (slipBlend > 0) {
+    vx *= Math.pow(lerp(1.0, SLIP_LATERAL_KINETIC_DAMPING, slipBlend), dt);
+  }
 
   if (wasOffTrack) {
-    if (Math.sign(vx) === Math.sign(x)) vx = 0;
+    if (Math.sign(vx) === Math.sign(x)) vx *= OFF_TRACK_OUTWARD_VX_DAMP;
     const overflow = Math.abs(x) - trackLimit;
     vx +=
       -Math.sign(x) *
@@ -156,18 +298,12 @@ function applyBoundaryAndSurface(
   wasOffTrack,
   dt,
 ) {
-  const maxOffset = trackLimit + OFF_TRACK_MAX_OFFSET_MARGIN;
-  if (Math.abs(x) > maxOffset) {
-    x = Math.sign(x) * maxOffset;
-    vx *= WALL_BOUNCE_DAMPING;
-  }
-
   const isOffTrack = Math.abs(x) > trackLimit;
   let nextVz = vz;
 
   if (isOffTrack) {
     nextVz *= Math.pow(OFF_TRACK_VZ_DRAG, dt);
-    if (!wasOffTrack) vx *= OFF_TRACK_VX_DRAG;
+    vx *= Math.pow(OFF_TRACK_VX_DRAG, dt);
     gameState.offTrackDustTimer = OFF_TRACK_DUST_FRAMES;
   } else {
     gameState.offTrackDustTimer = Math.max(
@@ -179,15 +315,27 @@ function applyBoundaryAndSurface(
   return { x, vx, nextVz, isOffTrack };
 }
 
-function integrateLateralState(gameState, curvature, vz, dt) {
+function integrateLateralState(gameState, track, curvature, vz, dt) {
   let x = gameState.lateralOffset || 0;
   let vx = gameState.lateralVelocity || 0;
   const trackLimit = TRACK_WIDTH * 0.5;
 
-  const forces = computeLateralForces(gameState, curvature, vz);
+  const effectiveCurvature =
+    Math.abs(curvature) < CURVATURE_DEADZONE ? 0 : curvature;
+
+  const forces = computeLateralForces(gameState, effectiveCurvature, vz);
+  const autoSteerForce = computeAutoSteer(gameState, track, vz, dt);
+
+  const currentVisual = gameState.carVisualHeading || 0;
+  gameState.carVisualHeading = lerp(
+    currentVisual,
+    gameState.carHeadingDelta || 0,
+    clamp(AUTOSTEER_VISUAL_LERP_RATE * dt, 0, 1),
+  );
 
   const lateralResult = applyLateralDynamics(
     gameState,
+    autoSteerForce,
     vx,
     vz,
     x,
@@ -249,7 +397,7 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
   resolveCurrentSegment(gameState, track, lapZ);
 
   let vz = computeForwardVelocity(gameState, curvature, dt);
-  vz = integrateLateralState(gameState, curvature, vz, dt);
+  vz = integrateLateralState(gameState, track, curvature, vz, dt);
 
   gameState.speed = vz;
   gameState.previousCurvature = curvature;

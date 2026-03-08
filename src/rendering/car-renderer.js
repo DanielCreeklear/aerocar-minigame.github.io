@@ -12,6 +12,7 @@ import {
   HALF_RATIO,
   MIN_CAR_ALPHA,
   RENDER_COLORS,
+  CAR_HEADING_VISUAL_SCALE,
 } from "../constants/index.js";
 
 function computeCarDrawPosition(gameState, width, height) {
@@ -157,7 +158,10 @@ function drawCar(ctx, gameState, track, metrics) {
 
   const currentCurvature = gameState.currentCurvature ?? carTrackInfo.curve ?? 0;
   const CAR_CURVE_ROTATION_FACTOR = 0.08;
-  ctx.rotate(currentCurvature * CAR_CURVE_ROTATION_FACTOR);
+  ctx.rotate(
+    currentCurvature * CAR_CURVE_ROTATION_FACTOR +
+      (gameState.carVisualHeading || 0) * CAR_HEADING_VISUAL_SCALE,
+  );
 
   drawCarBody(ctx, gameState, { carWidth, carHeight });
 

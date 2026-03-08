@@ -69,7 +69,7 @@ class Renderer {
     this.hud = new HudRenderer();
   }
 
-  draw(gameState, track) {
+  draw(gameState, track, telemetry = null) {
     const { ctx, canvas, statusText } = this;
     const width = canvas.width;
     const height = canvas.height;
@@ -96,6 +96,7 @@ class Renderer {
     drawTrack(ctx, gameState, track, metrics);
     drawCar(ctx, gameState, track, metrics);
     this.hud.draw(ctx, gameState, width, height, metrics.speedometer, statusText);
+    if (telemetry) telemetry.drawHUD(ctx, width, height);
   }
 
   resetHud() {
