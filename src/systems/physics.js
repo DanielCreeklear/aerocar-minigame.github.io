@@ -23,10 +23,9 @@ import {
   OFF_TRACK_VZ_DRAG,
   SLIP_BLEND_RANGE,
   SLIP_BLEND_START,
-  SLIP_FORCE_BASE_SCALE,
-  SLIP_FORCE_BLEND_SCALE,
   SLIP_GRIP_EROSION,
   SLIP_PENALTY_THRESHOLD,
+  COUNTERSTEER_DAMPING_BONUS,
   STEERING_VX_FACTOR,
   TRACK_WIDTH,
   WALL_BOUNCE_DAMPING,
@@ -105,10 +104,7 @@ function applyLateralDynamics(gameState, vx, vz, x, trackLimit, forces, dt) {
     if (strategy.useCentrifugalPush) {
       vx += centrifugalForce * CENTRIFUGAL_DIRECT_PUSH_X * dt;
     }
-    vx +=
-      slipOutwardForce *
-      (SLIP_FORCE_BASE_SCALE + slipBlend * SLIP_FORCE_BLEND_SCALE) *
-      dt;
+    vx += slipOutwardForce * strategy.slipForceScale * dt;
   }
 
   const edgeRatio = clamp(
@@ -126,7 +122,14 @@ function applyLateralDynamics(gameState, vx, vz, x, trackLimit, forces, dt) {
     strategy.slipDamping,
     slipBlend,
   );
-  vx *= Math.pow(damping * (1 - edgePressure * EDGE_VX_DAMPING_FACTOR), dt);
+  const isCountersteering =
+    gameState.steeringInput !== 0 &&
+    Math.sign(gameState.steeringInput) !== Math.sign(vx) &&
+    Math.abs(vx) > LATERAL_VX_DEAD_ZONE;
+  const effectiveDamping = isCountersteering
+    ? damping * COUNTERSTEER_DAMPING_BONUS
+    : damping;
+  vx *= Math.pow(effectiveDamping * (1 - edgePressure * EDGE_VX_DAMPING_FACTOR), dt);
 
   if (wasOffTrack) {
     if (Math.sign(vx) === Math.sign(x)) vx = 0;

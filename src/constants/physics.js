@@ -1,4 +1,4 @@
-export const CENTRIFUGAL_SCALE_C = 0.00055;
+export const CENTRIFUGAL_SCALE_C = 0.002;
 
 export const VZ_ACCEL_MODE_X = 1.05;
 export const VZ_ACCEL_MODE_Z = 0.55;
@@ -7,10 +7,10 @@ export const VZ_DRAG_MODE_Z = 0.975;
 export const VZ_MAX_MODE_X = 30;
 export const VZ_MAX_MODE_Z = 17;
 
-export const MAX_GRIP_MODE_X = 4.5;
-export const MAX_GRIP_MODE_Z = 12.5;
+export const MAX_GRIP_MODE_X = 1.5;
+export const MAX_GRIP_MODE_Z = 5.0;
 
-export const CENTRIFUGAL_DIRECT_PUSH_X = 0.22;
+export const CENTRIFUGAL_DIRECT_PUSH_X = 0.1;
 
 export const LATERAL_FRICTION_GRIP_X = 0.91;
 export const LATERAL_FRICTION_GRIP_Z = 0.54;
@@ -18,12 +18,14 @@ export const LATERAL_FRICTION_GRIP_Z = 0.54;
 export const SLIP_BLEND_START = 0.82;
 export const SLIP_BLEND_RANGE = 0.92;
 export const SLIP_DAMPING_MODE_X = 0.88;
-export const SLIP_DAMPING_MODE_Z = 0.60;
+export const SLIP_DAMPING_MODE_Z = 0.82;
 
 export const GRIP_MIN_FLOOR = 0.0001;
 export const SLIP_GRIP_EROSION = 0.28;
-export const SLIP_FORCE_BASE_SCALE = 0.45;
-export const SLIP_FORCE_BLEND_SCALE = 0.25;
+export const SLIP_FORCE_MODE_X = 0.33;
+export const SLIP_FORCE_MODE_Z = 0.65;
+export const SLIP_VZ_PENALTY = 0.12;
+export const COUNTERSTEER_DAMPING_BONUS = 0.82;
 
 export const EDGE_RATIO_CLAMP_MAX = 1.2;
 export const EDGE_PRESSURE_RATIO_START = 0.82;
@@ -55,8 +57,8 @@ export const BOOST_SLIP_EFFECT_FACTOR = 0.08;
 export const BOOST_BATTERY_DRAIN = 1.0;
 export const BOOST_OVERCAP_RATIO = 1.1;
 
-export const MANUAL_BRAKE_DECEL = 0.90;
+export const MANUAL_BRAKE_DECEL = 0.84;
 export const BRAKE_REGEN_BASE = 0.2;
 export const BRAKE_REGEN_SPEED_FACTOR = 0.025;
 
-export const STEERING_VX_FACTOR = 0.055;
+export const STEERING_VX_FACTOR = 0.12;

@@ -8,6 +8,8 @@ import {
   MAX_GRIP_MODE_Z,
   SLIP_DAMPING_MODE_X,
   SLIP_DAMPING_MODE_Z,
+  SLIP_FORCE_MODE_X,
+  SLIP_FORCE_MODE_Z,
   VZ_ACCEL_MODE_X,
   VZ_ACCEL_MODE_Z,
   VZ_DRAG_MODE_X,
@@ -25,6 +27,7 @@ const LowDragMode = {
   maxGrip: MAX_GRIP_MODE_X,
   lateralFriction: LATERAL_FRICTION_GRIP_X,
   slipDamping: SLIP_DAMPING_MODE_X,
+  slipForceScale: SLIP_FORCE_MODE_X,
   useCentrifugalPush: true,
 };
 
@@ -37,6 +40,7 @@ const HighDownforceMode = {
   maxGrip: MAX_GRIP_MODE_Z,
   lateralFriction: LATERAL_FRICTION_GRIP_Z,
   slipDamping: SLIP_DAMPING_MODE_Z,
+  slipForceScale: SLIP_FORCE_MODE_Z,
   useCentrifugalPush: false,
 };
 
