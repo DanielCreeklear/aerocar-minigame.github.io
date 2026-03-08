@@ -1,7 +1,4 @@
-import {
-  AERO_MODES,
-  TRACK_TYPES,
-} from "./constants/index.js";
+import { AERO_MODES, TRACK_TYPES } from "../constants/index.js";
 
 function createCarStateFields() {
   return {
@@ -49,4 +46,3 @@ function setCarBrake(gameState, isBraking) {
 }
 
 export { createCarStateFields, toggleCarMode, setCarBoost, setCarBrake };
-

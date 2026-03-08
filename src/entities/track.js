@@ -22,7 +22,7 @@ import {
   TRACK_TYPES,
   YAW_FACTOR,
   Z_RESOLUTION,
-} from "./constants/index.js";
+} from "../constants/index.js";
 
 function clamp01(value) {
   if (value < 0) return 0;
@@ -31,15 +31,15 @@ function clamp01(value) {
 }
 
 function smoothstep01(value) {
-  let t = clamp01(value);
+  const t = clamp01(value);
   return t * t * (3 - 2 * t);
 }
 
 function smoothWindow(t, edgeSize) {
-  let edge = clamp01(edgeSize);
+  const edge = clamp01(edgeSize);
   if (edge <= 0) return 1;
-  let inRamp = smoothstep01(t / edge);
-  let outRamp = smoothstep01((1 - t) / edge);
+  const inRamp = smoothstep01(t / edge);
+  const outRamp = smoothstep01((1 - t) / edge);
   return Math.min(inRamp, outRamp);
 }
 
@@ -86,10 +86,10 @@ class Track {
     let zOffset = 0;
     let turnBalance = 0;
     for (let i = 1; i <= totalSegments; i++) {
-      let type = this.getSegmentType(i);
-      let isChicane = this.isChicaneSegment();
-      let length = this.getSegmentLength(type, isChicane);
-      let curveStrength = this.getCurveStrength(type, isChicane, turnBalance);
+      const type = this.getSegmentType(i);
+      const isChicane = this.isChicaneSegment();
+      const length = this.getSegmentLength(type, isChicane);
+      const curveStrength = this.getCurveStrength(type, isChicane, turnBalance);
       if (type === TRACK_TYPES.CURVE) turnBalance += curveStrength;
 
       this.segments.push({
@@ -109,14 +109,13 @@ class Track {
     const pointCount = this.getPointCount();
     let currentX = 0;
     let currentYaw = 0;
-    let rawData = [];
+    const rawData = [];
 
     for (let i = 0; i < pointCount; i++) {
-      let z = i * Z_RESOLUTION;
-      let seg = this.findSegmentForZ(z);
-
-      let t = this.getSegmentProgress(seg, z);
-      let targetCurve = this.getTargetCurve(seg, t);
+      const z = i * Z_RESOLUTION;
+      const seg = this.findSegmentForZ(z);
+      const t = this.getSegmentProgress(seg, z);
+      const targetCurve = this.getTargetCurve(seg, t);
 
       currentYaw += targetCurve * YAW_FACTOR;
       currentX += currentYaw;
@@ -156,7 +155,7 @@ class Track {
     let dir = turnBalance > 0 ? -1 : 1;
     if (this.random() < DIRECTION_FLIP_CHANCE) dir *= -1;
 
-    let isHairpin = !isChicane && this.random() < HAIRPIN_CHANCE;
+    const isHairpin = !isChicane && this.random() < HAIRPIN_CHANCE;
     if (isHairpin) {
       return (
         (HAIRPIN_MIN_STRENGTH + this.random() * HAIRPIN_STRENGTH_VARIATION) *
@@ -187,7 +186,6 @@ class Track {
 
   getSegmentProgress(seg, z) {
     if (seg.length <= 0) return 0;
-
     let t = (z - seg.startZ) / seg.length;
     if (t < 0) t = 0;
     if (t > 1) t = 1;
@@ -196,29 +194,27 @@ class Track {
 
   getTargetCurve(seg, t) {
     if (seg.isChicane) return this.getChicaneCurve(seg, t);
-
-    let envelope = smoothWindow(t, CURVE_ENTRY_EXIT_PORTION);
+    const envelope = smoothWindow(t, CURVE_ENTRY_EXIT_PORTION);
     return seg.curveStrength * envelope;
   }
 
   getChicaneCurve(seg, t) {
-    let phaseT = t < 0.5 ? t * 2 : (t - 0.5) * 2;
-    let phaseSign = t < 0.5 ? 1 : -1;
-    let phaseEnvelope = smoothWindow(phaseT, CHICANE_ENTRY_EXIT_PORTION);
+    const phaseT = t < 0.5 ? t * 2 : (t - 0.5) * 2;
+    const phaseSign = t < 0.5 ? 1 : -1;
+    const phaseEnvelope = smoothWindow(phaseT, CHICANE_ENTRY_EXIT_PORTION);
     return seg.curveStrength * phaseSign * phaseEnvelope;
   }
 
   normalizeTrackData(rawData) {
     if (rawData.length === 0) return;
 
-    let endPoint = rawData[rawData.length - 1];
-    let endX = endPoint.x;
-    let endYaw = endPoint.yaw || 0;
-
-    let N = rawData.length - 1;
+    const endPoint = rawData[rawData.length - 1];
+    const endX = endPoint.x;
+    const endYaw = endPoint.yaw || 0;
+    const N = rawData.length - 1;
 
     if (N <= 0) {
-      let point = rawData[0];
+      const point = rawData[0];
       this.trackData.push({
         z: point.z,
         x: point.x,
@@ -229,20 +225,20 @@ class Track {
       return;
     }
 
-    let n2 = N * N;
-    let n3 = n2 * N;
-    let A = (-3 * endX) / n2 + endYaw / N;
-    let B = (2 * endX) / n3 - endYaw / n2;
+    const n2 = N * N;
+    const n3 = n2 * N;
+    const A = (-3 * endX) / n2 + endYaw / N;
+    const B = (2 * endX) / n3 - endYaw / n2;
 
     for (let i = 0; i < rawData.length; i++) {
-      let point = rawData[i];
-      let z = point.z;
-      let i2 = i * i;
-      let i3 = i2 * i;
+      const point = rawData[i];
+      const z = point.z;
+      const i2 = i * i;
+      const i3 = i2 * i;
 
-      let deltaX = A * i2 + B * i3;
-      let deltaYaw = 2 * A * i + 3 * B * i2;
-      let deltaCurve = (2 * A + 6 * B * i) / YAW_FACTOR;
+      const deltaX = A * i2 + B * i3;
+      const deltaYaw = 2 * A * i + 3 * B * i2;
+      const deltaCurve = (2 * A + 6 * B * i) / YAW_FACTOR;
 
       this.trackData.push({
         z,
@@ -261,7 +257,7 @@ class Track {
   }
 
   getTrackPoint(z) {
-    let lap = this.lapLength || this.totalDistance;
+    const lap = this.lapLength || this.totalDistance;
     if (!lap || this.trackData.length === 0) {
       return { z: 0, x: 0, yaw: 0, type: TRACK_TYPES.STRAIGHT, curve: 0 };
     }

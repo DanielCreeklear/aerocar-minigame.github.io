@@ -7,13 +7,18 @@ import {
   PREVENT_DEFAULT_KEYS,
   STEER_DEADZONE_DEG,
   STEER_MAX_TILT_DEG,
-} from "./constants/index.js";
+} from "../constants/index.js";
+
+const TOUCH_STEER_HALF_RANGE_RATIO = 0.25;
 
 function normalizeTilt(raw) {
   const sign = Math.sign(raw);
   const abs = Math.abs(raw);
   if (abs < STEER_DEADZONE_DEG) return 0;
-  return sign * Math.min(1, (abs - STEER_DEADZONE_DEG) / (STEER_MAX_TILT_DEG - STEER_DEADZONE_DEG));
+  return (
+    sign *
+    Math.min(1, (abs - STEER_DEADZONE_DEG) / (STEER_MAX_TILT_DEG - STEER_DEADZONE_DEG))
+  );
 }
 
 class InputController {
@@ -23,6 +28,7 @@ class InputController {
     this.lastTouchTimestamp = 0;
     this.isKeyBraking = false;
     this.isKeyBoosting = false;
+    this.activeTouchSteering = false;
     this._iosPermissionRequested = false;
     this.bindEvents();
   }
@@ -62,18 +68,34 @@ class InputController {
   evaluateTouchStates(touchList) {
     let hasBrake = false;
     let hasBoost = false;
+    let centerZoneTouchX = null;
 
     Array.from(touchList).forEach((touch) => {
       const { x, y } = this.getCanvasCoords(touch.clientX, touch.clientY);
-      // Mode-corner touches are handled as a one-shot toggle in touchstart;
-      // they do not count as brake or boost holds.
       if (this.isInModeCorner(x, y)) return;
-      if (this.isInBoostZone(x)) hasBoost = true;
-      else if (this.isInBrakeZone(x)) hasBrake = true;
+
+      if (this.isInBoostZone(x)) {
+        hasBoost = true;
+      } else if (this.isInBrakeZone(x)) {
+        hasBrake = true;
+      } else if (centerZoneTouchX === null) {
+        centerZoneTouchX = x;
+      }
     });
 
     this.handlers.onBrakeChange(hasBrake);
     this.handlers.onBoostChange(hasBoost);
+
+    if (centerZoneTouchX !== null) {
+      this.activeTouchSteering = true;
+      const centerX = this.canvas.width * 0.5;
+      const steerRange = this.canvas.width * TOUCH_STEER_HALF_RANGE_RATIO;
+      const steer = Math.max(-1, Math.min(1, (centerZoneTouchX - centerX) / steerRange));
+      this.handlers.onSteerChange(steer);
+    } else if (this.activeTouchSteering) {
+      this.activeTouchSteering = false;
+      this.handlers.onSteerChange(0);
+    }
   }
 
   _bindDeviceOrientationEvent() {
@@ -93,8 +115,7 @@ class InputController {
       }
 
       if (raw === null || raw === undefined) return;
-      const value = normalizeTilt(raw);
-      this.handlers.onSteerChange(value);
+      this.handlers.onSteerChange(normalizeTilt(raw));
     });
   }
 
@@ -122,7 +143,6 @@ class InputController {
       (e) => {
         this.lastTouchTimestamp = Date.now();
         e.preventDefault();
-
         this._requestIOSOrientationPermission();
 
         for (let i = 0; i < e.changedTouches.length; i += 1) {
@@ -220,10 +240,7 @@ class InputController {
         return;
       }
 
-      if (
-        e.code === ACTION_KEYS.ARROW_DOWN ||
-        e.code === ACTION_KEYS.KEY_S
-      ) {
+      if (e.code === ACTION_KEYS.ARROW_DOWN || e.code === ACTION_KEYS.KEY_S) {
         if (!this.isKeyBraking) {
           this.isKeyBraking = true;
           this.handlers.onBrakeChange(true);
@@ -242,10 +259,7 @@ class InputController {
     });
 
     window.addEventListener("keyup", (e) => {
-      if (
-        e.code === ACTION_KEYS.ARROW_DOWN ||
-        e.code === ACTION_KEYS.KEY_S
-      ) {
+      if (e.code === ACTION_KEYS.ARROW_DOWN || e.code === ACTION_KEYS.KEY_S) {
         this.isKeyBraking = false;
         this.handlers.onBrakeChange(false);
       }
@@ -265,8 +279,6 @@ class InputController {
       }
     });
 
-    // Bind device orientation for non-iOS devices immediately.
-    // iOS requires explicit permission requested on first user interaction (see touchstart).
     if (
       typeof DeviceOrientationEvent !== "undefined" &&
       typeof DeviceOrientationEvent.requestPermission !== "function"

@@ -14,7 +14,7 @@ import {
   VZ_DRAG_MODE_Z,
   VZ_MAX_MODE_X,
   VZ_MAX_MODE_Z,
-} from "./constants/index.js";
+} from "../constants/index.js";
 
 const LowDragMode = {
   name: AERO_MODES.X,
