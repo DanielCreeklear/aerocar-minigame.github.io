@@ -34,7 +34,7 @@ function computeTireSlipForces(gameState, curvature, vz) {
   const centrifugalForce = vz * vz * curvature * CENTRIFUGAL_SCALE_C;
   const absCentrifugalForce = Math.abs(centrifugalForce);
 
-  const safeGrip  = Math.max(strategy.maxGrip, GRIP_MIN_FLOOR);
+  const safeGrip = Math.max(strategy.maxGrip, GRIP_MIN_FLOOR);
   const slipRatio = absCentrifugalForce / safeGrip;
 
   const slipBlend = clamp(
@@ -49,10 +49,25 @@ function computeTireSlipForces(gameState, curvature, vz) {
     Math.sign(centrifugalForce) *
     Math.max(0, absCentrifugalForce - effectiveGrip);
 
-  return { centrifugalForce, absCentrifugalForce, effectiveGrip, slipBlend, slipOutwardForce };
+  return {
+    centrifugalForce,
+    absCentrifugalForce,
+    effectiveGrip,
+    slipBlend,
+    slipOutwardForce,
+  };
 }
 
-function applyLateralDynamics(gameState, autoSteerForce, vx, vz, x, trackLimit, forces, dt) {
+function applyLateralDynamics(
+  gameState,
+  autoSteerForce,
+  vx,
+  vz,
+  x,
+  trackLimit,
+  forces,
+  dt,
+) {
   const strategy = getAeroStrategy(gameState.aeroMode);
   const { centrifugalForce, slipBlend, slipOutwardForce } = forces;
   const wasOffTrack = Math.abs(x) > trackLimit;
@@ -81,7 +96,11 @@ function applyLateralDynamics(gameState, autoSteerForce, vx, vz, x, trackLimit, 
     1,
   );
 
-  const damping = lerp(strategy.lateralFriction, strategy.slipDamping, slipBlend);
+  const damping = lerp(
+    strategy.lateralFriction,
+    strategy.slipDamping,
+    slipBlend,
+  );
 
   // Contra-esterço: heading oposto a vx → pneu trabalha melhor → bônus de amortecimento.
   const headingDelta = gameState.carHeadingDelta || 0;
@@ -93,7 +112,10 @@ function applyLateralDynamics(gameState, autoSteerForce, vx, vz, x, trackLimit, 
     ? damping * COUNTERSTEER_DAMPING_BONUS
     : damping;
 
-  vx *= Math.pow(effectiveDamping * (1 - edgePressure * EDGE_VX_DAMPING_FACTOR), dt);
+  vx *= Math.pow(
+    effectiveDamping * (1 - edgePressure * EDGE_VX_DAMPING_FACTOR),
+    dt,
+  );
 
   // Amortecimento cinético: impede vx ilimitado em slip pleno (bug "lateral cannon").
   if (slipBlend > 0) {
@@ -104,13 +126,16 @@ function applyLateralDynamics(gameState, autoSteerForce, vx, vz, x, trackLimit, 
   if (wasOffTrack) {
     if (Math.sign(vx) === Math.sign(x)) vx *= OFF_TRACK_OUTWARD_VX_DAMP;
     const overflow = Math.abs(x) - trackLimit;
-    vx += -Math.sign(x) * (OFF_TRACK_CENTERING_BONUS + overflow * OFF_TRACK_RECOVERY_PER_UNIT) * dt;
+    vx +=
+      -Math.sign(x) *
+      (OFF_TRACK_CENTERING_BONUS + overflow * OFF_TRACK_RECOVERY_PER_UNIT) *
+      dt;
   }
 
   // Zona morta: suprime micro-jitter em velocidades laterais muito baixas.
   if (Math.abs(vx) < LATERAL_VX_DEAD_ZONE) vx = 0;
-  vx  = clamp(vx, -MAX_LATERAL_VX, MAX_LATERAL_VX);
-  x  += vx * dt;
+  vx = clamp(vx, -MAX_LATERAL_VX, MAX_LATERAL_VX);
+  x += vx * dt;
 
   return { x, vx, wasOffTrack };
 }
@@ -121,41 +146,61 @@ function applyOffTrackPenalties(gameState, x, vx, vz, trackLimit, dt) {
 
   if (isOffTrack) {
     nextVz *= Math.pow(OFF_TRACK_VZ_DRAG, dt);
-    nextVz  = Math.min(nextVz, OFF_TRACK_MAX_SPEED);
-    vx     *= Math.pow(OFF_TRACK_VX_DRAG, dt);
+    nextVz = Math.min(nextVz, OFF_TRACK_MAX_SPEED);
+    vx *= Math.pow(OFF_TRACK_VX_DRAG, dt);
     gameState.offTrackDustTimer = OFF_TRACK_DUST_FRAMES;
   } else {
-    gameState.offTrackDustTimer = Math.max(0, (gameState.offTrackDustTimer || 0) - dt);
+    gameState.offTrackDustTimer = Math.max(
+      0,
+      (gameState.offTrackDustTimer || 0) - dt,
+    );
   }
 
   return { x, vx, nextVz, isOffTrack };
 }
 
 function integrateLateralState(gameState, curvature, vz, autoSteerForce, dt) {
-  let x  = gameState.lateralOffset  || 0;
+  let x = gameState.lateralOffset || 0;
   let vx = gameState.lateralVelocity || 0;
   const trackLimit = PHYSICS_TRACK_HALF;
 
   const forces = computeTireSlipForces(gameState, curvature, vz);
 
   const lateralResult = applyLateralDynamics(
-    gameState, autoSteerForce, vx, vz, x, trackLimit, forces, dt,
+    gameState,
+    autoSteerForce,
+    vx,
+    vz,
+    x,
+    trackLimit,
+    forces,
+    dt,
   );
-  x  = lateralResult.x;
+  x = lateralResult.x;
   vx = lateralResult.vx;
   const { wasOffTrack } = lateralResult;
 
-  const surfaceResult = applyOffTrackPenalties(gameState, x, vx, vz, trackLimit, dt);
-  x  = surfaceResult.x;
+  const surfaceResult = applyOffTrackPenalties(
+    gameState,
+    x,
+    vx,
+    vz,
+    trackLimit,
+    dt,
+  );
+  x = surfaceResult.x;
   vx = surfaceResult.vx;
   const { nextVz, isOffTrack } = surfaceResult;
 
   // --- Grava estado lateral ---
-  gameState.currentSlip      = Math.max(0, forces.absCentrifugalForce - forces.effectiveGrip);
-  gameState.isPenalized      = gameState.currentSlip > SLIP_PENALTY_THRESHOLD;
-  gameState.lateralOffset    = x;
-  gameState.lateralVelocity  = vx;
-  gameState.isOffTrack       = isOffTrack;
+  gameState.currentSlip = Math.max(
+    0,
+    forces.absCentrifugalForce - forces.effectiveGrip,
+  );
+  gameState.isPenalized = gameState.currentSlip > SLIP_PENALTY_THRESHOLD;
+  gameState.lateralOffset = x;
+  gameState.lateralVelocity = vx;
+  gameState.isOffTrack = isOffTrack;
 
   return { nextVz, forces };
 }

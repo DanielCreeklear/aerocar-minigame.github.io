@@ -21,9 +21,9 @@ import {
 } from "../../constants/index.js";
 
 function computeAutoSteer(gameState, track, vz, dt) {
-  const rl        = track.racingLine;
+  const rl = track.racingLine;
   const lapLength = track.lapLength || track.totalDistance;
-  const lapZ      = ((gameState.currentZ % lapLength) + lapLength) % lapLength;
+  const lapZ = ((gameState.currentZ % lapLength) + lapLength) % lapLength;
 
   // Avança o índice em cache (wpIdx) até o waypoint mais próximo atrás do carro.
   // Reseta para 0 em volta nova (lapZ retrocedeu).
@@ -38,12 +38,13 @@ function computeAutoSteer(gameState, track, vz, dt) {
   // Sinal negativo: pré-direciona NA curva para antecipar a força centrífuga
   // antes que o erro de posição se acumule.
   const safeCurve = Math.abs(la.curve) < CURVATURE_DEADZONE ? 0 : la.curve;
-  const feedfwd   = -safeCurve * AUTOSTEER_FEEDFORWARD_K * vz;
+  const feedfwd = -safeCurve * AUTOSTEER_FEEDFORWARD_K * vz;
 
   // Suprime forças do controlador para fora perto do limite físico da pista.
   const currentOffset = gameState.lateralOffset || 0;
   const edgeBlend = clamp(
-    (Math.abs(currentOffset) / PHYSICS_TRACK_HALF - AUTOSTEER_EDGE_GUARD_RATIO) /
+    (Math.abs(currentOffset) / PHYSICS_TRACK_HALF -
+      AUTOSTEER_EDGE_GUARD_RATIO) /
       (1 - AUTOSTEER_EDGE_GUARD_RATIO),
     0,
     1,
@@ -53,7 +54,7 @@ function computeAutoSteer(gameState, track, vz, dt) {
   // apenas o feedforward — elimina micro-jitter em posicionamento quase perfeito.
   if (
     Math.abs(currentOffset - la.targetX) < AUTOSTEER_OFFSET_DEADZONE &&
-    Math.abs(currentOffset)              < AUTOSTEER_OFFSET_DEADZONE
+    Math.abs(currentOffset) < AUTOSTEER_OFFSET_DEADZONE
   ) {
     const pushingOutwardFwd =
       currentOffset !== 0 && Math.sign(feedfwd) === Math.sign(currentOffset);
@@ -69,17 +70,30 @@ function computeAutoSteer(gameState, track, vz, dt) {
   // Em grampos (alta curvatura): faixa completa de 0,9 rad disponível.
   // Em retas (baixa curvatura): cap cai para 0,04 rad — evita inclinação
   // agressiva em resposta a pequenos erros de posição na reta.
-  const curvatureScale = clamp(Math.abs(la.curve) / AUTOSTEER_CURVATURE_REF, 0, 1);
-  let effectiveMaxHeading = lerp(AUTOSTEER_MIN_HEADING, AUTOSTEER_MAX_HEADING, curvatureScale);
+  const curvatureScale = clamp(
+    Math.abs(la.curve) / AUTOSTEER_CURVATURE_REF,
+    0,
+    1,
+  );
+  let effectiveMaxHeading = lerp(
+    AUTOSTEER_MIN_HEADING,
+    AUTOSTEER_MAX_HEADING,
+    curvatureScale,
+  );
 
   // Autoridade de recuperação: longe da linha de corrida, expande o cap para
   // AUTOSTEER_MAX_HEADING — senão o cap de 0,04 rad em retas impediria a recuperação.
   const recoveryBlend = clamp(
-    (Math.abs(offsetError) - AUTOSTEER_RECOVERY_THRESHOLD) / AUTOSTEER_RECOVERY_THRESHOLD,
+    (Math.abs(offsetError) - AUTOSTEER_RECOVERY_THRESHOLD) /
+      AUTOSTEER_RECOVERY_THRESHOLD,
     0,
     1,
   );
-  effectiveMaxHeading = lerp(effectiveMaxHeading, AUTOSTEER_MAX_HEADING, recoveryBlend);
+  effectiveMaxHeading = lerp(
+    effectiveMaxHeading,
+    AUTOSTEER_MAX_HEADING,
+    recoveryBlend,
+  );
 
   const targetHeading = clamp(
     offsetError * AUTOSTEER_HEADING_KH,
@@ -90,10 +104,10 @@ function computeAutoSteer(gameState, track, vz, dt) {
   // speedFactor reduz a taxa de heading e o Kp em alta velocidade —
   // a direção fica mais pesada, análogo ao aumento de inércia efetiva.
   const currentHeading = gameState.carHeadingDelta || 0;
-  const headingError   = targetHeading - currentHeading;
-  const speedFactor    = 1 / (1 + vz * vz * AUTOSTEER_SPEED_SENSITIVITY);
-  const maxDelta       = AUTOSTEER_HEADING_RATE * speedFactor * dt;
-  const dHeading       = clamp(headingError, -maxDelta, maxDelta);
+  const headingError = targetHeading - currentHeading;
+  const speedFactor = 1 / (1 + vz * vz * AUTOSTEER_SPEED_SENSITIVITY);
+  const maxDelta = AUTOSTEER_HEADING_RATE * speedFactor * dt;
+  const dHeading = clamp(headingError, -maxDelta, maxDelta);
 
   gameState.carHeadingDelta = clamp(
     currentHeading + dHeading,
@@ -101,8 +115,11 @@ function computeAutoSteer(gameState, track, vz, dt) {
     effectiveMaxHeading,
   );
 
-  const effectiveKp  = AUTOSTEER_KP * lerp(AUTOSTEER_KP_FLOOR_RATIO, 1.0, curvatureScale) * speedFactor;
-  const rawForce     = gameState.carHeadingDelta * vz * effectiveKp;
+  const effectiveKp =
+    AUTOSTEER_KP *
+    lerp(AUTOSTEER_KP_FLOOR_RATIO, 1.0, curvatureScale) *
+    speedFactor;
+  const rawForce = gameState.carHeadingDelta * vz * effectiveKp;
   const dampingForce = -(gameState.lateralVelocity || 0) * AUTOSTEER_KD;
 
   const totalForce = rawForce + feedfwd + dampingForce;

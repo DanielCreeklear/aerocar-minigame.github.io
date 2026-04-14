@@ -2,7 +2,12 @@ import { resizeCanvas } from "../utils/canvas.js";
 import { Track } from "../entities/track.js";
 import { InputController } from "../systems/input.js";
 import { Renderer } from "../rendering/renderer.js";
-import { createCarStateFields, toggleCarMode, setCarBoost, setCarBrake } from "../entities/car.js";
+import {
+  createCarStateFields,
+  toggleCarMode,
+  setCarBoost,
+  setCarBrake,
+} from "../entities/car.js";
 import { updateCarPhysics } from "../systems/physics/index.js";
 import { EnergyManager } from "../systems/energy.js";
 import { GameLoop } from "./game-loop.js";
