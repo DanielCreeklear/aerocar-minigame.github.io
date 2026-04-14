@@ -1,29 +1,27 @@
 export const UI_COLORS = {
-  // Base backgrounds — near-black with purple-black tint (R4 nocturnal)
   startBgA: "#050308",
   startBgB: "#0a0610",
   startBgC: "#030206",
   previewBgA: "#06040c",
   previewBgB: "#030206",
-  // Accent palette — R4 authentic
-  gold: "#c8960a", // R4 gold (secondary info)
-  neonCyan: "#5878b0", // muted slate-blue
-  neonGreen: "#3a8858", // muted forest green
-  neonPink: "#c00020", // R4 CRIMSON — primary accent
-  neonOrange: "#b87010", // deep amber
-  textLight: "#f0ece4", // warm white (R4 text)
-  infoBlue: "#4870a8", // muted slate
+  gold: "#c8960a",
+  neonCyan: "#5878b0",
+  neonGreen: "#3a8858",
+  neonPink: "#c00020",
+  neonOrange: "#b87010",
+  textLight: "#f0ece4",
+  infoBlue: "#4870a8",
   success: "#3a8858",
-  danger: "#c00020", // R4 crimson
-  tipGray: "#806858", // warm stone
+  danger: "#c00020",
+  tipGray: "#806858",
   accentOrange: "#b87010",
   white: "#f0ece4",
   transparentBlack: "rgba(0, 0, 0, 0)",
   vignette: "rgba(2, 1, 6, 0.80)",
   // Panel styling
   panelFill: "rgba(5, 3, 10, 0.94)",
-  panelStroke: "rgba(192, 0, 28, 0.85)", // R4 crimson border
-  panelAccent: "rgba(200, 150, 10, 0.72)", // gold accent bar
+  panelStroke: "rgba(192, 0, 28, 0.85)",
+  panelAccent: "rgba(200, 150, 10, 0.72)",
   previewPanelFill: "rgba(6, 4, 12, 0.95)",
   previewPanelStroke: "rgba(192, 0, 28, 0.80)",
   previewMapFill: "rgba(3, 2, 8, 0.97)",
@@ -125,11 +123,11 @@ export const UI_TEXT = {
 };
 
 export const HUD_COLORS = {
-  // Speedometer — R4 crimson border, clean white numeral
+  // Speedometer
   speedPanel: "rgba(5, 3, 10, 0.92)",
   speedPanelBorder: "rgba(192, 0, 28, 0.82)",
   speedPanelGlow: "rgba(192, 0, 28, 0.22)",
-  speedValue: "#f0ece4", // clean white — R4 speed display
+  speedValue: "#f0ece4",
   speedLabel: "rgba(192, 0, 28, 0.65)",
   // Battery bar
   batteryPanel: "rgba(5, 3, 10, 0.92)",
@@ -140,7 +138,7 @@ export const HUD_COLORS = {
   batteryRegen: "#4870a8",
   batteryLabel: "rgba(240, 236, 228, 0.82)",
   batterySegmentSep: "rgba(5, 3, 10, 0.72)",
-  // Aero badge — Mode X: R4 crimson; Mode Z: deep indigo
+  // Aero badge — Mode X
   badgeModeX: "rgba(192, 0, 28, 0.90)",
   badgeModeXBorder: "rgba(220, 40, 60, 0.80)",
   badgeModeXGlow: "rgba(192, 0, 28, 0.35)",
@@ -148,14 +146,14 @@ export const HUD_COLORS = {
   badgeModeZBorder: "rgba(72, 112, 192, 0.78)",
   badgeModeZGlow: "rgba(28, 50, 128, 0.32)",
   badgeText: "#f0ece4",
-  // Lap panel — gold (secondary info, R4 style)
+  // Lap panel
   lapPanel: "rgba(5, 3, 10, 0.92)",
   lapPanelBorder: "rgba(200, 150, 10, 0.72)",
   lapTime: "#c8960a",
   lapLabel: "rgba(200, 150, 10, 0.60)",
   lapCount: "#f0ece4",
   lapCountLabel: "rgba(240, 236, 228, 0.50)",
-  // Grip / off-track warning — R4 crimson for both
+  // Grip
   warningBorder: "rgba(192, 0, 28, 0.88)",
   warningGlow: "rgba(192, 0, 28, 0.30)",
   offTrackBorder: "rgba(192, 0, 28, 0.72)",
@@ -185,7 +183,7 @@ export const HUD_FONTS = {
 };
 
 export const HUD_LAYOUT = {
-  // Speedometer — bottom-center (R4 style)
+  // Speedometer
   speedRightMarginRatio: 0.022,
   speedBottomMarginRatio: 0.032,
   speedWidthRatio: 0.19,
@@ -196,7 +194,7 @@ export const HUD_LAYOUT = {
   speedMaxHeight: 92,
   speedMinMargin: 10,
   speedMaxMargin: 22,
-  // Battery bar — top-left
+  // Battery bar
   batteryLeftMarginRatio: 0.028,
   batteryTopMarginRatio: 0.022,
   batteryWidthRatio: 0.22,
@@ -208,14 +206,14 @@ export const HUD_LAYOUT = {
   batterySegments: 10,
   batteryMinMargin: 14,
   batteryMaxMargin: 26,
-  // Aero badge — bottom-right, above speedometer
+  // Aero badge
   badgeWidthRatio: 0.13,
   badgeHeightRatio: 0.062,
   badgeMinWidth: 68,
   badgeMaxWidth: 120,
   badgeMinHeight: 26,
   badgeMaxHeight: 46,
-  // Lap panel — top-right
+  // Lap panel
   lapRightMarginRatio: 0.028,
   lapTopMarginRatio: 0.022,
   lapWidthRatio: 0.24,
