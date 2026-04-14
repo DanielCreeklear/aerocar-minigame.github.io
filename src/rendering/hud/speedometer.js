@@ -20,17 +20,14 @@ function drawSpeedometer(ctx, displayedSpeedKmh, width, height) {
     Math.min(L.speedMaxMargin, height * L.speedBottomMarginRatio),
   );
 
-  // Bottom-right, parallelogram leans inward (top-left corner cut) — R4 right-side HUD
   const x = width - panelW - rightMargin;
   const y = height - panelH - bottomMargin;
-  // lean: top edge shifts LEFT so right edge stays flush with screen margin
   const lean = Math.round(panelH * 0.28);
 
   const shownSpeed = Math.round(displayedSpeedKmh);
 
   ctx.save();
 
-  // Parallelogram: top-left corner cut inward
   ctx.beginPath();
   ctx.moveTo(x - lean, y);
   ctx.lineTo(x + panelW, y);
@@ -48,7 +45,6 @@ function drawSpeedometer(ctx, displayedSpeedKmh, width, height) {
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Top accent: full top edge highlighted
   ctx.beginPath();
   ctx.moveTo(x - lean, y);
   ctx.lineTo(x + panelW, y);
@@ -56,7 +52,6 @@ function drawSpeedometer(ctx, displayedSpeedKmh, width, height) {
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  // Speed value
   const speedFontSize = responsiveSize(width, HUD_FONTS.speedValue);
   ctx.shadowColor = HUD_COLORS.speedValue;
   ctx.shadowBlur = 10;
