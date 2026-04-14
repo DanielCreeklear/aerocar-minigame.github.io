@@ -3,7 +3,6 @@ import { clamp, lerp } from "../../utils/math.js";
 import {
   BOOST_BASE_GAIN,
   BOOST_MIN_EFFECT,
-  BOOST_OVERCAP_RATIO,
   BOOST_SLIP_EFFECT_FACTOR,
   MANUAL_BRAKE_DECEL,
   SLIP_PENALTY_THRESHOLD,
@@ -39,7 +38,6 @@ function computeForwardVelocity(gameState, dt) {
   const strategy = getAeroStrategy(gameState.aeroMode);
 
   // 1. Empuxo + arrasto aerodinâmico
-  // No gramado ou em spin: sem empuxo (aceleração bloqueada).
   let vz = gameState.speed || 0;
   if (!gameState.isOffTrack && !gameState.isSpinning) {
     vz = Math.max(0, vz + strategy.accel * dt);
