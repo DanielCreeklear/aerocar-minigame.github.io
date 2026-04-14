@@ -57,7 +57,11 @@ function computeAutoSteer(gameState, track, vz, dt) {
     const earlyScale = getAeroStrategy(gameState.aeroMode).autoSteerScale;
     return {
       force: earlyForce * earlyScale,
-      telemetry: { targetHeading: 0, kpForce: 0, autoSteerForce: earlyForce },
+      telemetry: {
+        targetHeading: 0,
+        kpForce: 0,
+        autoSteerForce: earlyForce * earlyScale,
+      },
     };
   }
 
@@ -127,7 +131,11 @@ function computeAutoSteer(gameState, track, vz, dt) {
   const steerScale = getAeroStrategy(gameState.aeroMode).autoSteerScale;
   return {
     force: finalForce * steerScale,
-    telemetry: { targetHeading, kpForce: rawForce, autoSteerForce: finalForce },
+    telemetry: {
+      targetHeading,
+      kpForce: rawForce,
+      autoSteerForce: finalForce * steerScale,
+    },
   };
 }
 

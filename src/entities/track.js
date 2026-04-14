@@ -235,6 +235,7 @@ class Track {
         x: point.x,
         yaw: point.yaw || 0,
         type: point.type,
+        rawCurve: point.curve,
         curve: point.curve,
       });
       return;
@@ -260,14 +261,34 @@ class Track {
         x: point.x + deltaX,
         yaw: (point.yaw || 0) + deltaYaw,
         type: point.type,
+        rawCurve: point.curve,
         curve: point.curve + deltaCurve,
       });
     }
   }
 
   markStartFinish() {
-    if (this.trackData.length > 0) {
-      this.trackData[0].marker = "start-finish";
+    if (this.trackData.length === 0) return;
+
+    const FINISH_LINE_LENGTH = 80;
+    const GRID_SPACING = 300;
+    const GRID_BOX_LENGTH = 50;
+    const NUM_GRID_ROWS = 6;
+
+    for (const pt of this.trackData) {
+      if (pt.z < FINISH_LINE_LENGTH) {
+        pt.marker = "start-finish";
+      }
+    }
+
+    for (let i = 0; i < NUM_GRID_ROWS; i++) {
+      const gridZ = this.lapLength - (i + 1) * GRID_SPACING;
+      if (gridZ < FINISH_LINE_LENGTH) continue;
+      for (const pt of this.trackData) {
+        if (pt.z >= gridZ && pt.z < gridZ + GRID_BOX_LENGTH) {
+          pt.marker = `grid-${i + 1}`;
+        }
+      }
     }
   }
 
@@ -294,7 +315,7 @@ class Track {
     this.racingLine = [];
     for (let z = 0; z < this.lapLength; z += RACING_LINE_STEP) {
       const pt = this.getTrackPoint(z);
-      this.racingLine.push({ z, targetX: 0, curve: pt.curve });
+      this.racingLine.push({ z, targetX: 0, curve: pt.rawCurve });
     }
   }
 
@@ -320,6 +341,11 @@ class Track {
       x: currentPoint.x + (nextPoint.x - currentPoint.x) * t,
       yaw: currentPoint.yaw + (nextPoint.yaw - currentPoint.yaw) * t,
       curve: currentPoint.curve + (nextPoint.curve - currentPoint.curve) * t,
+      rawCurve:
+        (currentPoint.rawCurve ?? currentPoint.curve) +
+        ((nextPoint.rawCurve ?? nextPoint.curve) -
+          (currentPoint.rawCurve ?? currentPoint.curve)) *
+          t,
       type: currentPoint.type,
       marker: currentPoint.marker,
       isModeXZone: currentPoint.isModeXZone || false,

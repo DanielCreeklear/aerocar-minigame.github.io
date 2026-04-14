@@ -146,14 +146,16 @@ class Game {
 
     const currentTrackPoint = this.track.getTrackPoint(this.gameState.currentZ);
     this.gameState.currentTrackPoint = currentTrackPoint;
-    this.gameState.currentCurvature = currentTrackPoint.curve || 0;
+    this.gameState.currentCurvature =
+      currentTrackPoint.rawCurve ?? currentTrackPoint.curve ?? 0;
     this.gameState.isInModeXZone = currentTrackPoint.isModeXZone || false;
 
     const LOOKAHEAD_DISTANCE = 300;
     const lookaheadPoint = this.track.getTrackPoint(
       this.gameState.currentZ + LOOKAHEAD_DISTANCE,
     );
-    this.gameState.upcomingCurvature = lookaheadPoint.curve || 0;
+    this.gameState.upcomingCurvature =
+      lookaheadPoint.rawCurve ?? lookaheadPoint.curve ?? 0;
     this.gameState.upcomingIsModeXZone = lookaheadPoint.isModeXZone || false;
 
     const { lapCompleted } = updateCarPhysics(

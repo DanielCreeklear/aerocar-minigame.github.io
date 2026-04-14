@@ -9,6 +9,9 @@ import {
   TRACK_WIDTH,
 } from "../constants/index.js";
 
+// Advertising hoarding colours cycling around the lap
+const AD_COLORS = ["#aa0018", "#1020a0", "#b07400", "#005828", "#5a606c"];
+
 function drawTrack(ctx, gameState, track, metrics) {
   const { width, height } = metrics;
   const carY = metrics.carY;
@@ -17,8 +20,12 @@ function drawTrack(ctx, gameState, track, metrics) {
     gameState.currentTrackPoint || track.getTrackPoint(gameState.currentZ);
   const cameraX = carTrackInfo.x;
 
+  // Base grass fill
   ctx.fillStyle = RENDER_COLORS.grass;
   ctx.fillRect(0, 0, width, height);
+
+  const runoffW = Math.max(6, Math.round(metrics.borderWidth * 0.8));
+  const detailW = Math.max(10, Math.round(metrics.borderWidth * 0.65));
 
   for (let y = 0; y < height; y += metrics.roadSampleStep) {
     const sliceZ = gameState.currentZ + (carY - y);
@@ -27,13 +34,47 @@ function drawTrack(ctx, gameState, track, metrics) {
 
     const left = Math.round(centerX - halfRoad);
     const right = Math.round(centerX + halfRoad);
+    const bw = metrics.borderWidth;
+    const step = metrics.roadSampleStep;
 
+    // ── Side layout (outward from track edge) ───────────────────────
+    //  kerb | run-off | ad board | grass
+    const leftRunoffX = left - bw - runoffW;
+    const leftDetailX = leftRunoffX - detailW;
+    const rightRunoffX = right + bw;
+    const rightDetailX = rightRunoffX + runoffW;
+
+    // Alternating grass stripes for depth perception
+    const grassBeat = Math.floor(sliceZ / 150) % 2 === 0;
+    if (!grassBeat) {
+      ctx.fillStyle = RENDER_COLORS.grassDark;
+      ctx.fillRect(0, y, Math.max(0, leftDetailX), step);
+      if (rightDetailX + detailW < width)
+        ctx.fillRect(
+          rightDetailX + detailW,
+          y,
+          width - (rightDetailX + detailW),
+          step,
+        );
+    }
+
+    // Advertising hoardings (colour cycles every ~1500 z-units)
+    const adIdx =
+      ((Math.floor(sliceZ / 1500) % AD_COLORS.length) + AD_COLORS.length) %
+      AD_COLORS.length;
+    ctx.fillStyle = AD_COLORS[adIdx];
+    ctx.fillRect(leftDetailX, y, detailW, step);
+    ctx.fillRect(rightDetailX, y, detailW, step);
+
+    // Run-off asphalt (dark strip immediately beyond kerb)
+    ctx.fillStyle = RENDER_COLORS.runoff;
+    ctx.fillRect(leftRunoffX, y, runoffW, step);
+    ctx.fillRect(rightRunoffX, y, runoffW, step);
+
+    // Kerb stripes
     const isCurve = info.type === TRACK_TYPES.CURVE;
     const stripeLength = isCurve ? CURVE_STRIPE_LENGTH : STRAIGHT_STRIPE_LENGTH;
     const checker = Math.floor(sliceZ / stripeLength) % 2 === 0;
-    const asphaltColor = isCurve
-      ? RENDER_COLORS.asphaltCurve
-      : RENDER_COLORS.asphaltStraight;
     const stripeColor = checker
       ? isCurve
         ? RENDER_COLORS.red
@@ -43,25 +84,47 @@ function drawTrack(ctx, gameState, track, metrics) {
         : RENDER_COLORS.red;
 
     ctx.fillStyle = stripeColor;
-    ctx.fillRect(
-      left - metrics.borderWidth,
-      y,
-      metrics.borderWidth,
-      metrics.roadSampleStep,
-    );
-    ctx.fillRect(right, y, metrics.borderWidth, metrics.roadSampleStep);
+    ctx.fillRect(left - bw, y, bw, step);
+    ctx.fillRect(right, y, bw, step);
 
+    // Asphalt surface
+    const asphaltColor = isCurve
+      ? RENDER_COLORS.asphaltCurve
+      : RENDER_COLORS.asphaltStraight;
     ctx.fillStyle = asphaltColor;
-    ctx.fillRect(left, y, metrics.trackWidth, metrics.roadSampleStep);
+    ctx.fillRect(left, y, metrics.trackWidth, step);
 
     if (info.isModeXZone) {
       ctx.fillStyle = RENDER_COLORS.asphaltModeX;
-      ctx.fillRect(left, y, metrics.trackWidth, metrics.roadSampleStep);
+      ctx.fillRect(left, y, metrics.trackWidth, step);
     }
 
-    if (info.marker) {
-      ctx.fillStyle = RENDER_COLORS.white;
-      ctx.fillRect(left, y, metrics.trackWidth, metrics.roadSampleStep);
+    // ── Track markings ───────────────────────────────────────────────
+
+    // Checkered start/finish line
+    if (info.marker === "start-finish") {
+      const checkRow = Math.floor(info.z / 10);
+      const numCols = 8;
+      const colW = Math.ceil(metrics.trackWidth / numCols);
+      for (let col = 0; col < numCols; col++) {
+        ctx.fillStyle =
+          (checkRow + col) % 2 === 0
+            ? RENDER_COLORS.finishWhite
+            : RENDER_COLORS.finishBlack;
+        ctx.fillRect(left + col * colW, y, colW, step);
+      }
+    }
+
+    // Grid position boxes (P1/P3/P5 right side, P2/P4/P6 left side)
+    if (info.marker && info.marker.startsWith("grid-")) {
+      const gridPos = parseInt(info.marker.slice(5), 10);
+      const isRight = gridPos % 2 === 1;
+      const boxW = Math.round(metrics.trackWidth * 0.32);
+      const boxX = isRight
+        ? left + Math.round(metrics.trackWidth * 0.55)
+        : left + Math.round(metrics.trackWidth * 0.13);
+      ctx.fillStyle = RENDER_COLORS.gridLine;
+      ctx.fillRect(boxX, y, boxW, step);
     }
   }
 }

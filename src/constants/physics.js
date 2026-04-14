@@ -22,38 +22,15 @@ export const BOOST_OVERCAP_RATIO = 1.1;
 export const BRAKE_REGEN_BASE = 0.2;
 export const BRAKE_REGEN_SPEED_FACTOR = 0.025;
 
-export const CENTRIFUGAL_SCALE_C = 0.003;
-
-export const CENTRIFUGAL_DIRECT_PUSH_X = 0.12;
-
-export const MAX_GRIP_MODE_X = 4.0;
-export const MAX_GRIP_MODE_Z = 3.5;
-
-export const GRIP_MIN_FLOOR = 0.0001;
-
-export const SLIP_BLEND_START = 0.82;
-
-export const SLIP_BLEND_RANGE = 0.92;
-
-export const SLIP_GRIP_EROSION = 0.28;
-
-export const SLIP_FORCE_MODE_X = 1.2;
-export const SLIP_FORCE_MODE_Z = 0.65;
-
-export const SLIP_VZ_PENALTY = 0.12;
-
-export const SLIP_LATERAL_KINETIC_DAMPING = 0.55;
+// Força de saída de curva: excesso de vz acima da velocidade segura empurra o carro para fora.
+export const CORNER_PUSH_K = 0.05;
 
 export const SLIP_PENALTY_THRESHOLD = 0.15;
-export const SLIP_SPEED_PENALTY_DRAG = 0.985;
 
 export const PASSIVE_REGEN_FACTOR = 0.4;
 
 export const LATERAL_FRICTION_GRIP_X = 0.93;
 export const LATERAL_FRICTION_GRIP_Z = 0.8;
-
-export const SLIP_DAMPING_MODE_X = 0.96;
-export const SLIP_DAMPING_MODE_Z = 0.82;
 
 export const COUNTERSTEER_DAMPING_BONUS = 0.82;
 
@@ -62,14 +39,6 @@ export const LATERAL_VX_DEAD_ZONE = 0.01;
 export const MAX_LATERAL_VX = 34;
 
 export const WALL_BOUNCE_DAMPING = 0.5;
-
-export const EDGE_RATIO_CLAMP_MAX = 1.2;
-
-export const EDGE_PRESSURE_RATIO_START = 0.82;
-
-export const EDGE_PRESSURE_RATIO_RANGE = 0.18;
-
-export const EDGE_VX_DAMPING_FACTOR = 0.18;
 
 export const PHYSICS_TRACK_HALF = 100;
 
@@ -85,9 +54,9 @@ export const SPIN_TRIGGER_SPEED = 15;
 export const SPIN_EXIT_SPEED = 3;
 export const SPIN_ANGULAR_VELOCITY = 3.5;
 
-export const OFF_TRACK_CENTERING_BONUS = 0.05;
+export const OFF_TRACK_CENTERING_BONUS = 0.2;
 
-export const OFF_TRACK_RECOVERY_PER_UNIT = 0.002;
+export const OFF_TRACK_RECOVERY_PER_UNIT = 0.008;
 
 export const OFF_TRACK_OUTWARD_VX_DAMP = 0.9;
 
@@ -111,7 +80,7 @@ export const AUTOSTEER_FEEDFORWARD_K = 0.003;
 
 export const AUTOSTEER_LOOKAHEAD_N = 5;
 
-export const AUTOSTEER_SLIP_SUPPRESS = 0.92;
+export const AUTOSTEER_SLIP_SUPPRESS = 0.6;
 
 export const AUTOSTEER_EDGE_GUARD_RATIO = 0.8;
 

@@ -1,5 +1,5 @@
 import { getLapData } from "../../utils/math.js";
-import { computeForwardVelocity, precomputeSlip } from "./longitudinal.js";
+import { computeForwardVelocity } from "./longitudinal.js";
 import { integrateLateralState } from "./lateral.js";
 import { computeAutoSteer } from "./autosteer.js";
 import { writePhysicsTelemetry } from "./telemetry.js";
@@ -8,11 +8,14 @@ import {
   SPIN_ANGULAR_VELOCITY,
 } from "../../constants/index.js";
 
-// currentSlip = 0 aqui porque computeForwardVelocity o lê antes de integrateLateralState reescrevê-lo.
 function resolveTrackState(gameState, currentTrackInfo) {
   gameState.trackType = currentTrackInfo.type;
   gameState.currentSlip = 0;
-  return { curvature: currentTrackInfo.curve || 0 };
+  // Use rawCurve (pure segment curvature) to avoid phantom centrifugal forces
+  // introduced by the loop-closure polynomial in normalizeTrackData.
+  return {
+    curvature: currentTrackInfo.rawCurve ?? currentTrackInfo.curve ?? 0,
+  };
 }
 
 function resolveCurrentSegment(gameState, track, lapZ) {
@@ -44,13 +47,10 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
   const effectiveCurvature =
     Math.abs(curvature) < CURVATURE_DEADZONE ? 0 : curvature;
 
-  // 2. Pré-calcula slip do frame atual com a velocidade do frame anterior (gameState.speed).
-  precomputeSlip(gameState, effectiveCurvature);
-
-  // 3. Velocidade longitudinal — agora lê isPenalized corretamente
+  // 2. Velocidade longitudinal
   const vz = computeForwardVelocity(gameState, dt);
 
-  // 4. AutoSteer (PD + feedforward)
+  // 3. AutoSteer (PD + feedforward)
   const { force: autoSteerForce, telemetry: steerTel } = computeAutoSteer(
     gameState,
     track,
@@ -58,7 +58,7 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     dt,
   );
 
-  // 5. Dinâmica lateral + penalidades fora da pista (recalcula slip final com vz real)
+  // 4. Dinâmica lateral + penalidades fora da pista
   const { nextVz, forces } = integrateLateralState(
     gameState,
     effectiveCurvature,
@@ -67,7 +67,7 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     dt,
   );
 
-  // 6. Telemetria
+  // 5. Telemetria
   writePhysicsTelemetry(gameState, {
     centrifugalForce: forces.centrifugalForce,
     effectiveGrip: forces.effectiveGrip,
@@ -76,7 +76,7 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     autoSteerForce: steerTel.autoSteerForce,
   });
 
-  // 7. Confirma velocidade e avança
+  // 6. Confirma velocidade e avança
   gameState.speed = nextVz;
   gameState.previousCurvature = curvature;
 
