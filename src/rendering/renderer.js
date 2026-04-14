@@ -1,7 +1,11 @@
 import { drawTrack } from "./track-renderer.js";
 import { drawCar } from "./car-renderer.js";
 import { HudRenderer } from "./hud-renderer.js";
-import { drawStartScreen, drawGameOverScreen, drawTrackPreviewScreen } from "./screen-renderer.js";
+import {
+  drawStartScreen,
+  drawGameOverScreen,
+  drawTrackPreviewScreen,
+} from "./screen-renderer.js";
 import {
   BORDER_WIDTH,
   CAR_HEIGHT,
@@ -20,6 +24,7 @@ function buildRenderMetrics(width, height) {
     return {
       width,
       height,
+      isPortrait: profile.isPortrait,
       carY: height * CAR_Y_RATIO,
       borderWidth: BORDER_WIDTH,
       carHeight: CAR_HEIGHT,
@@ -32,6 +37,7 @@ function buildRenderMetrics(width, height) {
   return {
     width,
     height,
+    isPortrait: true,
     carY: height * CAR_Y_RATIO,
     borderWidth: Math.max(12, Math.min(BORDER_WIDTH, width * 0.045)),
     carHeight: Math.max(78, Math.min(CAR_HEIGHT, height * 0.14)),
@@ -72,7 +78,7 @@ class Renderer {
     drawTrack(ctx, gameState, track, metrics);
     drawCar(ctx, gameState, track, metrics);
     this.hud.draw(ctx, gameState, width, height);
-    if (telemetry) telemetry.drawHUD(ctx, width, height);
+    if (telemetry) telemetry.drawHUD(ctx, width, height, metrics.isPortrait);
   }
 
   resetHud() {

@@ -32,9 +32,10 @@ function computeAutoSteer(gameState, track, vz, dt) {
   gameState.wpIdx = idx;
 
   const la = rl[(idx + AUTOSTEER_LOOKAHEAD_N) % rl.length];
+  const cur = rl[idx];
 
-  // F_ff = −κ × K_ff × vz
-  const safeCurve = Math.abs(la.curve) < CURVATURE_DEADZONE ? 0 : la.curve;
+  // F_ff uses CURRENT curve to match the centrifugal force acting on the car right now
+  const safeCurve = Math.abs(cur.curve) < CURVATURE_DEADZONE ? 0 : cur.curve;
   const feedfwd = -safeCurve * AUTOSTEER_FEEDFORWARD_K * vz;
 
   const currentOffset = gameState.lateralOffset || 0;

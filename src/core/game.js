@@ -57,6 +57,9 @@ class Game {
       onScreenTap: (x, y) => {
         this.handleScreenTap(x, y);
       },
+      onSteerChange: (v) => {
+        this.gameState.steerInput = v;
+      },
       onTelemetryExport: () => this.telemetry.exportJSON(),
       onTelemetryHudToggle: () => this.telemetry.toggleHUD(),
     });

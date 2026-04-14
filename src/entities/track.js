@@ -11,6 +11,8 @@ import {
   CURVE_STRENGTH_VARIATION,
   DIRECTION_FLIP_CHANCE,
   HAIRPIN_CHANCE,
+  HAIRPIN_MIN_LENGTH,
+  HAIRPIN_LENGTH_VARIATION,
   HAIRPIN_MIN_STRENGTH,
   HAIRPIN_STRENGTH_VARIATION,
   RNG_DIVISOR,
@@ -94,16 +96,25 @@ class Track {
       const curveStrength = this.getCurveStrength(type, isChicane, turnBalance);
       if (type === TRACK_TYPES.CURVE) turnBalance += curveStrength;
 
+      const isHairpin =
+        !isChicane &&
+        type === TRACK_TYPES.CURVE &&
+        Math.abs(curveStrength) >= HAIRPIN_MIN_STRENGTH;
+      const finalLength = isHairpin
+        ? HAIRPIN_MIN_LENGTH + this.random() * HAIRPIN_LENGTH_VARIATION
+        : length;
+
       this.segments.push({
         index: i,
         type,
-        length,
+        length: finalLength,
         startZ: zOffset,
-        endZ: zOffset + length,
+        endZ: zOffset + finalLength,
         curveStrength,
         isChicane,
+        isHairpin,
       });
-      zOffset += length;
+      zOffset += finalLength;
     }
     this.totalDistance = zOffset;
     this.lapLength = zOffset;

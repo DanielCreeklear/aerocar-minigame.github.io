@@ -5,6 +5,7 @@ function createCarStateFields() {
     aeroMode: AERO_MODES.X,
     isBoosting: false,
     isBraking: false,
+    steerInput: 0,
     speed: 0,
     currentZ: 0,
     trackType: TRACK_TYPES.STRAIGHT,

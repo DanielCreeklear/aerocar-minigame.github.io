@@ -14,12 +14,14 @@ export const CURVE_LENGTH_VARIATION = 700;
 
 export const HAIRPIN_MIN_STRENGTH = 8;
 export const HAIRPIN_STRENGTH_VARIATION = 6;
+export const HAIRPIN_MIN_LENGTH = 1800;
+export const HAIRPIN_LENGTH_VARIATION = 600;
 export const CHICANE_MIN_STRENGTH = 8;
 export const CHICANE_STRENGTH_VARIATION = 5;
 export const CURVE_MIN_STRENGTH = 4;
 export const CURVE_STRENGTH_VARIATION = 4;
 
-export const YAW_FACTOR = 0.004;
+export const YAW_FACTOR = 0.002;
 
 export const RACING_LINE_STEP = 100;
 

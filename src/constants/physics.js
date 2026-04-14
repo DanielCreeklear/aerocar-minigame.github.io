@@ -42,11 +42,10 @@ export const SLIP_FORCE_MODE_Z = 0.65;
 
 export const SLIP_VZ_PENALTY = 0.12;
 
-export const SLIP_LATERAL_KINETIC_DAMPING = 0.28;
+export const SLIP_LATERAL_KINETIC_DAMPING = 0.55;
 
 export const SLIP_PENALTY_THRESHOLD = 0.15;
-
-export const SLIP_SPEED_PENALTY_DRAG = 0.96;
+export const SLIP_SPEED_PENALTY_DRAG = 0.985;
 
 export const PASSIVE_REGEN_FACTOR = 0.4;
 
@@ -110,7 +109,7 @@ export const AUTOSTEER_HEADING_RATE = 0.05;
 
 export const AUTOSTEER_FEEDFORWARD_K = 0.003;
 
-export const AUTOSTEER_LOOKAHEAD_N = 3;
+export const AUTOSTEER_LOOKAHEAD_N = 5;
 
 export const AUTOSTEER_SLIP_SUPPRESS = 0.92;
 
