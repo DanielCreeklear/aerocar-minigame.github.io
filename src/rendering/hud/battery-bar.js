@@ -25,7 +25,6 @@ function drawBatteryBar(ctx, gameState, width, height) {
   const x = marginX;
   const y = marginY;
 
-  // Choose segment fill color
   let fillColor;
   if (isBraking && !isBoosting) {
     fillColor = HUD_COLORS.batteryRegen;
@@ -48,7 +47,6 @@ function drawBatteryBar(ctx, gameState, width, height) {
   ctx.fillRect(x - 2, y - 2, barW + 4, barH + 4);
   ctx.shadowBlur = 0;
 
-  // Segmented fill
   const segments = L.batterySegments;
   const filledSegments = Math.round((battery / 100) * segments);
   const gap = 3;
@@ -74,12 +72,10 @@ function drawBatteryBar(ctx, gameState, width, height) {
   }
   ctx.globalAlpha = 1;
 
-  // Border
   ctx.strokeStyle = HUD_COLORS.batteryBorder;
   ctx.lineWidth = 1.5;
   ctx.strokeRect(x, y, barW, barH);
 
-  // Label below bar
   const labelSize = responsiveSize(width, HUD_FONTS.batteryLabel);
   ctx.fillStyle = HUD_COLORS.batteryLabel;
   ctx.font = `${HUD_FONTS.bold} ${labelSize}px ${HUD_FONTS.family}`;
