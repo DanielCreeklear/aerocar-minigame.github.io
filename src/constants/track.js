@@ -19,7 +19,7 @@ export const CHICANE_STRENGTH_VARIATION = 5;
 export const CURVE_MIN_STRENGTH = 4;
 export const CURVE_STRENGTH_VARIATION = 4;
 
-export const YAW_FACTOR = 0.01;
+export const YAW_FACTOR = 0.004;
 
 export const RACING_LINE_STEP = 100;
 
