@@ -8,11 +8,11 @@ body,
 html {
   width: 100%;
   height: 100%;
-  background-color: #020408;
+  background-color: #050416;
   overflow: hidden;
   touch-action: none;
   user-select: none;
-  font-family: 'Courier New', Consolas, monospace;
+  font-family: "Courier New", Consolas, monospace;
 }
 
 #gameCanvas {

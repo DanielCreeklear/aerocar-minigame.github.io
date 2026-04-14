@@ -1,33 +1,36 @@
 export const UI_COLORS = {
-  startBgA: "#020408",
-  startBgB: "#060e1c",
-  startBgC: "#020305",
-  previewBgA: "#020810",
-  previewBgB: "#010406",
-  gold: "#ffe600",
-  neonCyan: "#00f5ff",
-  neonGreen: "#00ff88",
-  neonPink: "#ff2d78",
-  neonOrange: "#ff7700",
-  textLight: "#e8f4f8",
-  infoBlue: "#00c2ff",
-  success: "#00ff88",
-  danger: "#ff2d78",
-  tipGray: "#7a8fa0",
-  accentOrange: "#ff7700",
+  // Base backgrounds — deep indigo-navy (R4 nocturnal luxury)
+  startBgA: "#050416",
+  startBgB: "#0a0820",
+  startBgC: "#030212",
+  previewBgA: "#060520",
+  previewBgB: "#030212",
+  // Accent palette
+  gold: "#e8a820", // warm amber (R4 gold)
+  neonCyan: "#6090d8", // muted azure
+  neonGreen: "#4ab870", // earthy emerald
+  neonPink: "#c84864", // deep wine-rose
+  neonOrange: "#c88030", // amber-orange
+  textLight: "#f4edd8", // warm ivory
+  infoBlue: "#5a8ac8", // soft azure
+  success: "#4ab870",
+  danger: "#c84864",
+  tipGray: "#8c7e6a", // warm stone
+  accentOrange: "#c88030",
   white: "#ffffff",
   transparentBlack: "rgba(0, 0, 0, 0)",
-  vignette: "rgba(0, 0, 0, 0.72)",
-  panelFill: "rgba(2, 6, 14, 0.92)",
-  panelStroke: "rgba(255, 230, 0, 0.9)",
-  panelAccent: "rgba(0, 255, 136, 0.7)",
-  previewPanelFill: "rgba(2, 8, 18, 0.94)",
-  previewPanelStroke: "rgba(0, 255, 136, 0.95)",
-  previewMapFill: "rgba(1, 5, 10, 0.96)",
-  previewMapStroke: "rgba(0, 194, 255, 0.6)",
-  gameOverOverlay: "rgba(0, 0, 0, 0.88)",
-  subtleText: "rgba(232, 244, 248, 0.7)",
-  shadow: "rgba(0, 0, 0, 0.8)",
+  vignette: "rgba(2, 1, 10, 0.78)",
+  // Panel styling
+  panelFill: "rgba(5, 4, 20, 0.93)",
+  panelStroke: "rgba(200, 144, 26, 0.88)", // amber border
+  panelAccent: "rgba(180, 60, 90, 0.72)", // wine accent bar
+  previewPanelFill: "rgba(6, 5, 22, 0.94)",
+  previewPanelStroke: "rgba(58, 142, 200, 0.85)",
+  previewMapFill: "rgba(3, 2, 14, 0.96)",
+  previewMapStroke: "rgba(90, 138, 200, 0.6)",
+  gameOverOverlay: "rgba(2, 1, 10, 0.90)",
+  subtleText: "rgba(244, 237, 216, 0.65)",
+  shadow: "rgba(0, 0, 0, 0.85)",
 };
 
 export const UI_LAYOUT = {
@@ -65,7 +68,7 @@ export const UI_LAYOUT = {
 };
 
 export const UI_FONT = {
-  family: "'Courier New', Consolas, monospace",
+  family: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
   bold: "bold",
   startTitle: { min: 30, max: 54, ratio: 0.072 },
   startSubtitle: { min: 14, max: 20, ratio: 0.03 },
@@ -100,7 +103,7 @@ export const UI_SHAPE = {
 };
 
 export const UI_TEXT = {
-  gameTitle: "AeroCarGame",
+  gameTitle: "APEX TYPE Z",
   startSubtitle: "TIME ATTACK",
   controlsTitle: "CONTROLES",
   controlsLeft: "<- ESQUERDA (segurar): Freio / ERS",
@@ -122,49 +125,49 @@ export const UI_TEXT = {
 };
 
 export const HUD_COLORS = {
-  // Speedometer
-  speedPanel: "rgba(2, 5, 12, 0.88)",
-  speedPanelBorder: "rgba(0, 245, 255, 0.7)",
-  speedPanelGlow: "rgba(0, 245, 255, 0.35)",
-  speedValue: "#00f5ff",
-  speedLabel: "rgba(0, 245, 255, 0.7)",
+  // Speedometer — amber accent (R4 feel)
+  speedPanel: "rgba(5, 4, 20, 0.90)",
+  speedPanelBorder: "rgba(200, 144, 26, 0.75)",
+  speedPanelGlow: "rgba(200, 144, 26, 0.30)",
+  speedValue: "#e8a820",
+  speedLabel: "rgba(200, 144, 26, 0.72)",
   // Battery bar
-  batteryPanel: "rgba(2, 5, 12, 0.88)",
-  batteryBorder: "rgba(0, 255, 136, 0.6)",
-  batteryFull: "#00ff88",
-  batteryMid: "#ffe600",
-  batteryLow: "#ff2d78",
-  batteryRegen: "#00f5ff",
-  batteryLabel: "rgba(232, 244, 248, 0.85)",
-  batterySegmentSep: "rgba(2, 5, 12, 0.7)",
+  batteryPanel: "rgba(5, 4, 20, 0.90)",
+  batteryBorder: "rgba(74, 184, 112, 0.55)",
+  batteryFull: "#4ab870",
+  batteryMid: "#d4a018",
+  batteryLow: "#c84864",
+  batteryRegen: "#5a8ac8",
+  batteryLabel: "rgba(244, 237, 216, 0.85)",
+  batterySegmentSep: "rgba(5, 4, 20, 0.7)",
   // Aero badge
-  badgeModeX: "rgba(255, 45, 120, 0.9)",
-  badgeModeXBorder: "rgba(255, 120, 170, 0.8)",
-  badgeModeXGlow: "rgba(255, 45, 120, 0.5)",
-  badgeModeZ: "rgba(0, 194, 255, 0.88)",
-  badgeModeZBorder: "rgba(120, 210, 255, 0.8)",
-  badgeModeZGlow: "rgba(0, 194, 255, 0.4)",
-  badgeText: "#ffffff",
-  // Lap panel
-  lapPanel: "rgba(2, 5, 12, 0.88)",
-  lapPanelBorder: "rgba(255, 230, 0, 0.65)",
-  lapTime: "#ffe600",
-  lapLabel: "rgba(255, 230, 0, 0.6)",
-  lapCount: "#e8f4f8",
-  lapCountLabel: "rgba(232, 244, 248, 0.55)",
-  // Grip / off-track warning
-  warningBorder: "rgba(255, 45, 120, 0.85)",
-  warningGlow: "rgba(255, 45, 120, 0.35)",
-  offTrackBorder: "rgba(255, 119, 0, 0.8)",
-  offTrackGlow: "rgba(255, 119, 0, 0.3)",
+  badgeModeX: "rgba(196, 58, 90, 0.92)", // wine-rose
+  badgeModeXBorder: "rgba(230, 100, 130, 0.78)",
+  badgeModeXGlow: "rgba(196, 58, 90, 0.45)",
+  badgeModeZ: "rgba(42, 90, 168, 0.92)", // deep royal blue
+  badgeModeZBorder: "rgba(90, 138, 200, 0.78)",
+  badgeModeZGlow: "rgba(42, 90, 168, 0.38)",
+  badgeText: "#f4edd8",
+  // Lap panel — amber
+  lapPanel: "rgba(5, 4, 20, 0.90)",
+  lapPanelBorder: "rgba(200, 144, 26, 0.68)",
+  lapTime: "#e8a820",
+  lapLabel: "rgba(200, 144, 26, 0.62)",
+  lapCount: "#f4edd8",
+  lapCountLabel: "rgba(244, 237, 216, 0.52)",
+  // Grip / off-track warning — muted rose / amber
+  warningBorder: "rgba(196, 72, 100, 0.82)",
+  warningGlow: "rgba(196, 72, 100, 0.32)",
+  offTrackBorder: "rgba(200, 128, 48, 0.78)",
+  offTrackGlow: "rgba(200, 128, 48, 0.28)",
   // Curve indicator
-  curveNormal: "#e8f4f8",
-  curveMild: "#ffe600",
-  curveHard: "#ff2d78",
+  curveNormal: "#c8d4e8",
+  curveMild: "#e8a820",
+  curveHard: "#c84864",
 };
 
 export const HUD_FONTS = {
-  family: "'Courier New', Consolas, monospace",
+  family: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
   bold: "bold",
   // Speedometer
   speedValue: { min: 32, max: 56, ratio: 0.055 },

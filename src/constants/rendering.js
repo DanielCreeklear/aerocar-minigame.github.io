@@ -40,20 +40,20 @@ export const BOOST_FLAME_HEIGHT_RANDOM = 20;
 export const BOOST_FLAME_X_OFFSET = -15;
 
 export const RENDER_COLORS = {
-  grass: "#2d8a46",
-  asphaltCurve: "#3e1d1d",
-  asphaltStraight: "#2c3e50",
-  red: "#e74c3c",
-  redLight: "#ff867a",
-  redDark: "#a92f24",
-  white: "#ffffff",
-  modeZ: "#3498db",
-  modeZLight: "#8dceff",
-  modeZDark: "#1b5f95",
-  boost: "#f1c40f",
-  wheel: "#21262b",
-  cockpit: "#9fd4ff",
-  headlight: "#fff3ad",
-  taillight: "#ff6d6d",
-  asphaltModeX: "#1a2a3a",
+  grass: "#2a5e34", // darker evening green (R4 night circuit)
+  asphaltCurve: "#2c1820", // deep wine-gray
+  asphaltStraight: "#1a2230", // midnight blue-gray
+  red: "#c84050", // deep wine-red (R4 car livery)
+  redLight: "#e87080",
+  redDark: "#8c2a32",
+  white: "#f4edd8", // warm ivory instead of pure white
+  modeZ: "#2a5aaa", // deep royal blue
+  modeZLight: "#6090d0",
+  modeZDark: "#162e60",
+  boost: "#d4a018", // amber flame
+  wheel: "#18181e",
+  cockpit: "#8ab8d8",
+  headlight: "#ffe8b0",
+  taillight: "#d44060",
+  asphaltModeX: "#10182a",
 };
