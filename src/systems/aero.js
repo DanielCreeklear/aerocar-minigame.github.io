@@ -18,31 +18,33 @@ import {
   VZ_MAX_MODE_Z,
 } from "../constants/index.js";
 
-const LowDragMode = {
-  name: AERO_MODES.X,
-  accel: VZ_ACCEL_MODE_X,
-  drag: VZ_DRAG_MODE_X,
-  maxVz: VZ_MAX_MODE_X,
-  curveDragFactor: CURVE_DRAG_FACTOR_X,
-  maxGrip: MAX_GRIP_MODE_X,
-  lateralFriction: LATERAL_FRICTION_GRIP_X,
-  slipDamping: SLIP_DAMPING_MODE_X,
-  slipForceScale: SLIP_FORCE_MODE_X,
+// Modo X: baixo arrasto, alta velocidade. useCentrifugalPush=true: deriva sob força centrífuga.
+const LowDragMode = Object.freeze({
+  name:               AERO_MODES.X,
+  accel:              VZ_ACCEL_MODE_X,
+  drag:               VZ_DRAG_MODE_X,
+  maxVz:              VZ_MAX_MODE_X,
+  curveDragFactor:    CURVE_DRAG_FACTOR_X,
+  maxGrip:            MAX_GRIP_MODE_X,
+  lateralFriction:    LATERAL_FRICTION_GRIP_X,
+  slipDamping:        SLIP_DAMPING_MODE_X,
+  slipForceScale:     SLIP_FORCE_MODE_X,
   useCentrifugalPush: true,
-};
+});
 
-const HighDownforceMode = {
-  name: AERO_MODES.Z,
-  accel: VZ_ACCEL_MODE_Z,
-  drag: VZ_DRAG_MODE_Z,
-  maxVz: VZ_MAX_MODE_Z,
-  curveDragFactor: CURVE_DRAG_FACTOR_Z,
-  maxGrip: MAX_GRIP_MODE_Z,
-  lateralFriction: LATERAL_FRICTION_GRIP_Z,
-  slipDamping: SLIP_DAMPING_MODE_Z,
-  slipForceScale: SLIP_FORCE_MODE_Z,
+// Modo Z: alto downforce, mais grip. useCentrifugalPush=false: mantém o carro plantado.
+const HighDownforceMode = Object.freeze({
+  name:               AERO_MODES.Z,
+  accel:              VZ_ACCEL_MODE_Z,
+  drag:               VZ_DRAG_MODE_Z,
+  maxVz:              VZ_MAX_MODE_Z,
+  curveDragFactor:    CURVE_DRAG_FACTOR_Z,
+  maxGrip:            MAX_GRIP_MODE_Z,
+  lateralFriction:    LATERAL_FRICTION_GRIP_Z,
+  slipDamping:        SLIP_DAMPING_MODE_Z,
+  slipForceScale:     SLIP_FORCE_MODE_Z,
   useCentrifugalPush: false,
-};
+});
 
 function getAeroStrategy(aeroMode) {
   return aeroMode === AERO_MODES.X ? LowDragMode : HighDownforceMode;

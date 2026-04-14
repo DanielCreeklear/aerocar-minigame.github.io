@@ -1,25 +1,16 @@
 import { drawRoundedRect } from "../utils/canvas.js";
 
-const SAMPLE_INTERVAL_MS = 50;  // 20 Hz
-const MAX_SAMPLES = 600;        // 30 s ring buffer (30 000 ms / 50 ms)
+const SAMPLE_INTERVAL_MS = 50;
+const MAX_SAMPLES = 600;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TelemetryManager
-//   • log(gameState)      — sample physics state at 20 Hz into a ring buffer
-//   • exportJSON()        — trigger browser download of a .json file
-//   • toggleHUD()         — show / hide the on-canvas debug overlay
-//   • drawHUD(ctx, w, h)  — render the overlay (called every frame)
-// ─────────────────────────────────────────────────────────────────────────────
 class TelemetryManager {
   constructor() {
     this._buf = new Array(MAX_SAMPLES).fill(null);
-    this._head = 0;    // next write index (circular)
-    this._count = 0;   // number of valid samples
+    this._head = 0;
+    this._count = 0;
     this._lastSampleMs = -Infinity;
     this._hudVisible = false;
   }
-
-  // ── Public API ─────────────────────────────────────────────────────────────
 
   reset() {
     this._head = 0;
@@ -33,24 +24,19 @@ class TelemetryManager {
     this._lastSampleMs = now;
 
     this._buf[this._head] = {
-      // Time / position
       t:   now,
       z:   gameState.currentZ,
       x:   gameState.lateralOffset,
-      // Velocity
       vz:  gameState.speed,
       vx:  gameState.lateralVelocity,
-      // Curve physics
       curvature:       gameState.currentCurvature,
       slip:            gameState.currentSlip,
       centrifugalForce: gameState._telCentrifugalForce ?? 0,
       effectiveGrip:   gameState._telEffectiveGrip   ?? 0,
-      // AutoSteer controller
       targetHeading:   gameState._telTargetHeading   ?? 0,
       carHeadingDelta: gameState.carHeadingDelta,
       kpForce:         gameState._telKpForce         ?? 0,
       autoSteerForce:  gameState._telAutoSteerForce  ?? 0,
-      // Inputs / mode
       aeroMode:   gameState.aeroMode,
       battery:    gameState.battery,
       isOffTrack: gameState.isOffTrack ? 1 : 0,
@@ -94,24 +80,21 @@ class TelemetryManager {
     this._hudVisible = !this._hudVisible;
   }
 
-  // ── Rendering ──────────────────────────────────────────────────────────────
-
   drawHUD(ctx, width, height) {
     if (!this._hudVisible) return;
     const d = this._getLatest();
     if (!d) return;
 
-    const PX = 10;   // panel left
-    const PY = 62;   // panel top (below battery bar)
-    const PW = 256;  // panel width
-    const PH = 226;  // panel height
+    const PX = 10;
+    const PY = 62;
+    const PW = 256;
+    const PH = 226;
     const COL = PX + 10;
-    const LH  = 16;  // line height
+    const LH  = 16;
     let cy = PY + 8;
 
     ctx.save();
 
-    // Panel background
     drawRoundedRect(ctx, PX, PY, PW, PH, 8);
     ctx.fillStyle = 'rgba(4, 10, 18, 0.88)';
     ctx.fill();
@@ -123,7 +106,6 @@ class TelemetryManager {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
 
-    // ── Title ─────────────────────────────────────────────────────────
     ctx.fillStyle = 'rgba(241, 196, 15, 0.95)';
     ctx.fillText('\u25A0 TELEMETRIA', COL, cy);
     ctx.textAlign = 'right';
@@ -134,7 +116,6 @@ class TelemetryManager {
 
     _sep(ctx, PX, PX + PW, cy); cy += 5;
 
-    // ── Velocity ──────────────────────────────────────────────────────
     ctx.fillStyle = '#ecf0f1';
     ctx.fillText(
       `Vz: ${d.vz.toFixed(1).padStart(5)} m/s   Vx: ${_sign(d.vx)}${d.vx.toFixed(2)}`,
@@ -142,14 +123,12 @@ class TelemetryManager {
     );
     cy += LH;
 
-    // ── Curvature / Slip ──────────────────────────────────────────────
     ctx.fillText(
       `\u03BA: ${_sign(d.curvature)}${d.curvature.toFixed(4)}   slip: ${d.slip.toFixed(3)}`,
       COL, cy,
     );
     cy += LH + 4;
 
-    // ── Grip vs Centrifugal bars ───────────────────────────────────────
     ctx.fillStyle = 'rgba(241, 196, 15, 0.85)';
     ctx.fillText('CENTRIF vs GRIP', COL, cy);
     cy += LH;
@@ -162,7 +141,6 @@ class TelemetryManager {
       ? Math.round((Math.abs(d.centrifugalForce) / d.effectiveGrip) * 100)
       : 0;
 
-    // Grip bar (green)
     ctx.fillStyle = 'rgba(20, 45, 20, 0.8)';
     ctx.fillRect(BX, cy, BAR_W, BAR_H);
     const gFill = Math.min(d.effectiveGrip / scale, 1) * BAR_W;
@@ -173,7 +151,6 @@ class TelemetryManager {
     ctx.textBaseline = 'top';
     cy += BAR_H + 3;
 
-    // Centrifugal bar (orange → red when slipping)
     ctx.fillStyle = 'rgba(45, 20, 20, 0.8)';
     ctx.fillRect(BX, cy, BAR_W, BAR_H);
     const cFill = Math.min(Math.abs(d.centrifugalForce) / scale, 1) * BAR_W;
@@ -192,7 +169,6 @@ class TelemetryManager {
 
     _sep(ctx, PX, PX + PW, cy); cy += 5;
 
-    // ── AutoSteer ─────────────────────────────────────────────────────
     ctx.fillStyle = 'rgba(86, 180, 233, 0.9)';
     ctx.fillText('AUTO-STEER', COL, cy);
     cy += LH;
@@ -211,7 +187,6 @@ class TelemetryManager {
 
     _sep(ctx, PX, PX + PW, cy); cy += 5;
 
-    // ── Estado ────────────────────────────────────────────────────────
     ctx.fillStyle = d.isOffTrack ? '#e74c3c' : '#b2bec3';
     ctx.fillText(
       `MODO: ${d.aeroMode}   ERS: ${Math.floor(d.battery)}%${d.isOffTrack ? '  [!] OFF-TRACK' : ''}`,
@@ -219,14 +194,11 @@ class TelemetryManager {
     );
     cy += LH + 3;
 
-    // Footer
     ctx.fillStyle = 'rgba(127, 140, 141, 0.65)';
     ctx.fillText('[T] Export JSON', COL, cy);
 
     ctx.restore();
   }
-
-  // ── Private helpers ────────────────────────────────────────────────────────
 
   _getLatest() {
     if (this._count === 0) return null;
@@ -243,8 +215,6 @@ class TelemetryManager {
     return out;
   }
 }
-
-// ── Module-level helpers ───────────────────────────────────────────────────
 
 function _sep(ctx, x1, x2, y) {
   ctx.save();

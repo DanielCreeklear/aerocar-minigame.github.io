@@ -19,8 +19,7 @@ class EnergyManager {
         gameState.isBoosting = false;
       }
     } else if (isBraking && speed > 0) {
-      const regenRate =
-        (BRAKE_REGEN_BASE + speed * BRAKE_REGEN_SPEED_FACTOR) * dt;
+      const regenRate = (BRAKE_REGEN_BASE + speed * BRAKE_REGEN_SPEED_FACTOR) * dt;
       this.battery = Math.min(BATTERY_MAX, this.battery + regenRate);
     }
   }
