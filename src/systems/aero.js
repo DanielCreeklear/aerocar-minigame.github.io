@@ -18,9 +18,7 @@ import {
   VZ_MAX_MODE_Z,
 } from "../constants/index.js";
 
-// Modo X: baixo arrasto, alta velocidade em reta, instável em curva.
-// autoSteerScale = 0.35 → autosteer opera com 35% da força normal.
-// O carro tende a sair lateralmente em curvas se o jogador não frear antes.
+// Modo X: baixo arrasto
 const LowDragMode = {
   name: AERO_MODES.X,
   accel: VZ_ACCEL_MODE_X,
@@ -32,11 +30,10 @@ const LowDragMode = {
   slipDamping: SLIP_DAMPING_MODE_X,
   slipForceScale: SLIP_FORCE_MODE_X,
   useCentrifugalPush: true,
-  autoSteerScale: 0.35, // instável em curvas
+  autoSteerScale: 0.2,
 };
 
-// Modo Z: alto downforce, velocidade máxima menor, aderência total em curva.
-// autoSteerScale = 1.0 → autosteer pleno, carro segue a linha sem esforço.
+// Modo Z: alto downforce
 const HighDownforceMode = {
   name: AERO_MODES.Z,
   accel: VZ_ACCEL_MODE_Z,
@@ -48,7 +45,7 @@ const HighDownforceMode = {
   slipDamping: SLIP_DAMPING_MODE_Z,
   slipForceScale: SLIP_FORCE_MODE_Z,
   useCentrifugalPush: false,
-  autoSteerScale: 1.0, // estável — downforce mantém o carro na linha
+  autoSteerScale: 0.75,
 };
 
 function getAeroStrategy(aeroMode) {

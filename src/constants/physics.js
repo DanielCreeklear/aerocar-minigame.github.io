@@ -4,7 +4,7 @@ export const VZ_ACCEL_MODE_Z = 0.55;
 export const VZ_DRAG_MODE_X = 0.996;
 export const VZ_DRAG_MODE_Z = 0.975;
 
-export const VZ_MAX_MODE_X = 30;
+export const VZ_MAX_MODE_X = 42;
 export const VZ_MAX_MODE_Z = 17;
 
 export const MANUAL_BRAKE_DECEL = 0.84;
@@ -23,8 +23,9 @@ export const BOOST_OVERCAP_RATIO = 1.1;
 export const BRAKE_REGEN_BASE = 0.2;
 export const BRAKE_REGEN_SPEED_FACTOR = 0.025;
 
-export const CURVE_DRAG_FACTOR_X = 0.03;
-export const CURVE_DRAG_FACTOR_Z = 0.017;
+// Drag de curvatura: quanto mais rápido e mais fechada a curva, mais velocidade se perde.
+export const CURVE_DRAG_FACTOR_X = 0.0002;
+export const CURVE_DRAG_FACTOR_Z = 0.00007;
 
 export const CENTRIFUGAL_SCALE_C = 0.003;
 
@@ -51,8 +52,7 @@ export const SLIP_LATERAL_KINETIC_DAMPING = 0.12;
 
 export const SLIP_PENALTY_THRESHOLD = 0.15;
 
-// Queda de ~12% de velocidade por segundo no slip máximo.
-export const SLIP_SPEED_PENALTY_DRAG = 0.88;
+export const SLIP_SPEED_PENALTY_DRAG = 0.8;
 
 // Regen passivo por desaceleração natural (troca de modo, slip, saída de curva).
 export const PASSIVE_REGEN_FACTOR = 0.4;
