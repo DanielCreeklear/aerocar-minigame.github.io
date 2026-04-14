@@ -32,7 +32,6 @@ function drawAeroBadge(ctx, gameState, width, height) {
   );
 
   const speedY = height - speedH - bottomMargin;
-  // Align badge right edge with speedometer right edge
   const x = width - rightMargin - badgeW;
   const y = speedY - badgeH - 6;
   const lean = Math.round(badgeH * 0.28);
@@ -45,7 +44,6 @@ function drawAeroBadge(ctx, gameState, width, height) {
 
   ctx.save();
 
-  // Parallelogram — same inward lean as speedometer
   ctx.beginPath();
   ctx.moveTo(x - lean, y);
   ctx.lineTo(x + badgeW, y);
@@ -62,7 +60,6 @@ function drawAeroBadge(ctx, gameState, width, height) {
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Top accent edge
   ctx.beginPath();
   ctx.moveTo(x - lean, y);
   ctx.lineTo(x + badgeW, y);
