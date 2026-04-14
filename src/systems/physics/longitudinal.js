@@ -61,14 +61,7 @@ function computeForwardVelocity(gameState, dt) {
     vz *= Math.pow(MANUAL_BRAKE_DECEL, dt);
   }
 
-  // 4. Drag de curvatura
-  const curvature = Math.abs(gameState.currentCurvature || 0);
-  if (curvature > 0 && vz > 0) {
-    const curveDrag = vz * vz * curvature * strategy.curveDragFactor;
-    vz = Math.max(0, vz - curveDrag * dt);
-  }
-
-  // 5. Penalidade de slip
+  // 4. Penalidade de slip
   if (gameState.isPenalized) {
     const slipMagnitude = clamp(
       gameState.currentSlip / SLIP_PENALTY_THRESHOLD,

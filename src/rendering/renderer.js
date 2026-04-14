@@ -26,16 +26,6 @@ function buildRenderMetrics(width, height) {
       carWidth: CAR_WIDTH,
       roadSampleStep: ROAD_SAMPLE_STEP,
       trackWidth: TRACK_WIDTH,
-      speedometer: {
-        widthRatio: 0.22,
-        heightRatio: 0.15,
-        minWidth: 136,
-        maxWidth: 220,
-        minHeight: 72,
-        maxHeight: 110,
-        minMargin: 10,
-        maxMargin: 24,
-      },
     };
   }
 
@@ -48,46 +38,32 @@ function buildRenderMetrics(width, height) {
     carWidth: Math.max(38, Math.min(CAR_WIDTH, width * 0.12)),
     roadSampleStep: profile.isCompactWidth ? 4 : ROAD_SAMPLE_STEP,
     trackWidth: Math.min(TRACK_WIDTH, width * 0.86),
-    speedometer: {
-      widthRatio: 0.18,
-      heightRatio: 0.11,
-      minWidth: 110,
-      maxWidth: 180,
-      minHeight: 58,
-      maxHeight: 90,
-      minMargin: 8,
-      maxMargin: 16,
-    },
   };
 }
 
 class Renderer {
-  constructor(canvas, ctx, statusText) {
+  constructor(canvas, ctx) {
     this.canvas = canvas;
     this.ctx = ctx;
-    this.statusText = statusText;
     this.hud = new HudRenderer();
   }
 
   draw(gameState, track, telemetry = null) {
-    const { ctx, canvas, statusText } = this;
+    const { ctx, canvas } = this;
     const width = canvas.width;
     const height = canvas.height;
 
     if (gameState.currentScreen === SCREENS.PREVIEW) {
-      statusText.innerText = "";
       drawTrackPreviewScreen(ctx, width, height, track);
       return;
     }
 
     if (gameState.currentScreen === SCREENS.START) {
-      statusText.innerText = "";
       drawStartScreen(ctx, width, height);
       return;
     }
 
     if (gameState.currentScreen === SCREENS.GAME_OVER) {
-      statusText.innerText = "";
       drawGameOverScreen(ctx, width, height, gameState.finalTime);
       return;
     }
@@ -95,7 +71,7 @@ class Renderer {
     const metrics = buildRenderMetrics(width, height);
     drawTrack(ctx, gameState, track, metrics);
     drawCar(ctx, gameState, track, metrics);
-    this.hud.draw(ctx, gameState, width, height, metrics.speedometer, statusText);
+    this.hud.draw(ctx, gameState, width, height);
     if (telemetry) telemetry.drawHUD(ctx, width, height);
   }
 

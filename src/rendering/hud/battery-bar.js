@@ -1,0 +1,102 @@
+import { drawRoundedRect } from "../../utils/canvas.js";
+import { responsiveSize } from "../../utils/canvas.js";
+import { HUD_COLORS, HUD_FONTS, HUD_LAYOUT } from "../../constants/index.js";
+
+
+function drawBatteryBar(ctx, gameState, width, height) {
+  const L = HUD_LAYOUT;
+  const battery = Math.max(0, Math.min(100, gameState.battery || 0));
+  const { isBoosting, isBraking } = gameState;
+
+  const barW = Math.max(
+    L.batteryMinWidth,
+    Math.min(L.batteryMaxWidth, width * L.batteryWidthRatio),
+  );
+  const barH = Math.max(
+    L.batteryMinHeight,
+    Math.min(L.batteryMaxHeight, height * L.batteryHeightRatio),
+  );
+  const marginX = Math.max(
+    L.batteryMinMargin,
+    Math.min(L.batteryMaxMargin, width * L.batteryLeftMarginRatio),
+  );
+  const marginY = Math.max(
+    L.batteryMinMargin,
+    Math.min(L.batteryMaxMargin, height * L.batteryTopMarginRatio),
+  );
+  const x = marginX;
+  const y = marginY;
+  const radius = 3;
+
+  // Choose segment fill color
+  let fillColor;
+  if (isBraking && !isBoosting) {
+    fillColor = HUD_COLORS.batteryRegen;
+  } else if (isBoosting) {
+    fillColor = battery < 20 ? HUD_COLORS.batteryLow : HUD_COLORS.batteryMid;
+  } else {
+    fillColor =
+      battery < 25
+        ? HUD_COLORS.batteryLow
+        : battery < 50
+          ? HUD_COLORS.batteryMid
+          : HUD_COLORS.batteryFull;
+  }
+
+  ctx.save();
+
+  // Panel background
+  ctx.shadowColor = fillColor;
+  ctx.shadowBlur = 10;
+  drawRoundedRect(ctx, x - 2, y - 2, barW + 4, barH + 4, radius + 2);
+  ctx.fillStyle = "rgba(2, 5, 12, 0.88)";
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Segmented fill
+  const segments = L.batterySegments;
+  const filledSegments = Math.round((battery / 100) * segments);
+  const gap = 3;
+  const segW = (barW - gap * (segments - 1)) / segments;
+
+  for (let i = 0; i < segments; i++) {
+    const sx = x + i * (segW + gap);
+    if (i < filledSegments) {
+      const brightness = 0.7 + (i / segments) * 0.3;
+      ctx.globalAlpha = brightness;
+      ctx.fillStyle = fillColor;
+    } else {
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "rgba(20, 30, 40, 0.8)";
+    }
+    drawRoundedRect(ctx, sx, y, segW, barH, 2);
+    ctx.fill();
+
+    if (i < segments - 1) {
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = HUD_COLORS.batterySegmentSep;
+      ctx.fillRect(sx + segW, y, gap, barH);
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  // Border
+  ctx.strokeStyle = HUD_COLORS.batteryBorder;
+  ctx.lineWidth = 1.5;
+  drawRoundedRect(ctx, x, y, barW, barH, radius);
+  ctx.stroke();
+
+  // Label below bar
+  const labelSize = responsiveSize(width, HUD_FONTS.batteryLabel);
+  ctx.fillStyle = HUD_COLORS.batteryLabel;
+  ctx.font = `${HUD_FONTS.bold} ${labelSize}px ${HUD_FONTS.family}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  const regenTag = isBraking && !isBoosting ? " [REGEN]" : "";
+  const boostTag = isBoosting ? " [BOOST]" : "";
+  ctx.fillText(`ERS ${Math.floor(battery)}%${regenTag}${boostTag}`, x, y + barH + 4);
+
+  ctx.restore();
+}
+
+export { drawBatteryBar };

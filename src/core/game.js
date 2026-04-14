@@ -20,13 +20,12 @@ import {
 } from "../constants/index.js";
 
 class Game {
-  constructor(canvas, statusText) {
+  constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
-    this.statusText = statusText;
 
     this.track = new Track();
-    this.renderer = new Renderer(this.canvas, this.ctx, this.statusText);
+    this.renderer = new Renderer(this.canvas, this.ctx);
     this.energyManager = new EnergyManager();
     this.gameLoop = new GameLoop();
     this.telemetry = new TelemetryManager();
@@ -112,7 +111,6 @@ class Game {
     }
 
     this.renderer.resetHud();
-    this.statusText.innerText = "";
   }
 
   _advanceIntroScreen() {

@@ -23,10 +23,6 @@ export const BOOST_OVERCAP_RATIO = 1.1;
 export const BRAKE_REGEN_BASE = 0.2;
 export const BRAKE_REGEN_SPEED_FACTOR = 0.025;
 
-// Drag de curvatura: quanto mais rápido e mais fechada a curva, mais velocidade se perde.
-export const CURVE_DRAG_FACTOR_X = 0.0002;
-export const CURVE_DRAG_FACTOR_Z = 0.00007;
-
 export const CENTRIFUGAL_SCALE_C = 0.003;
 
 export const CENTRIFUGAL_DIRECT_PUSH_X = 0.12;
@@ -48,11 +44,11 @@ export const SLIP_FORCE_MODE_Z = 0.65;
 export const SLIP_VZ_PENALTY = 0.12;
 
 // "lateral cannon" fix: decaimento cinético em slip pleno — sem isso vx≈34 em modo X.
-export const SLIP_LATERAL_KINETIC_DAMPING = 0.12;
+export const SLIP_LATERAL_KINETIC_DAMPING = 0.28;
 
 export const SLIP_PENALTY_THRESHOLD = 0.15;
 
-export const SLIP_SPEED_PENALTY_DRAG = 0.8;
+export const SLIP_SPEED_PENALTY_DRAG = 0.96;
 
 // Regen passivo por desaceleração natural (troca de modo, slip, saída de curva).
 export const PASSIVE_REGEN_FACTOR = 0.4;
