@@ -29,6 +29,7 @@ const LowDragMode = Object.freeze({
   lateralFriction: LATERAL_FRICTION_GRIP_X,
   slipDamping: SLIP_DAMPING_MODE_X,
   slipForceScale: SLIP_FORCE_MODE_X,
+  autoSteerScale: 0.35,   // autosteer reduzido — carro tende a sair em curvas
   useCentrifugalPush: true,
 });
 
@@ -43,6 +44,7 @@ const HighDownforceMode = Object.freeze({
   lateralFriction: LATERAL_FRICTION_GRIP_Z,
   slipDamping: SLIP_DAMPING_MODE_Z,
   slipForceScale: SLIP_FORCE_MODE_Z,
+  autoSteerScale: 1.0,    // autosteer total — carro gruda na pista
   useCentrifugalPush: false,
 });
 

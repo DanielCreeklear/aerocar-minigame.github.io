@@ -1,4 +1,4 @@
-import { formatTime } from "../utils/math.js";
+import { formatTime, clamp } from "../utils/math.js";
 import { drawRoundedRect } from "../utils/canvas.js";
 import { SLIP_PENALTY_THRESHOLD } from "../constants/index.js";
 
@@ -28,11 +28,17 @@ class HudRenderer {
     const shownSpeed = Math.round(this.displayedSpeedKmh);
     const panelWidth = Math.max(
       speedometerMetrics.minWidth,
-      Math.min(speedometerMetrics.maxWidth, width * speedometerMetrics.widthRatio),
+      Math.min(
+        speedometerMetrics.maxWidth,
+        width * speedometerMetrics.widthRatio,
+      ),
     );
     const panelHeight = Math.max(
       speedometerMetrics.minHeight,
-      Math.min(speedometerMetrics.maxHeight, height * speedometerMetrics.heightRatio),
+      Math.min(
+        speedometerMetrics.maxHeight,
+        height * speedometerMetrics.heightRatio,
+      ),
     );
     const margin = Math.max(
       speedometerMetrics.minMargin,
@@ -94,7 +100,8 @@ class HudRenderer {
     } else if (isBoosting) {
       barColor = battery < 20 ? "#e74c3c" : "#f1c40f";
     } else {
-      barColor = battery < 25 ? "#e74c3c" : battery < 50 ? "#f39c12" : "#2ecc71";
+      barColor =
+        battery < 25 ? "#e74c3c" : battery < 50 ? "#f39c12" : "#2ecc71";
     }
 
     if (fillW > 0) {
@@ -166,10 +173,31 @@ class HudRenderer {
     statusText.innerText = `${timeStr} | Volta: ${gameState.lapCount + 1}/${gameState.targetLaps} | Trecho: ${gameState.currentSegmentIndex}/${gameState.totalSegments}\nModo: ${gameState.aeroMode} | Bateria: ${Math.floor(gameState.battery)}%${brakeMsg}${alertMsg}${offTrackMsg}`;
   }
 
+  drawCurveIndicator(ctx, gameState, width) {
+    const curve = gameState.upcomingCurvature || 0;
+    const absCurve = Math.abs(curve);
+    if (absCurve < 0.0005) return;
+
+    const intensity = clamp(absCurve / 0.003, 0, 1);
+    const arrow = curve > 0 ? "→" : "←";
+    const color =
+      intensity > 0.6 ? "#ff4444" : intensity > 0.3 ? "#ffaa00" : "#ffffff";
+
+    ctx.save();
+    ctx.font = `bold ${Math.round(24 + intensity * 16)}px sans-serif`;
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.85;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(arrow, width * 0.5, 48);
+    ctx.restore();
+  }
+
   draw(ctx, gameState, width, height, speedometerMetrics, statusText) {
     this.drawSpeedometer(ctx, gameState, width, height, speedometerMetrics);
     this.drawBatteryBar(ctx, gameState, width, height);
     this.drawAeroModeButton(ctx, gameState, width, height);
+    this.drawCurveIndicator(ctx, gameState, width);
     this.updateStatusText(statusText, gameState);
   }
 }

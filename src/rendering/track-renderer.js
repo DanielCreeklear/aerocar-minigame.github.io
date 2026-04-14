@@ -43,11 +43,21 @@ function drawTrack(ctx, gameState, track, metrics) {
         : RENDER_COLORS.red;
 
     ctx.fillStyle = stripeColor;
-    ctx.fillRect(left - metrics.borderWidth, y, metrics.borderWidth, metrics.roadSampleStep);
+    ctx.fillRect(
+      left - metrics.borderWidth,
+      y,
+      metrics.borderWidth,
+      metrics.roadSampleStep,
+    );
     ctx.fillRect(right, y, metrics.borderWidth, metrics.roadSampleStep);
 
     ctx.fillStyle = asphaltColor;
     ctx.fillRect(left, y, metrics.trackWidth, metrics.roadSampleStep);
+
+    if (info.isModeXZone) {
+      ctx.fillStyle = RENDER_COLORS.asphaltModeX;
+      ctx.fillRect(left, y, metrics.trackWidth, metrics.roadSampleStep);
+    }
 
     if (info.marker) {
       ctx.fillStyle = RENDER_COLORS.white;

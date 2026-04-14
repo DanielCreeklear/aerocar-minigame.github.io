@@ -133,6 +133,7 @@ class Track {
 
     this.normalizeTrackData(rawData);
     this.markStartFinish();
+    this._markModeXZones();
     this._buildRacingLine();
   }
 
@@ -259,6 +260,25 @@ class Track {
     }
   }
 
+  _markModeXZones() {
+    // Retas longas são zonas de Modo X — apenas a faixa central (excluindo 20% de entrada/saída)
+    const MIN_STRAIGHT_LENGTH = 400;
+    for (const seg of this.segments) {
+      if (
+        seg.type === TRACK_TYPES.STRAIGHT &&
+        seg.length >= MIN_STRAIGHT_LENGTH
+      ) {
+        const zoneStart = seg.startZ + seg.length * 0.2;
+        const zoneEnd = seg.endZ - seg.length * 0.2;
+        for (const pt of this.trackData) {
+          if (pt.z >= zoneStart && pt.z < zoneEnd) {
+            pt.isModeXZone = true;
+          }
+        }
+      }
+    }
+  }
+
   _buildRacingLine() {
     this.racingLine = [];
     for (let z = 0; z < this.lapLength; z += RACING_LINE_STEP) {
@@ -291,6 +311,7 @@ class Track {
       curve: currentPoint.curve + (nextPoint.curve - currentPoint.curve) * t,
       type: currentPoint.type,
       marker: currentPoint.marker,
+      isModeXZone: currentPoint.isModeXZone || false,
     };
   }
 }

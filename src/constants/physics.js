@@ -85,6 +85,12 @@ export const SLIP_LATERAL_KINETIC_DAMPING = 0.12;
 
 export const SLIP_PENALTY_THRESHOLD = 0.15;
 
+// Queda de ~12% de velocidade por segundo no slip máximo.
+export const SLIP_SPEED_PENALTY_DRAG = 0.88;
+
+// Regen passivo por desaceleração natural (troca de modo, slip, saída de curva).
+export const PASSIVE_REGEN_FACTOR = 0.4;
+
 // =============================================================================
 // LATERAL DYNAMICS
 // =============================================================================

@@ -1,11 +1,13 @@
 import { getAeroStrategy } from "../aero.js";
-import { clamp } from "../../utils/math.js";
+import { clamp, lerp } from "../../utils/math.js";
 import {
   BOOST_BASE_GAIN,
   BOOST_MIN_EFFECT,
   BOOST_OVERCAP_RATIO,
   BOOST_SLIP_EFFECT_FACTOR,
   MANUAL_BRAKE_DECEL,
+  SLIP_PENALTY_THRESHOLD,
+  SLIP_SPEED_PENALTY_DRAG,
 } from "../../constants/index.js";
 
 function computeForwardVelocity(gameState, dt) {
@@ -34,6 +36,13 @@ function computeForwardVelocity(gameState, dt) {
   // 3. Frenagem manual
   if (gameState.isBraking && vz > 0) {
     vz *= Math.pow(MANUAL_BRAKE_DECEL, dt);
+  }
+
+  // 4. Penalidade de slip — queda de velocidade proporcional ao excesso de slip
+  if (gameState.isPenalized) {
+    const slipMagnitude = clamp(gameState.currentSlip / SLIP_PENALTY_THRESHOLD, 0, 1);
+    const slipDrag = lerp(1.0, SLIP_SPEED_PENALTY_DRAG, slipMagnitude);
+    vz *= Math.pow(slipDrag, dt);
   }
 
   return clamp(vz, 0, strategy.maxVz * BOOST_OVERCAP_RATIO);

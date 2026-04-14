@@ -1,4 +1,5 @@
 import { clamp, lerp } from "../../utils/math.js";
+import { getAeroStrategy } from "../aero.js";
 import {
   AUTOSTEER_LOOKAHEAD_N,
   AUTOSTEER_FEEDFORWARD_K,
@@ -59,8 +60,9 @@ function computeAutoSteer(gameState, track, vz, dt) {
     const pushingOutwardFwd =
       currentOffset !== 0 && Math.sign(feedfwd) === Math.sign(currentOffset);
     const earlyForce = feedfwd * (pushingOutwardFwd ? 1 - edgeBlend : 1.0);
+    const earlyScale = getAeroStrategy(gameState.aeroMode).autoSteerScale;
     return {
-      force: earlyForce,
+      force: earlyForce * earlyScale,
       telemetry: { targetHeading: 0, kpForce: 0, autoSteerForce: earlyForce },
     };
   }
@@ -137,8 +139,9 @@ function computeAutoSteer(gameState, track, vz, dt) {
     clamp(AUTOSTEER_VISUAL_LERP_RATE * dt, 0, 1),
   );
 
+  const steerScale = getAeroStrategy(gameState.aeroMode).autoSteerScale;
   return {
-    force: finalForce,
+    force: finalForce * steerScale,
     telemetry: { targetHeading, kpForce: rawForce, autoSteerForce: finalForce },
   };
 }

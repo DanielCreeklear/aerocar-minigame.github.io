@@ -55,4 +55,5 @@ export const RENDER_COLORS = {
   cockpit: "#9fd4ff",
   headlight: "#fff3ad",
   taillight: "#ff6d6d",
+  asphaltModeX: "#1a2a3a",
 };
