@@ -18,8 +18,10 @@ import {
   VZ_MAX_MODE_Z,
 } from "../constants/index.js";
 
-// Modo X: baixo arrasto, alta velocidade. useCentrifugalPush=true: deriva sob força centrífuga.
-const LowDragMode = Object.freeze({
+// Modo X: baixo arrasto, alta velocidade em reta, instável em curva.
+// autoSteerScale = 0.35 → autosteer opera com 35% da força normal.
+// O carro tende a sair lateralmente em curvas se o jogador não frear antes.
+const LowDragMode = {
   name: AERO_MODES.X,
   accel: VZ_ACCEL_MODE_X,
   drag: VZ_DRAG_MODE_X,
@@ -29,12 +31,13 @@ const LowDragMode = Object.freeze({
   lateralFriction: LATERAL_FRICTION_GRIP_X,
   slipDamping: SLIP_DAMPING_MODE_X,
   slipForceScale: SLIP_FORCE_MODE_X,
-  autoSteerScale: 0.35,   // autosteer reduzido — carro tende a sair em curvas
   useCentrifugalPush: true,
-});
+  autoSteerScale: 0.35, // instável em curvas
+};
 
-// Modo Z: alto downforce, mais grip. useCentrifugalPush=false: mantém o carro plantado.
-const HighDownforceMode = Object.freeze({
+// Modo Z: alto downforce, velocidade máxima menor, aderência total em curva.
+// autoSteerScale = 1.0 → autosteer pleno, carro segue a linha sem esforço.
+const HighDownforceMode = {
   name: AERO_MODES.Z,
   accel: VZ_ACCEL_MODE_Z,
   drag: VZ_DRAG_MODE_Z,
@@ -44,9 +47,9 @@ const HighDownforceMode = Object.freeze({
   lateralFriction: LATERAL_FRICTION_GRIP_Z,
   slipDamping: SLIP_DAMPING_MODE_Z,
   slipForceScale: SLIP_FORCE_MODE_Z,
-  autoSteerScale: 1.0,    // autosteer total — carro gruda na pista
   useCentrifugalPush: false,
-});
+  autoSteerScale: 1.0, // estável — downforce mantém o carro na linha
+};
 
 function getAeroStrategy(aeroMode) {
   return aeroMode === AERO_MODES.X ? LowDragMode : HighDownforceMode;

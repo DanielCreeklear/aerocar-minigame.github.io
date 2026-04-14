@@ -1,5 +1,5 @@
 import { getLapData } from "../../utils/math.js";
-import { computeForwardVelocity } from "./longitudinal.js";
+import { computeForwardVelocity, precomputeSlip } from "./longitudinal.js";
 import { integrateLateralState } from "./lateral.js";
 import { computeAutoSteer } from "./autosteer.js";
 import { writePhysicsTelemetry } from "./telemetry.js";
@@ -37,14 +37,17 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
   gameState.curveForce = Math.abs(curvature);
   resolveCurrentSegment(gameState, track, lapZ);
 
-  // 2. Velocidade longitudinal
-  const vz = computeForwardVelocity(gameState, dt);
-
   // Deadzone de curvatura: evita forças centrífugas fantasmas por ruído de ponto flutuante.
   const effectiveCurvature =
     Math.abs(curvature) < CURVATURE_DEADZONE ? 0 : curvature;
 
-  // 3. AutoSteer (PD + feedforward)
+  // 2. Pré-calcula slip do frame atual com a velocidade do frame anterior (gameState.speed).
+  precomputeSlip(gameState, effectiveCurvature);
+
+  // 3. Velocidade longitudinal — agora lê isPenalized corretamente
+  const vz = computeForwardVelocity(gameState, dt);
+
+  // 4. AutoSteer (PD + feedforward)
   const { force: autoSteerForce, telemetry: steerTel } = computeAutoSteer(
     gameState,
     track,
@@ -52,7 +55,7 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     dt,
   );
 
-  // 4. Dinâmica lateral + penalidades fora da pista
+  // 5. Dinâmica lateral + penalidades fora da pista (recalcula slip final com vz real)
   const { nextVz, forces } = integrateLateralState(
     gameState,
     effectiveCurvature,
@@ -61,7 +64,7 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     dt,
   );
 
-  // 5. Telemetria
+  // 6. Telemetria
   writePhysicsTelemetry(gameState, {
     centrifugalForce: forces.centrifugalForce,
     effectiveGrip: forces.effectiveGrip,
@@ -70,7 +73,7 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     autoSteerForce: steerTel.autoSteerForce,
   });
 
-  // 6. Confirma velocidade e avança
+  // 7. Confirma velocidade e avança
   gameState.speed = nextVz;
   gameState.previousCurvature = curvature;
 
