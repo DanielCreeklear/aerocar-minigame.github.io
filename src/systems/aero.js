@@ -26,8 +26,8 @@ const LowDragMode = {
   lateralFriction: LATERAL_FRICTION_GRIP_X,
   slipDamping: SLIP_DAMPING_MODE_X,
   slipForceScale: SLIP_FORCE_MODE_X,
-  useCentrifugalPush: true,
-  autoSteerScale: 0.2,
+  centrifugalPushFactor: 0.12,
+  autoSteerScale: 0.12,
 };
 
 // Modo Z: alto downforce
@@ -40,8 +40,8 @@ const HighDownforceMode = {
   lateralFriction: LATERAL_FRICTION_GRIP_Z,
   slipDamping: SLIP_DAMPING_MODE_Z,
   slipForceScale: SLIP_FORCE_MODE_Z,
-  useCentrifugalPush: false,
-  autoSteerScale: 0.75,
+  centrifugalPushFactor: 0.1,
+  autoSteerScale: 0.18,
 };
 
 function getAeroStrategy(aeroMode) {

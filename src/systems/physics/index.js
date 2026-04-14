@@ -3,7 +3,10 @@ import { computeForwardVelocity, precomputeSlip } from "./longitudinal.js";
 import { integrateLateralState } from "./lateral.js";
 import { computeAutoSteer } from "./autosteer.js";
 import { writePhysicsTelemetry } from "./telemetry.js";
-import { CURVATURE_DEADZONE } from "../../constants/index.js";
+import {
+  CURVATURE_DEADZONE,
+  SPIN_ANGULAR_VELOCITY,
+} from "../../constants/index.js";
 
 // currentSlip = 0 aqui porque computeForwardVelocity o lê antes de integrateLateralState reescrevê-lo.
 function resolveTrackState(gameState, currentTrackInfo) {
@@ -76,6 +79,14 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
   // 7. Confirma velocidade e avança
   gameState.speed = nextVz;
   gameState.previousCurvature = curvature;
+
+  // 8. Spin rotation: gira enquanto isSpinning, amortecer quando para.
+  if (gameState.isSpinning) {
+    gameState.spinRotation =
+      (gameState.spinRotation || 0) + SPIN_ANGULAR_VELOCITY * dt;
+  } else {
+    gameState.spinRotation = (gameState.spinRotation || 0) * Math.pow(0.85, dt);
+  }
 
   return advanceAlongTrack(gameState, lapLength, dt);
 }

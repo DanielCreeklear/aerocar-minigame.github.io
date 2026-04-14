@@ -23,7 +23,10 @@ function computeCarDrawPosition(gameState, width, height) {
   if (!gameState.isGameOver && gameState.isOffTrack) {
     const slip = gameState.currentSlip || 0;
     const slipShake = Math.min(1.5, slip * 0.3);
-    const inertiaShake = Math.min(1.8, Math.abs(gameState.lateralVelocity || 0) * 0.04);
+    const inertiaShake = Math.min(
+      1.8,
+      Math.abs(gameState.lateralVelocity || 0) * 0.04,
+    );
     const speedShake = Math.min(1.3, (gameState.speed || 0) / 35);
     const shakeScale = 1 + slipShake + inertiaShake + speedShake;
 
@@ -35,7 +38,12 @@ function computeCarDrawPosition(gameState, width, height) {
 }
 
 function drawDustCloud(ctx, gameState, drawX, drawY, carWidth, carHeight) {
-  if (gameState.isGameOver || !gameState.isOffTrack || gameState.offTrackDustTimer <= 0) return;
+  if (
+    gameState.isGameOver ||
+    !gameState.isOffTrack ||
+    gameState.offTrackDustTimer <= 0
+  )
+    return;
 
   const dustAlpha = Math.min(0.72, gameState.offTrackDustTimer / 24);
   const sprayWidth = carWidth + 110;
@@ -156,11 +164,13 @@ function drawCar(ctx, gameState, track, metrics) {
     ctx.globalAlpha = Math.max(MIN_CAR_ALPHA, 1 - slip * CAR_SLIP_ALPHA_FACTOR);
   }
 
-  const currentCurvature = gameState.currentCurvature ?? carTrackInfo.curve ?? 0;
+  const currentCurvature =
+    gameState.currentCurvature ?? carTrackInfo.curve ?? 0;
   const CAR_CURVE_ROTATION_FACTOR = 0.08;
   ctx.rotate(
     currentCurvature * CAR_CURVE_ROTATION_FACTOR +
-      (gameState.carVisualHeading || 0) * CAR_HEADING_VISUAL_SCALE,
+      (gameState.carVisualHeading || 0) * CAR_HEADING_VISUAL_SCALE +
+      (gameState.spinRotation || 0),
   );
 
   drawCarBody(ctx, gameState, { carWidth, carHeight });

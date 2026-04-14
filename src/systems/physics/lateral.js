@@ -2,7 +2,6 @@ import { getAeroStrategy } from "../aero.js";
 import { clamp, lerp } from "../../utils/math.js";
 import {
   CENTRIFUGAL_SCALE_C,
-  CENTRIFUGAL_DIRECT_PUSH_X,
   SLIP_BLEND_START,
   SLIP_BLEND_RANGE,
   SLIP_GRIP_EROSION,
@@ -25,6 +24,9 @@ import {
   OFF_TRACK_DUST_FRAMES,
   AUTOSTEER_SLIP_SUPPRESS,
   PHYSICS_TRACK_HALF,
+  CURB_HALF,
+  SPIN_TRIGGER_SPEED,
+  SPIN_EXIT_SPEED,
 } from "../../constants/index.js";
 
 function computeTireSlipForces(gameState, curvature, vz) {
@@ -76,10 +78,8 @@ function applyLateralDynamics(
   vx += autoSteerForce * (1 - slipBlend * AUTOSTEER_SLIP_SUPPRESS) * dt;
 
   if (!wasOffTrack) {
-    // Modo X: centrífuga empurra diretamente. Modo Z: downforce mantém o carro na linha.
-    if (strategy.useCentrifugalPush) {
-      vx += centrifugalForce * CENTRIFUGAL_DIRECT_PUSH_X * dt;
-    }
+    // Força centrífuga lateral por modo: X empurra mais (0.12), Z resiste melhor mas ainda sente (0.04).
+    vx += centrifugalForce * strategy.centrifugalPushFactor * dt;
     // Slip residual: excesso de centrífuga além do grip. Escala varia por modo (1,2 X / 0,65 Z).
     vx += slipOutwardForce * strategy.slipForceScale * dt;
   }
@@ -141,7 +141,8 @@ function applyLateralDynamics(
 }
 
 function applyOffTrackPenalties(gameState, x, vx, vz, trackLimit, dt) {
-  const isOffTrack = Math.abs(x) > trackLimit;
+  // isOffTrack usa CURB_HALF: a zebra (trackLimit..CURB_HALF) não tem penalidade.
+  const isOffTrack = Math.abs(x) > CURB_HALF;
   let nextVz = vz;
 
   if (isOffTrack) {
@@ -149,7 +150,18 @@ function applyOffTrackPenalties(gameState, x, vx, vz, trackLimit, dt) {
     nextVz = Math.min(nextVz, OFF_TRACK_MAX_SPEED);
     vx *= Math.pow(OFF_TRACK_VX_DRAG, dt);
     gameState.offTrackDustTimer = OFF_TRACK_DUST_FRAMES;
+
+    // Spin: entrada em alta velocidade no gramado aciona rotação visual.
+    if (vz > SPIN_TRIGGER_SPEED) {
+      gameState.isSpinning = true;
+    }
+    // Sai do spin quando freou o suficiente.
+    if (gameState.isSpinning && vz < SPIN_EXIT_SPEED) {
+      gameState.isSpinning = false;
+    }
   } else {
+    // De volta à pista/zebra: spin termina imediatamente (spin é só penalidade do gramado).
+    gameState.isSpinning = false;
     gameState.offTrackDustTimer = Math.max(
       0,
       (gameState.offTrackDustTimer || 0) - dt,

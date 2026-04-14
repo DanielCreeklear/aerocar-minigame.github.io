@@ -40,20 +40,20 @@ export const BOOST_FLAME_HEIGHT_RANDOM = 20;
 export const BOOST_FLAME_X_OFFSET = -15;
 
 export const RENDER_COLORS = {
-  grass: "#2a5e34", // darker evening green (R4 night circuit)
-  asphaltCurve: "#2c1820", // deep wine-gray
-  asphaltStraight: "#1a2230", // midnight blue-gray
-  red: "#c84050", // deep wine-red (R4 car livery)
-  redLight: "#e87080",
-  redDark: "#8c2a32",
-  white: "#f4edd8", // warm ivory instead of pure white
-  modeZ: "#2a5aaa", // deep royal blue
-  modeZLight: "#6090d0",
-  modeZDark: "#162e60",
-  boost: "#d4a018", // amber flame
-  wheel: "#18181e",
-  cockpit: "#8ab8d8",
-  headlight: "#ffe8b0",
-  taillight: "#d44060",
-  asphaltModeX: "#10182a",
+  grass: "#2a5e34", // darker evening green
+  asphaltCurve: "#1e0c10", // deep near-black
+  asphaltStraight: "#14181e", // midnight near-black
+  red: "#c00020", // R4 CRIMSON — iconic car livery
+  redLight: "#e03050",
+  redDark: "#800018",
+  white: "#f0ece4", // warm ivory
+  modeZ: "#1c3280", // deep indigo
+  modeZLight: "#4870c0",
+  modeZDark: "#0e1a48",
+  boost: "#c8960a", // R4 gold flame
+  wheel: "#141418",
+  cockpit: "#7098c0",
+  headlight: "#f8e8c0",
+  taillight: "#c00020", // R4 crimson tail
+  asphaltModeX: "#0e0c14",
 };

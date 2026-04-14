@@ -3,7 +3,6 @@ import { responsiveSize } from "../../utils/canvas.js";
 import { formatTime } from "../../utils/math.js";
 import { HUD_COLORS, HUD_FONTS, HUD_LAYOUT } from "../../constants/index.js";
 
-
 function drawLapPanel(ctx, gameState, width, height) {
   const L = HUD_LAYOUT;
 
@@ -30,16 +29,16 @@ function drawLapPanel(ctx, gameState, width, height) {
 
   ctx.shadowColor = HUD_COLORS.lapPanelBorder;
   ctx.shadowBlur = 10;
-  drawRoundedRect(ctx, x, y, panelW, panelH, 4);
+  drawRoundedRect(ctx, x, y, panelW, panelH, 0);
   ctx.fillStyle = HUD_COLORS.lapPanel;
   ctx.fill();
   ctx.shadowBlur = 0;
   ctx.strokeStyle = HUD_COLORS.lapPanelBorder;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 1.5;
   ctx.stroke();
 
   ctx.fillStyle = HUD_COLORS.lapPanelBorder;
-  ctx.fillRect(x + 2, y + 2, panelW - 4, 3);
+  ctx.fillRect(x, y, 3, panelH);
 
   const pad = 10;
   const col1 = x + pad;

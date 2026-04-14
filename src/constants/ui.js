@@ -1,36 +1,36 @@
 export const UI_COLORS = {
-  // Base backgrounds — deep indigo-navy (R4 nocturnal luxury)
-  startBgA: "#050416",
-  startBgB: "#0a0820",
-  startBgC: "#030212",
-  previewBgA: "#060520",
-  previewBgB: "#030212",
-  // Accent palette
-  gold: "#e8a820", // warm amber (R4 gold)
-  neonCyan: "#6090d8", // muted azure
-  neonGreen: "#4ab870", // earthy emerald
-  neonPink: "#c84864", // deep wine-rose
-  neonOrange: "#c88030", // amber-orange
-  textLight: "#f4edd8", // warm ivory
-  infoBlue: "#5a8ac8", // soft azure
-  success: "#4ab870",
-  danger: "#c84864",
-  tipGray: "#8c7e6a", // warm stone
-  accentOrange: "#c88030",
-  white: "#ffffff",
+  // Base backgrounds — near-black with purple-black tint (R4 nocturnal)
+  startBgA: "#050308",
+  startBgB: "#0a0610",
+  startBgC: "#030206",
+  previewBgA: "#06040c",
+  previewBgB: "#030206",
+  // Accent palette — R4 authentic
+  gold: "#c8960a", // R4 gold (secondary info)
+  neonCyan: "#5878b0", // muted slate-blue
+  neonGreen: "#3a8858", // muted forest green
+  neonPink: "#c00020", // R4 CRIMSON — primary accent
+  neonOrange: "#b87010", // deep amber
+  textLight: "#f0ece4", // warm white (R4 text)
+  infoBlue: "#4870a8", // muted slate
+  success: "#3a8858",
+  danger: "#c00020", // R4 crimson
+  tipGray: "#806858", // warm stone
+  accentOrange: "#b87010",
+  white: "#f0ece4",
   transparentBlack: "rgba(0, 0, 0, 0)",
-  vignette: "rgba(2, 1, 10, 0.78)",
+  vignette: "rgba(2, 1, 6, 0.80)",
   // Panel styling
-  panelFill: "rgba(5, 4, 20, 0.93)",
-  panelStroke: "rgba(200, 144, 26, 0.88)", // amber border
-  panelAccent: "rgba(180, 60, 90, 0.72)", // wine accent bar
-  previewPanelFill: "rgba(6, 5, 22, 0.94)",
-  previewPanelStroke: "rgba(58, 142, 200, 0.85)",
-  previewMapFill: "rgba(3, 2, 14, 0.96)",
-  previewMapStroke: "rgba(90, 138, 200, 0.6)",
-  gameOverOverlay: "rgba(2, 1, 10, 0.90)",
-  subtleText: "rgba(244, 237, 216, 0.65)",
-  shadow: "rgba(0, 0, 0, 0.85)",
+  panelFill: "rgba(5, 3, 10, 0.94)",
+  panelStroke: "rgba(192, 0, 28, 0.85)", // R4 crimson border
+  panelAccent: "rgba(200, 150, 10, 0.72)", // gold accent bar
+  previewPanelFill: "rgba(6, 4, 12, 0.95)",
+  previewPanelStroke: "rgba(192, 0, 28, 0.80)",
+  previewMapFill: "rgba(3, 2, 8, 0.97)",
+  previewMapStroke: "rgba(200, 150, 10, 0.55)",
+  gameOverOverlay: "rgba(2, 1, 6, 0.92)",
+  subtleText: "rgba(240, 236, 228, 0.60)",
+  shadow: "rgba(0, 0, 0, 0.88)",
 };
 
 export const UI_LAYOUT = {
@@ -125,45 +125,45 @@ export const UI_TEXT = {
 };
 
 export const HUD_COLORS = {
-  // Speedometer — amber accent (R4 feel)
-  speedPanel: "rgba(5, 4, 20, 0.90)",
-  speedPanelBorder: "rgba(200, 144, 26, 0.75)",
-  speedPanelGlow: "rgba(200, 144, 26, 0.30)",
-  speedValue: "#e8a820",
-  speedLabel: "rgba(200, 144, 26, 0.72)",
+  // Speedometer — R4 crimson border, clean white numeral
+  speedPanel: "rgba(5, 3, 10, 0.92)",
+  speedPanelBorder: "rgba(192, 0, 28, 0.82)",
+  speedPanelGlow: "rgba(192, 0, 28, 0.22)",
+  speedValue: "#f0ece4", // clean white — R4 speed display
+  speedLabel: "rgba(192, 0, 28, 0.65)",
   // Battery bar
-  batteryPanel: "rgba(5, 4, 20, 0.90)",
-  batteryBorder: "rgba(74, 184, 112, 0.55)",
-  batteryFull: "#4ab870",
-  batteryMid: "#d4a018",
-  batteryLow: "#c84864",
-  batteryRegen: "#5a8ac8",
-  batteryLabel: "rgba(244, 237, 216, 0.85)",
-  batterySegmentSep: "rgba(5, 4, 20, 0.7)",
-  // Aero badge
-  badgeModeX: "rgba(196, 58, 90, 0.92)", // wine-rose
-  badgeModeXBorder: "rgba(230, 100, 130, 0.78)",
-  badgeModeXGlow: "rgba(196, 58, 90, 0.45)",
-  badgeModeZ: "rgba(42, 90, 168, 0.92)", // deep royal blue
-  badgeModeZBorder: "rgba(90, 138, 200, 0.78)",
-  badgeModeZGlow: "rgba(42, 90, 168, 0.38)",
-  badgeText: "#f4edd8",
-  // Lap panel — amber
-  lapPanel: "rgba(5, 4, 20, 0.90)",
-  lapPanelBorder: "rgba(200, 144, 26, 0.68)",
-  lapTime: "#e8a820",
-  lapLabel: "rgba(200, 144, 26, 0.62)",
-  lapCount: "#f4edd8",
-  lapCountLabel: "rgba(244, 237, 216, 0.52)",
-  // Grip / off-track warning — muted rose / amber
-  warningBorder: "rgba(196, 72, 100, 0.82)",
-  warningGlow: "rgba(196, 72, 100, 0.32)",
-  offTrackBorder: "rgba(200, 128, 48, 0.78)",
-  offTrackGlow: "rgba(200, 128, 48, 0.28)",
+  batteryPanel: "rgba(5, 3, 10, 0.92)",
+  batteryBorder: "rgba(58, 136, 88, 0.55)",
+  batteryFull: "#3a8858",
+  batteryMid: "#c8960a",
+  batteryLow: "#c00020",
+  batteryRegen: "#4870a8",
+  batteryLabel: "rgba(240, 236, 228, 0.82)",
+  batterySegmentSep: "rgba(5, 3, 10, 0.72)",
+  // Aero badge — Mode X: R4 crimson; Mode Z: deep indigo
+  badgeModeX: "rgba(192, 0, 28, 0.90)",
+  badgeModeXBorder: "rgba(220, 40, 60, 0.80)",
+  badgeModeXGlow: "rgba(192, 0, 28, 0.35)",
+  badgeModeZ: "rgba(28, 50, 128, 0.90)",
+  badgeModeZBorder: "rgba(72, 112, 192, 0.78)",
+  badgeModeZGlow: "rgba(28, 50, 128, 0.32)",
+  badgeText: "#f0ece4",
+  // Lap panel — gold (secondary info, R4 style)
+  lapPanel: "rgba(5, 3, 10, 0.92)",
+  lapPanelBorder: "rgba(200, 150, 10, 0.72)",
+  lapTime: "#c8960a",
+  lapLabel: "rgba(200, 150, 10, 0.60)",
+  lapCount: "#f0ece4",
+  lapCountLabel: "rgba(240, 236, 228, 0.50)",
+  // Grip / off-track warning — R4 crimson for both
+  warningBorder: "rgba(192, 0, 28, 0.88)",
+  warningGlow: "rgba(192, 0, 28, 0.30)",
+  offTrackBorder: "rgba(192, 0, 28, 0.72)",
+  offTrackGlow: "rgba(192, 0, 28, 0.22)",
   // Curve indicator
-  curveNormal: "#c8d4e8",
-  curveMild: "#e8a820",
-  curveHard: "#c84864",
+  curveNormal: "#d8d0c4",
+  curveMild: "#c8960a",
+  curveHard: "#c00020",
 };
 
 export const HUD_FONTS = {
@@ -185,15 +185,15 @@ export const HUD_FONTS = {
 };
 
 export const HUD_LAYOUT = {
-  // Speedometer — bottom-right
+  // Speedometer — bottom-center (R4 style)
   speedRightMarginRatio: 0.022,
-  speedBottomMarginRatio: 0.028,
-  speedWidthRatio: 0.18,
-  speedHeightRatio: 0.14,
-  speedMinWidth: 120,
-  speedMaxWidth: 210,
-  speedMinHeight: 68,
-  speedMaxHeight: 108,
+  speedBottomMarginRatio: 0.032,
+  speedWidthRatio: 0.19,
+  speedHeightRatio: 0.12,
+  speedMinWidth: 130,
+  speedMaxWidth: 220,
+  speedMinHeight: 58,
+  speedMaxHeight: 92,
   speedMinMargin: 10,
   speedMaxMargin: 22,
   // Battery bar — top-left

@@ -1,7 +1,5 @@
-import { drawRoundedRect } from "../../utils/canvas.js";
 import { responsiveSize } from "../../utils/canvas.js";
 import { HUD_COLORS, HUD_FONTS, HUD_LAYOUT } from "../../constants/index.js";
-
 
 function drawBatteryBar(ctx, gameState, width, height) {
   const L = HUD_LAYOUT;
@@ -26,7 +24,6 @@ function drawBatteryBar(ctx, gameState, width, height) {
   );
   const x = marginX;
   const y = marginY;
-  const radius = 3;
 
   // Choose segment fill color
   let fillColor;
@@ -45,12 +42,10 @@ function drawBatteryBar(ctx, gameState, width, height) {
 
   ctx.save();
 
-  // Panel background
   ctx.shadowColor = fillColor;
   ctx.shadowBlur = 10;
-  drawRoundedRect(ctx, x - 2, y - 2, barW + 4, barH + 4, radius + 2);
-  ctx.fillStyle = "rgba(2, 5, 12, 0.88)";
-  ctx.fill();
+  ctx.fillStyle = HUD_COLORS.batteryPanel;
+  ctx.fillRect(x - 2, y - 2, barW + 4, barH + 4);
   ctx.shadowBlur = 0;
 
   // Segmented fill
@@ -69,8 +64,7 @@ function drawBatteryBar(ctx, gameState, width, height) {
       ctx.globalAlpha = 1;
       ctx.fillStyle = "rgba(20, 30, 40, 0.8)";
     }
-    drawRoundedRect(ctx, sx, y, segW, barH, 2);
-    ctx.fill();
+    ctx.fillRect(sx, y, segW, barH);
 
     if (i < segments - 1) {
       ctx.globalAlpha = 1;
@@ -83,8 +77,7 @@ function drawBatteryBar(ctx, gameState, width, height) {
   // Border
   ctx.strokeStyle = HUD_COLORS.batteryBorder;
   ctx.lineWidth = 1.5;
-  drawRoundedRect(ctx, x, y, barW, barH, radius);
-  ctx.stroke();
+  ctx.strokeRect(x, y, barW, barH);
 
   // Label below bar
   const labelSize = responsiveSize(width, HUD_FONTS.batteryLabel);
@@ -94,7 +87,11 @@ function drawBatteryBar(ctx, gameState, width, height) {
   ctx.textBaseline = "top";
   const regenTag = isBraking && !isBoosting ? " [REGEN]" : "";
   const boostTag = isBoosting ? " [BOOST]" : "";
-  ctx.fillText(`ERS ${Math.floor(battery)}%${regenTag}${boostTag}`, x, y + barH + 4);
+  ctx.fillText(
+    `ERS ${Math.floor(battery)}%${regenTag}${boostTag}`,
+    x,
+    y + barH + 4,
+  );
 
   ctx.restore();
 }

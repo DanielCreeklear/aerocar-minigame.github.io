@@ -21,6 +21,8 @@ function createCarStateFields() {
     lastModeToggleAt: 0,
     isOffTrack: false,
     offTrackDustTimer: 0,
+    isSpinning: false,
+    spinRotation: 0,
     wpIdx: 0,
   };
 }

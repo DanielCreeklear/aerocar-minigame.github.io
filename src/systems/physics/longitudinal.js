@@ -39,8 +39,11 @@ function computeForwardVelocity(gameState, dt) {
   const strategy = getAeroStrategy(gameState.aeroMode);
 
   // 1. Empuxo + arrasto aerodinâmico
+  // No gramado ou em spin: sem empuxo (aceleração bloqueada).
   let vz = gameState.speed || 0;
-  vz = Math.max(0, vz + strategy.accel * dt);
+  if (!gameState.isOffTrack && !gameState.isSpinning) {
+    vz = Math.max(0, vz + strategy.accel * dt);
+  }
   vz *= Math.pow(strategy.drag, dt);
 
   // 2. Boost ERS

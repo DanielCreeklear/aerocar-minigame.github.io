@@ -28,7 +28,7 @@ export const CENTRIFUGAL_SCALE_C = 0.003;
 export const CENTRIFUGAL_DIRECT_PUSH_X = 0.12;
 
 export const MAX_GRIP_MODE_X = 4.0;
-export const MAX_GRIP_MODE_Z = 5.0;
+export const MAX_GRIP_MODE_Z = 3.5;
 
 export const GRIP_MIN_FLOOR = 0.0001;
 
@@ -77,11 +77,22 @@ export const EDGE_VX_DAMPING_FACTOR = 0.18;
 
 export const PHYSICS_TRACK_HALF = 100;
 
-export const OFF_TRACK_VZ_DRAG = 0.55;
+// Zona de zebra: entre PHYSICS_TRACK_HALF (100) e CURB_HALF (120) não há penalidade de velocidade.
+// Só além de CURB_HALF o carro entra no gramado e recebe drag e possível spin.
+export const CURB_HALF = 120;
+
+export const OFF_TRACK_VZ_DRAG = 0.8;
 
 export const OFF_TRACK_VX_DRAG = 0.9;
 
-export const OFF_TRACK_MAX_SPEED = 5.0;
+export const OFF_TRACK_MAX_SPEED = 14.0;
+
+// Limiar de velocidade (vz) para acionar rotação do carro ao entrar no gramado.
+export const SPIN_TRIGGER_SPEED = 15;
+// Velocidade abaixo da qual o spin para (piloto freou o suficiente).
+export const SPIN_EXIT_SPEED = 3;
+// Velocidade angular do spin visual (rad/s).
+export const SPIN_ANGULAR_VELOCITY = 3.5;
 
 export const OFF_TRACK_CENTERING_BONUS = 0.05;
 
@@ -109,7 +120,7 @@ export const AUTOSTEER_FEEDFORWARD_K = 0.003;
 
 export const AUTOSTEER_LOOKAHEAD_N = 3;
 
-export const AUTOSTEER_SLIP_SUPPRESS = 0.85;
+export const AUTOSTEER_SLIP_SUPPRESS = 0.92;
 
 export const AUTOSTEER_EDGE_GUARD_RATIO = 0.8;
 

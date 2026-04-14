@@ -1,7 +1,5 @@
-import { drawRoundedRect } from "../../utils/canvas.js";
 import { responsiveSize } from "../../utils/canvas.js";
 import { HUD_COLORS, HUD_FONTS, HUD_LAYOUT } from "../../constants/index.js";
-
 
 function drawSpeedometer(ctx, displayedSpeedKmh, width, height) {
   const L = HUD_LAYOUT;
@@ -13,51 +11,68 @@ function drawSpeedometer(ctx, displayedSpeedKmh, width, height) {
     L.speedMinHeight,
     Math.min(L.speedMaxHeight, height * L.speedHeightRatio),
   );
-  const margin = Math.max(
+  const rightMargin = Math.max(
     L.speedMinMargin,
     Math.min(L.speedMaxMargin, width * L.speedRightMarginRatio),
   );
-  const x = width - panelW - margin;
-  const y = height - panelH - Math.max(L.speedMinMargin, Math.min(L.speedMaxMargin, height * L.speedBottomMarginRatio));
+  const bottomMargin = Math.max(
+    L.speedMinMargin,
+    Math.min(L.speedMaxMargin, height * L.speedBottomMarginRatio),
+  );
+
+  // Bottom-right, parallelogram leans inward (top-left corner cut) — R4 right-side HUD
+  const x = width - panelW - rightMargin;
+  const y = height - panelH - bottomMargin;
+  // lean: top edge shifts LEFT so right edge stays flush with screen margin
+  const lean = Math.round(panelH * 0.28);
 
   const shownSpeed = Math.round(displayedSpeedKmh);
 
   ctx.save();
 
-  // Outer glow
+  // Parallelogram: top-left corner cut inward
+  ctx.beginPath();
+  ctx.moveTo(x - lean, y);
+  ctx.lineTo(x + panelW, y);
+  ctx.lineTo(x + panelW, y + panelH);
+  ctx.lineTo(x, y + panelH);
+  ctx.closePath();
+
   ctx.shadowColor = HUD_COLORS.speedPanelGlow;
-  ctx.shadowBlur = 18;
-  drawRoundedRect(ctx, x, y, panelW, panelH, 4);
+  ctx.shadowBlur = 16;
   ctx.fillStyle = HUD_COLORS.speedPanel;
   ctx.fill();
 
-  // Border
   ctx.shadowBlur = 0;
   ctx.strokeStyle = HUD_COLORS.speedPanelBorder;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Top accent bar
-  ctx.fillStyle = HUD_COLORS.speedPanelBorder;
-  ctx.fillRect(x + 2, y + 2, panelW - 4, 3);
+  // Top accent: full top edge highlighted
+  ctx.beginPath();
+  ctx.moveTo(x - lean, y);
+  ctx.lineTo(x + panelW, y);
+  ctx.strokeStyle = HUD_COLORS.speedPanelBorder;
+  ctx.lineWidth = 4;
+  ctx.stroke();
 
   // Speed value
   const speedFontSize = responsiveSize(width, HUD_FONTS.speedValue);
   ctx.shadowColor = HUD_COLORS.speedValue;
-  ctx.shadowBlur = 12;
+  ctx.shadowBlur = 10;
   ctx.fillStyle = HUD_COLORS.speedValue;
   ctx.font = `${HUD_FONTS.bold} ${speedFontSize}px ${HUD_FONTS.family}`;
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
-  ctx.fillText(`${shownSpeed}`, x + panelW - 10, y + panelH * 0.5);
+  ctx.fillText(`${shownSpeed}`, x + panelW - 12, y + panelH * 0.46);
 
-  // KM/H label
   ctx.shadowBlur = 0;
   const labelFontSize = responsiveSize(width, HUD_FONTS.speedLabel);
   ctx.fillStyle = HUD_COLORS.speedLabel;
   ctx.font = `${HUD_FONTS.bold} ${labelFontSize}px ${HUD_FONTS.family}`;
-  ctx.textBaseline = "alphabetic";
-  ctx.fillText("KM/H", x + panelW - 10, y + panelH - 8);
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  ctx.fillText("KM/H", x + panelW - 12, y + panelH * 0.78);
 
   ctx.restore();
 }
