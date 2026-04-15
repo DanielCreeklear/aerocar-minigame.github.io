@@ -28,7 +28,7 @@ function drawAeroBadge(ctx, gameState, width, height) {
     Math.min(BADGE_BOTTOM_MARGIN_MAX, height * BADGE_BOTTOM_MARGIN_RATIO),
   );
 
-  // Centered horizontally, anchored to the bottom
+  
   const x = (width - badgeW) / 2;
   const y = height - badgeH - bottomMargin;
 
@@ -40,7 +40,7 @@ function drawAeroBadge(ctx, gameState, width, height) {
 
   ctx.save();
 
-  // Rounded rectangle pill button
+  
   ctx.beginPath();
   ctx.roundRect(x, y, badgeW, badgeH, BADGE_RADIUS);
 
@@ -53,7 +53,7 @@ function drawAeroBadge(ctx, gameState, width, height) {
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Top accent line
+  
   ctx.beginPath();
   ctx.roundRect(x, y, badgeW, 3, [BADGE_RADIUS, BADGE_RADIUS, 0, 0]);
   ctx.fillStyle = borderColor;

@@ -2,7 +2,7 @@ import { drawRoundedRect } from "../utils/canvas.js";
 
 const SAMPLE_INTERVAL_MS = 50;
 const MAX_SAMPLES = 600;
-const ACCEL_REF = 5; // m/s² para escala cheia no gráfico
+const ACCEL_REF = 5; 
 
 class TelemetryManager {
   constructor() {
@@ -254,11 +254,11 @@ class TelemetryManager {
       const CHART_H2 = 24;
       const n = chartData.length;
 
-      // ── Aceleração longitudinal (bipolar) ──
+      
       const midY1 = cy + CHART_H1 * 0.5;
       ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
       ctx.fillRect(CX, cy, CHART_W, CHART_H1);
-      // grid lines 25% / 75%
+      
       ctx.strokeStyle = "rgba(255, 255, 255, 0.07)";
       ctx.lineWidth = 0.5;
       [0.25, 0.75].forEach((f) => {
@@ -273,7 +273,7 @@ class TelemetryManager {
           midY1 -
           Math.max(-1, Math.min(1, s.accel / ACCEL_REF)) * (CHART_H1 * 0.5 - 2);
 
-        // green fill (aceleração: metade superior)
+        
         ctx.save();
         ctx.beginPath();
         ctx.rect(CX, cy, CHART_W, CHART_H1 * 0.5);
@@ -292,7 +292,7 @@ class TelemetryManager {
         ctx.fill();
         ctx.restore();
 
-        // red fill (frenagem: metade inferior)
+        
         ctx.save();
         ctx.beginPath();
         ctx.rect(CX, midY1, CHART_W, CHART_H1 * 0.5 + 1);
@@ -311,7 +311,7 @@ class TelemetryManager {
         ctx.fill();
         ctx.restore();
 
-        // linha contínua por cima
+        
         ctx.beginPath();
         ctx.strokeStyle = "#ecf0f1";
         ctx.lineWidth = 1.2;
@@ -325,7 +325,7 @@ class TelemetryManager {
         ctx.lineWidth = 1;
       }
 
-      // linha central
+      
       ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
       ctx.lineWidth = 0.5;
       ctx.beginPath();
@@ -341,7 +341,7 @@ class TelemetryManager {
       ctx.fillText("FREIN", CX + 3, cy + CHART_H1 - LH + 2);
       cy += CHART_H1 + 4;
 
-      // ── Steer ──
+      
       const midY2 = cy + CHART_H2 * 0.5;
       ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
       ctx.fillRect(CX, cy, CHART_W, CHART_H2);
@@ -383,7 +383,7 @@ class TelemetryManager {
       ctx.fillText("STR", CX + 3, cy + 2);
       cy += CHART_H2 + 4;
 
-      // ── Throttle (ERS) ──
+      
       const CHART_H3 = 22;
       ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
       ctx.fillRect(CX, cy, CHART_W, CHART_H3);
@@ -415,7 +415,7 @@ class TelemetryManager {
       ctx.fillText("ERS", CX + 3, cy + 2);
       cy += CHART_H3 + 4;
 
-      // ── Brake ──
+      
       ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
       ctx.fillRect(CX, cy, CHART_W, CHART_H3);
       if (n > 1) {

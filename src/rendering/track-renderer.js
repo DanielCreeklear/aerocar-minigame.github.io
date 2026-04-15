@@ -9,7 +9,7 @@ import {
   TRACK_WIDTH,
 } from "../constants/index.js";
 
-// Advertising hoarding colours cycling around the lap
+
 const AD_COLORS = ["#aa0018", "#1020a0", "#b07400", "#005828", "#5a606c"];
 
 function drawTrack(ctx, gameState, track, metrics) {
@@ -20,7 +20,7 @@ function drawTrack(ctx, gameState, track, metrics) {
     gameState.currentTrackPoint || track.getTrackPoint(gameState.currentZ);
   const cameraX = carTrackInfo.x;
 
-  // Base grass fill
+  
   ctx.fillStyle = RENDER_COLORS.grass;
   ctx.fillRect(0, 0, width, height);
 
@@ -91,12 +91,12 @@ function drawTrack(ctx, gameState, track, metrics) {
     ctx.fillStyle = asphaltColor;
     ctx.fillRect(left, y, metrics.trackWidth, step);
 
-    // Racing line: dim dashed guide visible in curves. Uses the track's
-    // pre-built Float32Array racing line (physics-space offset → screen pixels).
+    
+    
     if (isCurve) {
       const rlOffset = track.getRacingLineTarget(sliceZ);
       const rlX = Math.round(centerX + rlOffset * LATERAL_RENDER_SCALE);
-      // Dash pattern: 2 out of every 3 chunks of 60 z-units are drawn.
+      
       if (Math.floor(sliceZ / 60) % 3 !== 0) {
         ctx.fillStyle = "rgba(255,255,255,0.15)";
         ctx.fillRect(rlX - 2, y, 4, step);

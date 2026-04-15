@@ -48,7 +48,7 @@ function drawLapPanel(ctx, gameState, width, height) {
   const timeSize = responsiveSize(width, HUD_FONTS.lapTime);
   const lapCountSize = responsiveSize(width, HUD_FONTS.lapCount);
 
-  // ── Row 1: labels ──────────────────────────────────────────────────────────
+  
   ctx.font = `${HUD_FONTS.bold} ${labelSize}px ${HUD_FONTS.family}`;
   ctx.fillStyle = HUD_COLORS.lapLabel;
   ctx.textAlign = "left";
@@ -59,7 +59,7 @@ function drawLapPanel(ctx, gameState, width, height) {
   ctx.fillStyle = HUD_COLORS.lapCountLabel;
   ctx.fillText("LAPS", col2, y + 8);
 
-  // ── Row 2: values ──────────────────────────────────────────────────────────
+  
   const row2Y = y + 8 + labelSize + 3;
 
   ctx.font = `${HUD_FONTS.bold} ${timeSize}px ${HUD_FONTS.family}`;
@@ -76,7 +76,7 @@ function drawLapPanel(ctx, gameState, width, height) {
   const lapStr = `${gameState.lapCount + 1}/${gameState.targetLaps}`;
   ctx.fillText(lapStr, col2, row2Y);
 
-  // ── Row 3: best lap ────────────────────────────────────────────────────────
+  
   const divY = row2Y + timeSize + 6;
   ctx.strokeStyle = "rgba(200, 150, 10, 0.25)";
   ctx.lineWidth = 1;
@@ -107,7 +107,7 @@ function drawLapPanel(ctx, gameState, width, height) {
   ctx.textAlign = "right";
   ctx.fillText(bestTxt, col2, row3Y);
 
-  // ── Lap completion flash ───────────────────────────────────────────────────
+  
   if (gameState.lastLapFlashTimer > 0 && gameState.lastLapTime != null) {
     const alpha = Math.min(1, gameState.lastLapFlashTimer / 2.0);
     const flashH = 20;

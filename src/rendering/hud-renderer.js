@@ -9,7 +9,7 @@ const SPEEDOMETER_SCALE_TO_KMH = 17;
 const SPEEDOMETER_MAX_KMH = 399;
 const SPEEDOMETER_SMOOTHING = 0.18;
 
-// Touch zone width ratios — must match input.js portrait ratios exactly.
+
 const TOUCH_BRAKE_RATIO = 0.35;
 const TOUCH_BOOST_RATIO = 0.65;
 const TOUCH_HINT_FONT = "'Barlow Condensed', 'Segoe UI', Arial, sans-serif";
@@ -22,12 +22,12 @@ function drawTouchZoneHints(ctx, gameState, width, height) {
 
   ctx.save();
 
-  // Brake zone background (left)
+  
   ctx.fillStyle = "#CC001E";
   ctx.globalAlpha = isBraking ? 0.22 : 0.07;
   ctx.fillRect(0, hintY, width * TOUCH_BRAKE_RATIO, hintH);
 
-  // Boost zone background (right)
+  
   ctx.fillStyle = "#C87D12";
   ctx.globalAlpha = isBoosting ? 0.22 : 0.07;
   ctx.fillRect(
@@ -37,7 +37,7 @@ function drawTouchZoneHints(ctx, gameState, width, height) {
     hintH,
   );
 
-  // Divider lines
+  
   ctx.globalAlpha = 0.18;
   ctx.strokeStyle = "#CC001E";
   ctx.lineWidth = 1;
@@ -51,7 +51,7 @@ function drawTouchZoneHints(ctx, gameState, width, height) {
   ctx.lineTo(width * TOUCH_BOOST_RATIO, height);
   ctx.stroke();
 
-  // Labels
+  
   ctx.font = `700 ${sz}px ${TOUCH_HINT_FONT}`;
   ctx.textBaseline = "middle";
   const midY = hintY + hintH * 0.5;

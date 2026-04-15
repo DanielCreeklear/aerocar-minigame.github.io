@@ -23,7 +23,7 @@ function csz(ref, ratio, lo, hi) {
   return Math.max(lo, Math.min(hi, ref * ratio));
 }
 
-// ── Shared drawing primitives ──────────────────────────────────────────────────
+
 function scanlines(ctx, w, h) {
   ctx.save();
   ctx.fillStyle = "rgba(0,0,0,0.05)";
@@ -114,7 +114,7 @@ function sectionLabel(ctx, x, y, w, text) {
   ctx.restore();
 }
 
-// Draw a simple ranking list (no entering state)
+
 function drawRankList(ctx, x, y, w, rowH, rankings, slotCount) {
   const numW = csz(w, 0.08, 16, 24);
   const nameSz = csz(w, 0.056, 11, 17);
@@ -148,7 +148,7 @@ function drawRankList(ctx, x, y, w, rowH, rankings, slotCount) {
   }
 }
 
-// Draw ranking rows with new-entry highlight for results state
+
 function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
   const numW = csz(w, 0.08, 16, 24);
   const nameSz = csz(w, 0.056, 11, 17);
@@ -198,7 +198,7 @@ function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
   }
 }
 
-// Draw the "NEW" name-entry row (entering state)
+
 function drawNewEntryRow(ctx, x, y, w, rowH, entryTime, pending, blink) {
   const mid = y + rowH * 0.5;
   const numW = csz(w, 0.08, 16, 24);
@@ -227,7 +227,7 @@ function drawNewEntryRow(ctx, x, y, w, rowH, entryTime, pending, blink) {
   ctx.restore();
 }
 
-// ── Track minimap helpers ──────────────────────────────────────────────────────
+
 function calculateTrackBounds(points) {
   let minX = Infinity;
   let maxX = -Infinity;
@@ -304,7 +304,7 @@ function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
   ctx.restore();
 }
 
-// ── START SCREEN ─────────────────────────────────────────────────────────────
+
 function drawStartScreen(ctx, w, h, gameState, track) {
   const isPortrait = h > w;
   const age = gameState ? gameState.screenAge || 0 : 0;
@@ -486,7 +486,7 @@ function drawStartScreen(ctx, w, h, gameState, track) {
   ctx.restore();
 }
 
-// ── GAME OVER SCREEN ─────────────────────────────────────────────────────────
+
 function drawGameOverScreen(ctx, w, h, gameState) {
   const isPortrait = h > w;
   const age = gameState ? gameState.screenAge || 0 : 0;
@@ -662,7 +662,7 @@ function drawGameOverScreen(ctx, w, h, gameState) {
   ctx.restore();
 }
 
-// ── TRACK PREVIEW SCREEN ─────────────────────────────────────────────────────
+
 function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
   const isPortrait = h > w;
   const age = gameState ? gameState.screenAge || 0 : 0;

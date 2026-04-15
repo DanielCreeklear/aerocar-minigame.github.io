@@ -22,12 +22,12 @@ class EnergyManager {
         gameState.isBoosting = false;
       }
     } else if (isBraking && speed > 0) {
-      // Recarga ativa por frenagem
+      
       const regenRate =
         (BRAKE_REGEN_BASE + speed * BRAKE_REGEN_SPEED_FACTOR) * dt;
       this.battery = Math.min(BATTERY_MAX, this.battery + regenRate);
     } else if (!isBoosting && !isBraking && speed < prevSpeed && speed > 0) {
-      // Recarga passiva por desaceleração natural (troca de modo, slip, saída de curva)
+      
       const decelDelta = prevSpeed - speed;
       const passiveRegen = decelDelta * PASSIVE_REGEN_FACTOR * dt;
       this.battery = Math.min(BATTERY_MAX, this.battery + passiveRegen);

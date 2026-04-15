@@ -40,7 +40,7 @@ class Game {
     this._screenChangeTime = Date.now();
     this.rankingService = createRankingService();
     this.rankings = [];
-    // Async load — Firebase is source of truth; falls back to localStorage
+    
     this.rankingService
       .load()
       .then((entries) => {
@@ -264,14 +264,14 @@ class Game {
     );
     this.gameState.upcomingIsModeXZone = lookaheadPoint.isModeXZone || false;
 
-    // Ramp steerInput toward steerTarget each frame instead of snapping.
-    // STEER_RATE controls how fast the wheel turns (dt-scaled).
+    
+    
     {
       const target = this.gameState.steerTarget || 0;
       const current = this.gameState.steerInput || 0;
       const dir = Math.sign(target - current);
       this.gameState.steerInput = clamp(current + dir * STEER_RATE * dt, -1, 1);
-      // Snap to zero when target is 0 and undershoot would cross zero.
+      
       if (
         target === 0 &&
         Math.sign(this.gameState.steerInput) !== Math.sign(current) &&

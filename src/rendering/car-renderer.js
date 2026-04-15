@@ -18,9 +18,9 @@ import {
 
 function computeCarDrawPosition(gameState, width, height) {
   const carY = height * CAR_Y_RATIO;
-  // lateralOffset is in physics-space units (±PHYSICS_TRACK_HALF = ±100).
-  // Multiply by LATERAL_RENDER_SCALE (2.3) so ±100 maps to ±230 px, aligning
-  // with the visual track edge drawn by track-renderer.
+  
+  
+  
   let drawX = width * HALF_RATIO + (gameState.lateralOffset || 0) * LATERAL_RENDER_SCALE;
   let drawY = carY;
 

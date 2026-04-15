@@ -25,7 +25,7 @@ function drawBatteryBar(ctx, gameState, width, height) {
   const x = marginX;
   const y = marginY;
 
-  // ── RANK block (top-left corner) ──────────────────────────────────────────
+  
   ctx.save();
   const rankLabelSz = responsiveSize(width, HUD_FONTS.rankLabel);
   const rankValSz = responsiveSize(width, HUD_FONTS.rankValue);

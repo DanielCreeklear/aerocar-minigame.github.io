@@ -21,7 +21,7 @@ export class LocalStorageRankingRepository {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
     } catch {
-      // localStorage not available (private browsing, storage full, etc.)
+      
     }
     return Promise.resolve();
   }

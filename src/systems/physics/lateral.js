@@ -34,27 +34,18 @@ function updateHeadingAndLateral(
   return { x };
 }
 
-/**
- * Applies surface-dependent penalties based on the pre-computed grid surface type.
- * Damping is applied to gameState.carHeading (the true state variable) rather than
- * the ephemeral derived vx, so the force persists across frames.
- * @param {object} gameState
- * @param {number} x        - candidate next lateralOffset
- * @param {number} vz       - current forward speed
- * @param {number} surfaceType - SURFACE_TYPES value from grid lookup
- * @param {number} dt
- * @returns {{ nextVz: number, isOffTrack: boolean }}
- */
+
+
 function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt) {
   const isOffTrack = surfaceType === SURFACE_TYPES.GRASS;
   const isOnCurb = surfaceType === SURFACE_TYPES.CURB;
   let nextVz = vz;
 
   if (isOffTrack) {
-    // Grass: speed drag, spin trigger, and dust timer.
-    // carHeading is NOT extra-damped here: that killed steering authority because
-    // lateralFriction already self-centers the heading each frame.
-    // The player needs full steer response to drive back onto the track.
+    
+    
+    
+    
     nextVz *= Math.pow(OFF_TRACK_VZ_DRAG, dt);
     nextVz = Math.min(nextVz, OFF_TRACK_MAX_SPEED);
     gameState.offTrackDustTimer = OFF_TRACK_DUST_FRAMES;
@@ -66,7 +57,7 @@ function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt) {
       gameState.isSpinning = false;
     }
   } else if (isOnCurb) {
-    // Curb/zebra zone: mild longitudinal drag, no spin, no dust.
+    
     nextVz *= Math.pow(CURB_VZ_DRAG, dt);
     gameState.isSpinning = false;
     gameState.offTrackDustTimer = Math.max(
@@ -74,7 +65,7 @@ function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt) {
       (gameState.offTrackDustTimer || 0) - dt,
     );
   } else {
-    // On track: all clear.
+    
     gameState.isSpinning = false;
     gameState.offTrackDustTimer = Math.max(
       0,
@@ -85,15 +76,8 @@ function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt) {
   return { nextVz, isOffTrack };
 }
 
-/**
- * Main lateral integration step.
- * @param {object} gameState
- * @param {number} curvature    - effective track curvature (deadzone already applied)
- * @param {number} vz           - forward speed (pre-computed)
- * @param {number} dt
- * @param {object} strategy     - aero strategy (lateralFriction, etc.)
- * @param {number} surfaceType  - SURFACE_TYPES value from track.getSurfaceType()
- */
+
+
 function integrateLateralState(
   gameState,
   curvature,
@@ -117,8 +101,8 @@ function integrateLateralState(
     dt,
   );
 
-  // Hard positional wall: prevents infinite lateral drift on grass.
-  // Only kill the outward heading component so inward steering is preserved.
+  
+  
   const wall = CURB_HALF + OFF_TRACK_MAX_OFFSET_MARGIN;
   let x = rawX;
   if (x > wall) {
@@ -129,7 +113,7 @@ function integrateLateralState(
     if (gameState.carHeading < 0) gameState.carHeading = 0;
   }
 
-  // Recompute vx from the (possibly damped) heading so lateralVelocity stays consistent.
+  
   const vx = vz * Math.sin(gameState.carHeading);
 
   gameState.currentSlip = clamp(Math.abs(vx) / MAX_LATERAL_VX, 0, 1);
