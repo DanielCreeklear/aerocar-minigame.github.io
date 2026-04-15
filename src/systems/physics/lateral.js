@@ -18,6 +18,8 @@ import {
   SPIN_EXIT_SPEED,
   SURFACE_TYPES,
   CENTRIFUGAL_FACTOR,
+  CENTRIFUGAL_SLIDE_CURVE_THRESHOLD,
+  CENTRIFUGAL_SLIDE_DURATION,
 } from "../../constants/index.js";
 
 function updateHeadingAndLateral(
@@ -42,7 +44,7 @@ function updateHeadingAndLateral(
   return { x, vx: vxSteer - vxCentrifugal };
 }
 
-function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt) {
+function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt, curvature) {
   const isOffTrack = surfaceType === SURFACE_TYPES.GRASS;
   const isOnCurb = surfaceType === SURFACE_TYPES.CURB;
   let nextVz = vz;
@@ -58,6 +60,10 @@ function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt) {
     if (gameState.isSpinning && vz < SPIN_EXIT_SPEED) {
       gameState.isSpinning = false;
     }
+
+    if (Math.abs(curvature) >= CENTRIFUGAL_SLIDE_CURVE_THRESHOLD) {
+      gameState.centrifugalSlideTimer = CENTRIFUGAL_SLIDE_DURATION;
+    }
   } else if (isOnCurb) {
     nextVz *= Math.pow(CURB_VZ_DRAG, dt);
     gameState.isSpinning = false;
@@ -70,6 +76,13 @@ function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt) {
     gameState.offTrackDustTimer = Math.max(
       0,
       (gameState.offTrackDustTimer || 0) - dt,
+    );
+  }
+
+  if (!isOffTrack) {
+    gameState.centrifugalSlideTimer = Math.max(
+      0,
+      (gameState.centrifugalSlideTimer || 0) - dt,
     );
   }
 
@@ -98,6 +111,7 @@ function integrateLateralState(
     vz,
     surfaceType,
     dt,
+    curvature,
   );
 
   const wall = CURB_HALF + OFF_TRACK_MAX_OFFSET_MARGIN;

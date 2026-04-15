@@ -162,6 +162,10 @@ export const HUD_COLORS = {
   curveNormal: "#F2EDE4",
   curveMild: "#C87D12",
   curveHard: "#CC001E",
+
+  centrifugalSlideBorder: "rgba(255, 160, 0, 0.85)",
+  centrifugalSlideGlow: "rgba(255, 140, 0, 0.40)",
+  centrifugalSlideText: "#FFB300",
 };
 
 export const HUD_FONTS = {

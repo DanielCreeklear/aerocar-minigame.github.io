@@ -5,6 +5,7 @@ import { drawLapPanel } from "./hud/lap-panel.js";
 import { drawGripWarning } from "./hud/grip-warning.js";
 import { drawCurveIndicator } from "./hud/curve-indicator.js";
 import { createWindState, drawWindStreaks } from "./hud/wind-streaks.js";
+import { drawCentrifugalSlideEffect } from "./hud/centrifugal-slide.js";
 
 const SPEEDOMETER_SCALE_TO_KMH = 17;
 const SPEEDOMETER_MAX_KMH = 399;
@@ -133,6 +134,7 @@ class HudRenderer {
     }
 
     drawWindStreaks(ctx, gameState, width, height, this._windState);
+    drawCentrifugalSlideEffect(ctx, gameState, width, height);
     this._warningTick = drawGripWarning(
       ctx,
       gameState,

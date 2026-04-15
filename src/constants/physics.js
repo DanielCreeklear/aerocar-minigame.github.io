@@ -83,3 +83,6 @@ export const OFF_TRACK_RESCUE_RETURN_SPEED = 40; // units/s lateral slide back t
 export const CURB_VZ_DRAG = 0.94;
 
 export const CAR_HEADING_VISUAL_SCALE = 0.22;
+
+export const CENTRIFUGAL_SLIDE_CURVE_THRESHOLD = 1.5;
+export const CENTRIFUGAL_SLIDE_DURATION = 2.5;
