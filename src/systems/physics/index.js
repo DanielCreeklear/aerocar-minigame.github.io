@@ -53,13 +53,19 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
   const strategy = getAeroStrategy(gameState.aeroMode);
   const vz = computeForwardVelocity(gameState, dt, strategy);
 
-  // 3. Lateral dynamics + off-track penalties
+  // 3. Surface type via O(1) grid lookup.
+  // lateralOffset is a pure world-X delta from the centerline (same units as pt.x).
+  const worldX = currentTrackInfo.x + (gameState.lateralOffset || 0);
+  const surfaceType = track.getSurfaceType(worldX, lapZ);
+
+  // 4. Lateral dynamics + off-track penalties
   const { nextVz, forces } = integrateLateralState(
     gameState,
     effectiveCurvature,
     vz,
     dt,
     strategy,
+    surfaceType,
   );
 
   gameState.carVisualHeading = gameState.carHeading || 0;
