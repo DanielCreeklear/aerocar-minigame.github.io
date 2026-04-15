@@ -43,7 +43,7 @@ function drawSpeedometer(ctx, displayedSpeedKmh, width, height) {
   // ── Arc tachometer ────────────────────────────────────────────────────────
   // Semi-circle: from Math.PI (left) clockwise through top to Math.PI*2 (right)
   // Needle angle = Math.PI + ratio * Math.PI
-  const r = Math.min(panelW * 0.40, panelH * 0.58);
+  const r = Math.min(panelW * 0.4, panelH * 0.58);
   const cx = x + panelW / 2;
   const cy = y + panelH - 6;
 
@@ -57,32 +57,32 @@ function drawSpeedometer(ctx, displayedSpeedKmh, width, height) {
   // Danger zone arc — top-right 20% (speed > 80%)
   ctx.beginPath();
   ctx.arc(cx, cy, r, Math.PI * 1.8, Math.PI * 2, false);
-  ctx.strokeStyle = "rgba(230, 0, 0, 0.35)";
+  ctx.strokeStyle = "rgba(204, 0, 30, 0.35)";
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  // Progress arc (yellow fill)
+  // Progress arc (gold fill)
   const needleAngle = Math.PI + ratio * Math.PI;
   ctx.beginPath();
   ctx.arc(cx, cy, r, Math.PI, needleAngle, false);
-  ctx.strokeStyle = "#FFD700";
+  ctx.strokeStyle = HUD_COLORS.speedValue;
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  // Red needle
+  // Crimson needle
   const nx = cx + Math.cos(needleAngle) * r;
   const ny = cy + Math.sin(needleAngle) * r;
   ctx.beginPath();
   ctx.moveTo(cx, cy);
   ctx.lineTo(nx, ny);
-  ctx.strokeStyle = "#E60000";
+  ctx.strokeStyle = HUD_COLORS.speedPanelBorder;
   ctx.lineWidth = 2;
   ctx.stroke();
 
   // Pivot dot
   ctx.beginPath();
   ctx.arc(cx, cy, 3, 0, Math.PI * 2);
-  ctx.fillStyle = "#E60000";
+  ctx.fillStyle = HUD_COLORS.speedPanelBorder;
   ctx.fill();
 
   // ── Digital speed readout ─────────────────────────────────────────────────
