@@ -6,6 +6,7 @@ function createCarStateFields() {
     isBoosting: false,
     isBraking: false,
     steerInput: 0,
+    steerTarget: 0,
     speed: 0,
     currentZ: 0,
     trackType: TRACK_TYPES.STRAIGHT,
