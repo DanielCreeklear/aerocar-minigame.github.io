@@ -17,6 +17,32 @@ import {
   getViewportProfile,
 } from "../constants/index.js";
 
+const CAMERA_SHAKE_SPEED_KMH_SCALE = 17;
+const CAMERA_SHAKE_SPEED_MIN = 220;
+const CAMERA_SHAKE_SPEED_MAX = 340;
+const CAMERA_SHAKE_MAX_PX = 5.5;
+
+function getCameraShakeOffset(gameState) {
+  const rawSpeed = gameState?.speed || 0;
+  const speedKmh = rawSpeed * CAMERA_SHAKE_SPEED_KMH_SCALE;
+  if (speedKmh <= CAMERA_SHAKE_SPEED_MIN) return { x: 0, y: 0 };
+
+  const t = Math.min(
+    1,
+    (speedKmh - CAMERA_SHAKE_SPEED_MIN) /
+      (CAMERA_SHAKE_SPEED_MAX - CAMERA_SHAKE_SPEED_MIN),
+  );
+  const amp = CAMERA_SHAKE_MAX_PX * t;
+  const jitter = amp * 0.35;
+  const time = performance.now() * 0.028;
+  return {
+    x: Math.sin(time * 1.7) * amp + (Math.random() * 2 - 1) * jitter,
+    y:
+      Math.cos(time * 2.3 + 0.9) * amp * 0.72 +
+      (Math.random() * 2 - 1) * jitter * 0.8,
+  };
+}
+
 function buildRenderMetrics(width, height) {
   const profile = getViewportProfile(width, height);
 
@@ -74,9 +100,15 @@ class Renderer {
     }
 
     const metrics = buildRenderMetrics(width, height);
+    const shake = getCameraShakeOffset(gameState);
     ctx.imageSmoothingEnabled = false;
+
+    ctx.save();
+    ctx.translate(shake.x, shake.y);
     drawTrack(ctx, gameState, track, metrics);
     drawCar(ctx, gameState, track, metrics);
+    ctx.restore();
+
     this.hud.draw(ctx, gameState, width, height);
     if (telemetry) telemetry.drawHUD(ctx, width, height, metrics.isPortrait);
   }
