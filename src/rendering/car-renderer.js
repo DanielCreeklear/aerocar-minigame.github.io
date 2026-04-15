@@ -10,6 +10,7 @@ import {
   CAR_WIDTH,
   CAR_Y_RATIO,
   HALF_RATIO,
+  LATERAL_RENDER_SCALE,
   MIN_CAR_ALPHA,
   RENDER_COLORS,
   CAR_HEADING_VISUAL_SCALE,
@@ -17,7 +18,10 @@ import {
 
 function computeCarDrawPosition(gameState, width, height) {
   const carY = height * CAR_Y_RATIO;
-  let drawX = width * HALF_RATIO + (gameState.lateralOffset || 0);
+  // lateralOffset is in physics-space units (±PHYSICS_TRACK_HALF = ±100).
+  // Multiply by LATERAL_RENDER_SCALE (2.3) so ±100 maps to ±230 px, aligning
+  // with the visual track edge drawn by track-renderer.
+  let drawX = width * HALF_RATIO + (gameState.lateralOffset || 0) * LATERAL_RENDER_SCALE;
   let drawY = carY;
 
   if (!gameState.isGameOver && gameState.isOffTrack) {
@@ -104,7 +108,6 @@ function drawCarBody(ctx, gameState, metrics) {
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Panel separation line (technical detail)
   const panelLineY = bodyY + bodyHeight * 0.55;
   ctx.beginPath();
   ctx.moveTo(bodyX + 4, panelLineY);

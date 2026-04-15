@@ -1,5 +1,9 @@
 export const TRACK_WIDTH = 460;
 export const BORDER_WIDTH = 24;
+
+// Converts physics-space lateralOffset (±PHYSICS_TRACK_HALF = ±100 units) to
+// screen pixels so the physics boundary aligns with the visual track edge (±230 px).
+export const LATERAL_RENDER_SCALE = 2.3;
 export const CAR_WIDTH = 50;
 export const CAR_HEIGHT = 100;
 export const ROAD_SAMPLE_STEP = 3;
