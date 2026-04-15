@@ -37,9 +37,9 @@ function updateHeadingAndLateral(
 
   const vxSteer = vz * Math.sin(theta);
   const vxCentrifugal = curvature * vz * CENTRIFUGAL_FACTOR;
-  const x = (gameState.lateralOffset || 0) + (vxSteer + vxCentrifugal) * dt;
+  const x = (gameState.lateralOffset || 0) + (vxSteer - vxCentrifugal) * dt;
 
-  return { x, vx: vxSteer + vxCentrifugal };
+  return { x, vx: vxSteer - vxCentrifugal };
 }
 
 function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt) {

@@ -34,7 +34,7 @@ export const MAX_STEER_HEADING = 0.22;
 
 export const HEADING_ALIGNMENT_RATE = 0.25;
 
-export const CENTRIFUGAL_FACTOR = 0.004;
+export const CENTRIFUGAL_FACTOR = 0.005;
 
 export const VISUAL_HEADING_LERP = 0.25;
 
