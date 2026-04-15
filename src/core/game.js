@@ -25,6 +25,11 @@ import {
 import { clamp } from "../utils/math.js";
 import { createRankingService } from "../ranking/index.js";
 
+// How long (ms) to poll after an orientationchange before giving up waiting
+// for the browser to update its dimensions.  iOS Safari can be slow here.
+const ORIENTATION_POLL_INTERVAL = 50;
+const ORIENTATION_POLL_MAX_MS = 500;
+
 class Game {
   constructor(canvas) {
     this.canvas = canvas;
@@ -58,6 +63,12 @@ class Game {
     this._nameInput.autocomplete = "off";
     this._nameInput.spellcheck = false;
     this._nameInput.enterKeyHint = "done";
+    this._nameInput.inputMode = "text";
+    this._nameInput.setAttribute("autocapitalize", "characters");
+    // Start as readonly so that accidental focus (e.g. browser autofill or
+    // touch mis-tap) does not open the virtual keyboard until the ranking
+    // name-entry phase is active.  readOnly is removed in _showNameInput().
+    this._nameInput.readOnly = true;
     Object.assign(this._nameInput.style, {
       position: "fixed",
       background: "transparent",
@@ -136,14 +147,44 @@ class Game {
     this._handleViewportResize = this._handleViewportResize.bind(this);
     window.addEventListener("resize", this._handleViewportResize);
     window.addEventListener("orientationchange", () => {
-      setTimeout(this._handleViewportResize, 100);
+      // Poll until the browser has settled on its new dimensions (iOS Safari
+      // can take up to ~300 ms after orientationchange fires).
+      const deadline = Date.now() + ORIENTATION_POLL_MAX_MS;
+      const poll = () => {
+        this._handleViewportResize();
+        if (Date.now() < deadline) {
+          setTimeout(poll, ORIENTATION_POLL_INTERVAL);
+        }
+      };
+      setTimeout(poll, ORIENTATION_POLL_INTERVAL);
     });
+
+    // visualViewport resize fires when the on-screen keyboard appears or
+    // disappears on Android Chrome, keeping the canvas in sync without
+    // erroneously resizing while the keyboard is open.
+    if (typeof window !== "undefined" && window.visualViewport) {
+      window.visualViewport.addEventListener(
+        "resize",
+        this._handleViewportResize,
+      );
+    }
+
     this._handleViewportResize();
 
     this.reset(SCREENS.START);
   }
 
   _handleViewportResize() {
+    // When the virtual keyboard is visible on Android Chrome, visualViewport
+    // height shrinks significantly.  Avoid resizing the canvas in that state
+    // so the game layout doesn't get squashed while the player types their
+    // name.
+    const vv = typeof window !== "undefined" && window.visualViewport;
+    if (vv && this._nameInput && this._nameInput.style.display !== "none") {
+      const keyboardVisible = window.innerHeight - vv.height > 100;
+      if (keyboardVisible) return;
+    }
+
     resizeCanvas(this.canvas);
     if (this._nameInput && this._nameInput.style.display !== "none") {
       this._showNameInput();
@@ -352,6 +393,8 @@ class Game {
       display: "block",
     });
     this._nameInput.value = "";
+    // Remove readonly so the virtual keyboard opens on focus.
+    this._nameInput.readOnly = false;
     // setTimeout allows the display change to apply first.
     // On desktop this is enough; on mobile, focus() called here
     // (outside a gesture) won't open the keyboard — the user must
@@ -363,6 +406,9 @@ class Game {
     if (this._nameInput) {
       this._nameInput.style.display = "none";
       this._nameInput.blur();
+      // Re-add readonly so accidental focus (e.g. browser autofill) never
+      // triggers the virtual keyboard when the input is not in use.
+      this._nameInput.readOnly = true;
     }
   }
 

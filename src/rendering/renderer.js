@@ -16,6 +16,7 @@ import {
   TRACK_WIDTH,
   getViewportProfile,
 } from "../constants/index.js";
+import { isMobile } from "../utils/platform.js";
 
 const CAMERA_SHAKE_SPEED_KMH_SCALE = 17;
 const CAMERA_SHAKE_SPEED_MIN = 300;
@@ -68,7 +69,11 @@ function buildRenderMetrics(width, height) {
     borderWidth: Math.max(12, Math.min(BORDER_WIDTH, width * 0.045)),
     carHeight: Math.max(78, Math.min(CAR_HEIGHT, height * 0.14)),
     carWidth: Math.max(38, Math.min(CAR_WIDTH, width * 0.12)),
-    roadSampleStep: profile.isCompactWidth ? 4 : ROAD_SAMPLE_STEP,
+    // On compact or generic mobile viewports use a coarser sample step to
+    // reduce the number of draw calls per frame and keep the frame rate
+    // stable on low-end Android devices.
+    roadSampleStep:
+      profile.isCompactWidth || isMobile ? 4 : ROAD_SAMPLE_STEP,
     trackWidth: Math.min(TRACK_WIDTH, width * 0.86),
   };
 }
