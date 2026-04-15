@@ -144,7 +144,10 @@ class InputController {
           );
           if (this.isInModeButton(x, y)) {
             this.handlers.onModeToggle();
-          } else if (!this.isInBoostZone(x) && !this.isInBrakeZone(x)) {
+          } else if (
+            !this.handlers.isRaceActive?.() ||
+            (!this.isInBoostZone(x) && !this.isInBrakeZone(x))
+          ) {
             this.handlers.onScreenTap(x, y);
           }
         }
@@ -189,6 +192,8 @@ class InputController {
       const { x, y } = this.getCanvasCoords(e.clientX, e.clientY);
       if (this.isInModeButton(x, y)) {
         this.handlers.onModeToggle();
+      } else if (!this.handlers.isRaceActive?.()) {
+        this.handlers.onScreenTap(x, y);
       } else if (this.isInBoostZone(x)) {
         this.handlers.onBoostChange(true);
       } else if (this.isInBrakeZone(x)) {

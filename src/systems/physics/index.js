@@ -3,13 +3,15 @@ import { getAeroStrategy } from "../aero.js";
 import { computeForwardVelocity } from "./longitudinal.js";
 import { integrateLateralState } from "./lateral.js";
 import { buildPhysicsTelemetry } from "./telemetry.js";
-import { SPIN_ANGULAR_VELOCITY } from "../../constants/index.js";
+import {
+  SPIN_ANGULAR_VELOCITY,
+  VISUAL_HEADING_LERP,
+} from "../../constants/index.js";
 
 function resolveTrackState(gameState, currentTrackInfo) {
   gameState.trackType = currentTrackInfo.type;
   gameState.currentSlip = 0;
-  // Use rawCurve (pure segment curvature) to avoid phantom centrifugal forces
-  // introduced by the loop-closure polynomial in normalizeTrackData.
+
   return {
     curvature: currentTrackInfo.rawCurve ?? currentTrackInfo.curve ?? 0,
   };
@@ -38,7 +40,6 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     sampledTrackPoint || track.getTrackPoint(gameState.currentZ);
   const { lapZ } = getLapData(gameState.currentZ, lapLength);
 
-  // 1. Estado da pista
   const { curvature } = resolveTrackState(gameState, currentTrackInfo);
   gameState.currentTrackPoint = currentTrackInfo;
   gameState.currentCurvature = curvature;
@@ -49,16 +50,12 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
   const effectiveCurvature =
     Math.abs(curvature) < CURVATURE_DEADZONE ? 0 : curvature;
 
-  // 2. Velocidade longitudinal
   const strategy = getAeroStrategy(gameState.aeroMode);
   const vz = computeForwardVelocity(gameState, dt, strategy);
 
-  // 3. Surface type via O(1) grid lookup.
-  // lateralOffset is a pure world-X delta from the centerline (same units as pt.x).
   const worldX = currentTrackInfo.x + (gameState.lateralOffset || 0);
   const surfaceType = track.getSurfaceType(worldX, lapZ);
 
-  // 4. Lateral dynamics + off-track penalties
   const { nextVz, forces } = integrateLateralState(
     gameState,
     effectiveCurvature,
@@ -68,19 +65,19 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     surfaceType,
   );
 
-  gameState.carVisualHeading = gameState.carHeading || 0;
+  gameState.carVisualHeading =
+    (gameState.carVisualHeading || 0) +
+    ((gameState.carHeading || 0) - (gameState.carVisualHeading || 0)) *
+      Math.min(1, VISUAL_HEADING_LERP * dt);
 
-  // 5. Telemetria
   const physicsTelemetry = buildPhysicsTelemetry({
     centrifugalForce: forces.centrifugalForce,
     effectiveGrip: forces.effectiveGrip,
   });
 
-  // 6. Confirma velocidade e avança
   gameState.speed = nextVz;
   gameState.previousCurvature = curvature;
 
-  // 8. Spin rotation: gira enquanto isSpinning, amortecer quando para.
   if (gameState.isSpinning) {
     gameState.spinRotation =
       (gameState.spinRotation || 0) + SPIN_ANGULAR_VELOCITY * dt;

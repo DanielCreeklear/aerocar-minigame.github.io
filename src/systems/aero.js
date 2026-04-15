@@ -10,7 +10,7 @@ import {
   VZ_MAX_MODE_Z,
 } from "../constants/index.js";
 
-// Modo X: baixo arrasto — velocidade de curva segura baixa, não usar em curvas.
+
 const LowDragMode = {
   name: AERO_MODES.X,
   accel: VZ_ACCEL_MODE_X,
@@ -19,7 +19,7 @@ const LowDragMode = {
   lateralFriction: LATERAL_FRICTION_GRIP_X,
 };
 
-// Modo Z: alto downforce — velocidade de curva segura alta, modo de corrida nas curvas.
+
 const HighDownforceMode = {
   name: AERO_MODES.Z,
   accel: VZ_ACCEL_MODE_Z,

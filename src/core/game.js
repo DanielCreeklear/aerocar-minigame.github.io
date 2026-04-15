@@ -17,7 +17,10 @@ import {
   TARGET_LAPS,
   TOTAL_SEGMENTS,
   TRACK_SEED,
+  STEER_RATE,
 } from "../constants/index.js";
+import { clamp } from "../utils/math.js";
+import { createRankingService } from "../ranking/index.js";
 
 class Game {
   constructor(canvas) {
@@ -35,7 +38,16 @@ class Game {
     this.track.init(this.totalSegments, this.trackSeed);
 
     this._screenChangeTime = Date.now();
-    this.rankings = this._loadRankings();
+    this.rankingService = createRankingService();
+    this.rankings = [];
+    
+    this.rankingService
+      .load()
+      .then((entries) => {
+        this.rankings = entries;
+        if (this.gameState) this.gameState.rankings = entries;
+      })
+      .catch(() => {});
 
     this._nameInput = document.createElement("input");
     this._nameInput.type = "text";
@@ -68,9 +80,16 @@ class Game {
           .replace(/[^A-Z0-9]/gi, "")
           .toUpperCase();
         const name = raw.substring(0, 8) || "ACE";
-        this._saveRanking(name, this.gameState.finalTime);
         this._hideNameInput();
         this.gameState.rankingPhase = "results";
+        this.rankingService
+          .save(name, this.gameState.finalTime)
+          .then(({ rankings, newEntryIndex }) => {
+            this.rankings = rankings;
+            this.gameState.rankings = rankings;
+            this.gameState.newEntryIndex = newEntryIndex;
+          })
+          .catch(() => {});
       }
     });
     this._nameInput.addEventListener("input", () => {
@@ -103,10 +122,11 @@ class Game {
         this.handleScreenTap(x, y);
       },
       onSteerChange: (v) => {
-        this.gameState.steerInput = v;
+        this.gameState.steerTarget = v;
       },
       onTelemetryExport: () => this.telemetry.exportJSON(),
       onTelemetryHudToggle: () => this.telemetry.toggleHUD(),
+      isRaceActive: () => this.gameState.currentScreen === SCREENS.RACE,
     });
 
     this._handleViewportResize = this._handleViewportResize.bind(this);
@@ -244,6 +264,23 @@ class Game {
     );
     this.gameState.upcomingIsModeXZone = lookaheadPoint.isModeXZone || false;
 
+    
+    
+    {
+      const target = this.gameState.steerTarget || 0;
+      const current = this.gameState.steerInput || 0;
+      const dir = Math.sign(target - current);
+      this.gameState.steerInput = clamp(current + dir * STEER_RATE * dt, -1, 1);
+      
+      if (
+        target === 0 &&
+        Math.sign(this.gameState.steerInput) !== Math.sign(current) &&
+        current !== 0
+      ) {
+        this.gameState.steerInput = 0;
+      }
+    }
+
     const { lapCompleted, physicsTelemetry } = updateCarPhysics(
       this.gameState,
       this.track,
@@ -270,41 +307,6 @@ class Game {
         this.gameState.rankingPhase = "entering";
         this._showNameInput();
       }
-    }
-  }
-
-  _loadRankings() {
-    try {
-      const raw = localStorage.getItem("apexz_rankings");
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed
-        .filter(
-          (e) => e && typeof e.time === "number" && typeof e.name === "string",
-        )
-        .slice(0, 10);
-    } catch {
-      return [];
-    }
-  }
-
-  _saveRanking(name, time) {
-    this.rankings.push({
-      name: name.substring(0, 8),
-      time,
-      date: new Date().toISOString().slice(0, 10),
-    });
-    this.rankings.sort((a, b) => a.time - b.time);
-    this.rankings = this.rankings.slice(0, 10);
-    this.gameState.newEntryIndex = this.rankings.findIndex(
-      (r) => r.time === time && r.name === name,
-    );
-    this.gameState.rankings = this.rankings;
-    try {
-      localStorage.setItem("apexz_rankings", JSON.stringify(this.rankings));
-    } catch {
-      // localStorage not available
     }
   }
 

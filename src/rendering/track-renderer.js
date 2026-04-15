@@ -2,13 +2,13 @@ import {
   BORDER_WIDTH,
   CURVE_STRIPE_LENGTH,
   HALF_RATIO,
+  LATERAL_RENDER_SCALE,
   RENDER_COLORS,
   ROAD_SAMPLE_STEP,
   TRACK_TYPES,
   TRACK_WIDTH,
 } from "../constants/index.js";
 
-// Advertising hoarding colours cycling around the lap
 const AD_COLORS = ["#aa0018", "#1020a0", "#b07400", "#005828", "#5a606c"];
 
 function drawTrack(ctx, gameState, track, metrics) {
@@ -19,7 +19,6 @@ function drawTrack(ctx, gameState, track, metrics) {
     gameState.currentTrackPoint || track.getTrackPoint(gameState.currentZ);
   const cameraX = carTrackInfo.x;
 
-  // Base grass fill
   ctx.fillStyle = RENDER_COLORS.grass;
   ctx.fillRect(0, 0, width, height);
 
@@ -54,7 +53,6 @@ function drawTrack(ctx, gameState, track, metrics) {
         );
     }
 
-    // Detail strip — warning signs on curves, ads on straights
     const isCurveDetail = info.type === TRACK_TYPES.CURVE;
     if (isCurveDetail) {
       const warnChecker = Math.floor(sliceZ / 80) % 2 === 0;
@@ -90,6 +88,16 @@ function drawTrack(ctx, gameState, track, metrics) {
       : RENDER_COLORS.asphaltStraight;
     ctx.fillStyle = asphaltColor;
     ctx.fillRect(left, y, metrics.trackWidth, step);
+
+    if (isCurve) {
+      const rlOffset = track.getRacingLineTarget(sliceZ);
+      const rlX = Math.round(centerX + rlOffset * LATERAL_RENDER_SCALE);
+
+      if (Math.floor(sliceZ / 60) % 3 !== 0) {
+        ctx.fillStyle = "rgba(255,255,255,0.15)";
+        ctx.fillRect(rlX - 2, y, 4, step);
+      }
+    }
 
     if (info.isModeXZone) {
       ctx.fillStyle = RENDER_COLORS.asphaltModeX;

@@ -25,27 +25,27 @@ function drawBatteryBar(ctx, gameState, width, height) {
   const x = marginX;
   const y = marginY;
 
-  // ── RANK block (top-left corner) ──────────────────────────────────────────
+  
   ctx.save();
   const rankLabelSz = responsiveSize(width, HUD_FONTS.rankLabel);
   const rankValSz = responsiveSize(width, HUD_FONTS.rankValue);
   const rankBlockH = rankLabelSz + rankValSz + 6;
   const rankY = Math.max(4, y - rankBlockH - 6);
 
-  ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+  ctx.fillStyle = HUD_COLORS.lapPanel;
   ctx.fillRect(x - 2, rankY - 2, barW + 4, rankBlockH + 4);
-  ctx.strokeStyle = "rgba(255, 215, 0, 0.70)";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = HUD_COLORS.lapPanelBorder;
+  ctx.lineWidth = 1.5;
   ctx.strokeRect(x - 2, rankY - 2, barW + 4, rankBlockH + 4);
 
   ctx.font = `${HUD_FONTS.bold} ${rankLabelSz}px ${HUD_FONTS.family}`;
-  ctx.fillStyle = "#FFFFFF";
+  ctx.fillStyle = HUD_COLORS.lapLabel;
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
   ctx.fillText("RANK", x + 4, rankY + 2);
 
   ctx.font = `${HUD_FONTS.bold} ${rankValSz}px ${HUD_FONTS.family}`;
-  ctx.fillStyle = "#FFD700";
+  ctx.fillStyle = HUD_COLORS.lapTime;
   ctx.textAlign = "right";
   ctx.fillText("P 1", x + barW - 4, rankY + 2);
   ctx.restore();
@@ -85,7 +85,7 @@ function drawBatteryBar(ctx, gameState, width, height) {
       ctx.fillStyle = fillColor;
     } else {
       ctx.globalAlpha = 1;
-      ctx.fillStyle = "rgba(20, 30, 40, 0.8)";
+      ctx.fillStyle = "rgba(7, 5, 26, 0.9)";
     }
     ctx.fillRect(sx, y, segW, barH);
 

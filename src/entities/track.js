@@ -62,8 +62,8 @@ class Track {
     this.lapLength = 0;
     this.seed = TRACK_SEED;
     this.randomState = TRACK_SEED;
-    // 2D world-space grid for O(1) surface-type lookup
-    this.gridData = null; // Uint8Array — SURFACE_TYPES values
+    
+    this.gridData = null; 
     this.gridCols = 0;
     this.gridRows = 0;
     this.gridMinX = 0;
@@ -266,11 +266,9 @@ class Track {
     return t;
   }
 
-  /**
-   * Returns a rich description of the car's position on the track.
-   * @param {number} z  - any z value (auto-wrapped to lap)
-   * @returns {{ lapProgress, segment, segmentProgress, phase, distanceToSegmentEnd, classification, direction }}
-   */
+  
+
+
   getTrackPosition(z) {
     const lap = this.lapLength || this.totalDistance;
     if (!lap || this.segments.length === 0) return null;
@@ -303,13 +301,9 @@ class Track {
     };
   }
 
-  /**
-   * Returns all track segments that start within `lookAheadDistance` of z,
-   * sorted by distance ahead. Handles lap wrap-around.
-   * @param {number} z
-   * @param {number} lookAheadDistance
-   * @returns {Array<{ segment, distanceAhead, classification, direction, intensity, apexDistanceAhead }>}
-   */
+  
+
+
   getUpcomingFeatures(z, lookAheadDistance) {
     const lap = this.lapLength || this.totalDistance;
     if (!lap || this.segments.length === 0) return [];
@@ -450,7 +444,7 @@ class Track {
       ) {
         const zoneStart = seg.startZ + seg.length * 0.2;
         const zoneEnd = seg.endZ - seg.length * 0.2;
-        // Direct index arithmetic: trackData[i].z === i * Z_RESOLUTION
+        
         const startIdx = Math.ceil(zoneStart / Z_RESOLUTION);
         const endIdx = Math.min(Math.floor(zoneEnd / Z_RESOLUTION), len - 1);
         for (let i = startIdx; i <= endIdx; i++) {
@@ -460,19 +454,17 @@ class Track {
     }
   }
 
-  /**
-   * Rasterises the track into a 2D Uint8Array grid in world (X, Z) space.
-   * Each cell stores a SURFACE_TYPES value: GRASS (0), CURB (1), or TRACK (2).
-   * Called once per track.init(); lookup via getSurfaceType() is O(1).
-   */
+  
+
+
   _buildGrid() {
     const pts = this.trackData;
     if (pts.length === 0) return;
 
     const cs = TRACK_GRID_CELL_SIZE;
-    const margin = CURB_HALF + cs; // one extra cell on each side
+    const margin = CURB_HALF + cs; 
 
-    // Determine world-X extent of the rasterised area
+    
     let minX = Infinity;
     let maxX = -Infinity;
     for (const pt of pts) {
@@ -484,7 +476,7 @@ class Track {
 
     this.gridCols = Math.ceil((gridMaxX - this.gridMinX) / cs) + 1;
     this.gridRows = Math.ceil(this.lapLength / cs) + 1;
-    this.gridData = new Uint8Array(this.gridRows * this.gridCols); // all GRASS
+    this.gridData = new Uint8Array(this.gridRows * this.gridCols); 
 
     const cols = this.gridCols;
     const gMinX = this.gridMinX;
@@ -493,10 +485,10 @@ class Track {
       const row = Math.floor(pt.z / cs);
       if (row >= this.gridRows) continue;
 
-      // lateralOffset is a pure world-X delta, so boundaries are simple ± offsets.
-      // pt.yaw is a cumulative slope (dx/dZ), NOT an angle in radians — no cos() needed.
+      
+      
 
-      // Pass 1: paint CURB band (wider, outer)
+      
       const curbColL = Math.max(0, Math.floor((pt.x - CURB_HALF - gMinX) / cs));
       const curbColR = Math.min(
         cols - 1,
@@ -509,7 +501,7 @@ class Track {
         }
       }
 
-      // Pass 2: paint TRACK band (inner, overwrites CURB)
+      
       const trackColL = Math.max(
         0,
         Math.floor((pt.x - PHYSICS_TRACK_HALF - gMinX) / cs),
@@ -524,13 +516,9 @@ class Track {
     }
   }
 
-  /**
-   * Returns the surface type (SURFACE_TYPES.GRASS/CURB/TRACK) for a
-   * world-space position. O(1) lookup via the pre-built grid.
-   * @param {number} worldX  - car world X position
-   * @param {number} lapZ    - car lap-Z position (0 → lapLength)
-   * @returns {number} SURFACE_TYPES value
-   */
+  
+
+
   getSurfaceType(worldX, lapZ) {
     if (!this.gridData) return SURFACE_TYPES.GRASS;
     const cs = TRACK_GRID_CELL_SIZE;
@@ -543,7 +531,7 @@ class Track {
   }
 
   _buildRacingLine() {
-    this.racingLine = []; // kept for backward compat; no longer populated
+    this.racingLine = []; 
     const count = this.trackData.length;
     this.racingLineData = new Float32Array(count);
 
@@ -570,44 +558,36 @@ class Track {
     }
   }
 
-  /**
-   * Computes the ideal lateral offset for a given progress t ∈ [0,1] through
-   * a curve segment, following a wide-entry → apex-cut → wide-exit profile.
-   * @param {number} t          - normalised segment progress [0,1]
-   * @param {number} sign       - +1 = right-hander, -1 = left-hander
-   * @param {number} offset     - maximum lateral offset magnitude
-   * @param {number} edgePortion - fraction of segment used for entry/exit ramps
-   */
+  
+
+
   _racingLineCurveProfile(t, sign, offset, edgePortion) {
-    const te = edgePortion; // end of entry ramp
-    const tx = 1 - edgePortion; // start of exit ramp
-    const ta = 0.5; // apex at midpoint
+    const te = edgePortion; 
+    const tx = 1 - edgePortion; 
+    const ta = 0.5; 
 
     if (t <= te) {
-      // Ramp from centre toward outside (wide entry approach)
+      
       const tn = te > 0 ? t / te : 1;
       return -sign * offset * smoothstep01(tn);
     } else if (t <= ta) {
-      // Sweep from outside to inside (cut apex)
+      
       const tn = ta - te > 0 ? (t - te) / (ta - te) : 1;
       return -sign * offset + 2 * sign * offset * smoothstep01(tn);
     } else if (t <= tx) {
-      // Sweep from inside back to outside (exit wide)
+      
       const tn = tx - ta > 0 ? (t - ta) / (tx - ta) : 1;
       return sign * offset - 2 * sign * offset * smoothstep01(tn);
     } else {
-      // Ramp from outside back to centre (ready for next straight)
+      
       const tn = 1 - tx > 0 ? (t - tx) / (1 - tx) : 1;
       return -sign * offset * (1 - smoothstep01(tn));
     }
   }
 
-  /**
-   * Returns the ideal lateral offset (racing line targetX) at position z.
-   * Positive = right of centre, negative = left.
-   * @param {number} z
-   * @returns {number}
-   */
+  
+
+
   getRacingLineTarget(z) {
     if (!this.racingLineData || this.racingLineData.length === 0) return 0;
     const lap = this.lapLength || this.totalDistance;

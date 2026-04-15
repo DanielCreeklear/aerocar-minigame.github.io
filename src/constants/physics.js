@@ -26,10 +26,14 @@ export const SLIP_PENALTY_THRESHOLD = 0.15;
 
 export const PASSIVE_REGEN_FACTOR = 0.4;
 
-export const HEADING_CURVE_FACTOR = 0.0004;
-export const STEER_YAW_RATE = 0.05;
+export const HEADING_CURVE_FACTOR = 0.00006;
 
-// Side length of each cell in the 2D world-space track grid (units = game world units).
+export const STEER_YAW_RATE = 0.02;
+
+export const VISUAL_HEADING_LERP = 0.25;
+
+export const OVERSPEED_DRAG = 0.92;
+
 export const TRACK_GRID_CELL_SIZE = 10;
 
 export const LATERAL_FRICTION_GRIP_X = 0.97;
@@ -43,14 +47,16 @@ export const PHYSICS_TRACK_HALF = 100;
 
 export const CURB_HALF = 120;
 
-export const OFF_TRACK_VZ_DRAG = 0.8;
+export const OFF_TRACK_VZ_DRAG = 0.92;
 
 export const OFF_TRACK_VX_DRAG = 0.9;
 
-export const OFF_TRACK_MAX_SPEED = 7.0;
+export const OFF_TRACK_MAX_SPEED = 16.0;
 
-export const SPIN_TRIGGER_SPEED = 10;
-export const SPIN_EXIT_SPEED = 2;
+export const OFF_TRACK_ACCEL_FACTOR = 0.35;
+
+export const SPIN_TRIGGER_SPEED = 18;
+export const SPIN_EXIT_SPEED = 7;
 export const SPIN_ANGULAR_VELOCITY = 3.5;
 
 export const OFF_TRACK_CENTERING_BONUS = 0.2;

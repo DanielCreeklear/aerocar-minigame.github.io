@@ -18,7 +18,7 @@ export const UI_COLORS = {
   white: "#f0ece4",
   transparentBlack: "rgba(0, 0, 0, 0)",
   vignette: "rgba(2, 1, 6, 0.80)",
-  // Panel styling
+  
   panelFill: "rgba(5, 3, 10, 0.94)",
   panelStroke: "rgba(192, 0, 28, 0.85)",
   panelAccent: "rgba(200, 150, 10, 0.72)",
@@ -123,73 +123,73 @@ export const UI_TEXT = {
 };
 
 export const HUD_COLORS = {
-  // Speedometer
-  speedPanel: "rgba(0, 0, 0, 0.75)",
-  speedPanelBorder: "#E60000",
-  speedPanelGlow: "rgba(230, 0, 0, 0.25)",
-  speedValue: "#FFD700",
-  speedLabel: "rgba(255, 255, 255, 0.80)",
-  // Battery bar
-  batteryPanel: "rgba(0, 0, 0, 0.75)",
-  batteryBorder: "rgba(255, 215, 0, 0.70)",
-  batteryFull: "#FFD700",
-  batteryMid: "#FF8C00",
-  batteryLow: "#E60000",
-  batteryRegen: "#00BFFF",
-  batteryLabel: "rgba(255, 255, 255, 0.80)",
+  
+  speedPanel: "rgba(6, 12, 24, 0.92)",
+  speedPanelBorder: "#CC001E",
+  speedPanelGlow: "rgba(204, 0, 30, 0.25)",
+  speedValue: "#C87D12",
+  speedLabel: "rgba(242, 237, 228, 0.60)",
+  
+  batteryPanel: "rgba(6, 12, 24, 0.92)",
+  batteryBorder: "rgba(200, 125, 18, 0.70)",
+  batteryFull: "#C87D12",
+  batteryMid: "#D4760A",
+  batteryLow: "#CC001E",
+  batteryRegen: "#4A6890",
+  batteryLabel: "rgba(242, 237, 228, 0.60)",
   batterySegmentSep: "rgba(0, 0, 0, 0.60)",
-  // Aero badge — Mode X
-  badgeModeX: "rgba(180, 0, 0, 0.90)",
-  badgeModeXBorder: "#E60000",
-  badgeModeXGlow: "rgba(230, 0, 0, 0.40)",
-  badgeModeZ: "rgba(28, 50, 128, 0.90)",
-  badgeModeZBorder: "rgba(72, 112, 192, 0.90)",
-  badgeModeZGlow: "rgba(28, 50, 128, 0.35)",
-  badgeText: "#FFFFFF",
-  // Lap panel
-  lapPanel: "rgba(0, 0, 0, 0.75)",
-  lapPanelBorder: "rgba(255, 215, 0, 0.80)",
-  lapTime: "#FFD700",
-  lapLabel: "rgba(255, 255, 255, 0.80)",
-  lapCount: "#FFD700",
-  lapCountLabel: "rgba(255, 255, 255, 0.70)",
-  // Grip
-  warningBorder: "rgba(230, 0, 0, 0.88)",
-  warningGlow: "rgba(230, 0, 0, 0.35)",
-  offTrackBorder: "rgba(230, 0, 0, 0.72)",
-  offTrackGlow: "rgba(230, 0, 0, 0.25)",
-  // Curve indicator
-  curveNormal: "#FFFFFF",
-  curveMild: "#FFD700",
-  curveHard: "#E60000",
+  
+  badgeModeX: "rgba(140, 0, 18, 0.92)",
+  badgeModeXBorder: "#CC001E",
+  badgeModeXGlow: "rgba(204, 0, 30, 0.40)",
+  badgeModeZ: "rgba(10, 22, 48, 0.92)",
+  badgeModeZBorder: "rgba(74, 104, 144, 0.90)",
+  badgeModeZGlow: "rgba(74, 104, 144, 0.35)",
+  badgeText: "#F2EDE4",
+  
+  lapPanel: "rgba(6, 12, 24, 0.92)",
+  lapPanelBorder: "rgba(200, 125, 18, 0.80)",
+  lapTime: "#C87D12",
+  lapLabel: "rgba(242, 237, 228, 0.60)",
+  lapCount: "#C87D12",
+  lapCountLabel: "rgba(242, 237, 228, 0.60)",
+  
+  warningBorder: "rgba(204, 0, 30, 0.88)",
+  warningGlow: "rgba(204, 0, 30, 0.35)",
+  offTrackBorder: "rgba(204, 0, 30, 0.72)",
+  offTrackGlow: "rgba(204, 0, 30, 0.25)",
+  
+  curveNormal: "#F2EDE4",
+  curveMild: "#C87D12",
+  curveHard: "#CC001E",
 };
 
 export const HUD_FONTS = {
-  family: "'Press Start 2P', monospace",
-  bold: "normal",
-  // Speedometer
-  speedValue: { min: 18, max: 32, ratio: 0.034 },
-  speedLabel: { min: 6, max: 9, ratio: 0.009 },
-  // Battery
-  batteryLabel: { min: 6, max: 8, ratio: 0.009 },
-  // Aero badge
-  badgeMode: { min: 8, max: 11, ratio: 0.013 },
-  // Lap panel
-  lapTime: { min: 10, max: 16, ratio: 0.018 },
-  lapLabel: { min: 6, max: 8, ratio: 0.009 },
-  lapCount: { min: 9, max: 13, ratio: 0.014 },
-  // Curve indicator
-  curveArrow: { min: 20, max: 36, ratio: 0.038 },
-  // RANK display
-  rankLabel: { min: 6, max: 9, ratio: 0.009 },
-  rankValue: { min: 10, max: 16, ratio: 0.016 },
+  family: "'Barlow Condensed', 'Segoe UI', Arial, sans-serif",
+  bold: "700",
+  
+  speedValue: { min: 22, max: 36, ratio: 0.036 },
+  speedLabel: { min: 10, max: 13, ratio: 0.013 },
+  
+  batteryLabel: { min: 10, max: 13, ratio: 0.013 },
+  
+  badgeMode: { min: 13, max: 17, ratio: 0.016 },
+  
+  lapTime: { min: 14, max: 20, ratio: 0.022 },
+  lapLabel: { min: 10, max: 13, ratio: 0.013 },
+  lapCount: { min: 13, max: 17, ratio: 0.018 },
+  
+  curveArrow: { min: 24, max: 42, ratio: 0.042 },
+  
+  rankLabel: { min: 10, max: 13, ratio: 0.013 },
+  rankValue: { min: 14, max: 19, ratio: 0.02 },
 };
 
 export const HUD_LAYOUT = {
-  // Speedometer
+  
   speedRightMarginRatio: 0.022,
   speedBottomMarginRatio: 0.032,
-  speedWidthRatio: 0.20,
+  speedWidthRatio: 0.2,
   speedHeightRatio: 0.18,
   speedMinWidth: 130,
   speedMaxWidth: 230,
@@ -197,7 +197,7 @@ export const HUD_LAYOUT = {
   speedMaxHeight: 160,
   speedMinMargin: 10,
   speedMaxMargin: 22,
-  // Battery bar
+  
   batteryLeftMarginRatio: 0.028,
   batteryTopMarginRatio: 0.022,
   batteryWidthRatio: 0.22,
@@ -209,14 +209,14 @@ export const HUD_LAYOUT = {
   batterySegments: 10,
   batteryMinMargin: 14,
   batteryMaxMargin: 26,
-  // Aero badge
+  
   badgeWidthRatio: 0.13,
   badgeHeightRatio: 0.062,
   badgeMinWidth: 68,
   badgeMaxWidth: 120,
   badgeMinHeight: 26,
   badgeMaxHeight: 46,
-  // Lap panel
+  
   lapRightMarginRatio: 0.028,
   lapTopMarginRatio: 0.022,
   lapWidthRatio: 0.24,
@@ -227,9 +227,9 @@ export const HUD_LAYOUT = {
   lapMaxHeight: 140,
   lapMinMargin: 14,
   lapMaxMargin: 28,
-  // Warning border
+  
   warningThickness: 6,
   warningPulseSpeed: 0.008,
-  // Curve indicator
+  
   curveIndicatorY: 46,
 };
