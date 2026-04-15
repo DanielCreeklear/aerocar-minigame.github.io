@@ -66,7 +66,7 @@ export const UI_LAYOUT = {
 };
 
 export const UI_FONT = {
-  family: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+  family: "'Barlow Condensed', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
   bold: "bold",
   startTitle: { min: 30, max: 54, ratio: 0.072 },
   startSubtitle: { min: 14, max: 20, ratio: 0.03 },
@@ -165,7 +165,7 @@ export const HUD_COLORS = {
 };
 
 export const HUD_FONTS = {
-  family: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+  family: "'Barlow Condensed', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
   bold: "bold",
   // Speedometer
   speedValue: { min: 32, max: 56, ratio: 0.055 },
@@ -220,8 +220,8 @@ export const HUD_LAYOUT = {
   lapHeightRatio: 0.11,
   lapMinWidth: 145,
   lapMaxWidth: 255,
-  lapMinHeight: 56,
-  lapMaxHeight: 96,
+  lapMinHeight: 80,
+  lapMaxHeight: 140,
   lapMinMargin: 14,
   lapMaxMargin: 28,
   // Warning border

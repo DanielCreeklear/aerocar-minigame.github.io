@@ -25,6 +25,10 @@ export const YAW_FACTOR = 0.002;
 
 export const RACING_LINE_STEP = 100;
 
+export const TIGHT_CURVE_THRESHOLD = 6;
+
+export const RACING_LINE_OFFSET_FACTOR = 0.7;
+
 export const RNG_MULTIPLIER = 1664525;
 export const RNG_INCREMENT = 1013904223;
 export const RNG_DIVISOR = 4294967296;

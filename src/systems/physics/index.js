@@ -1,11 +1,9 @@
-import { getLapData, lerp, clamp } from "../../utils/math.js";
+import { getLapData, clamp } from "../../utils/math.js";
+import { getAeroStrategy } from "../aero.js";
 import { computeForwardVelocity } from "./longitudinal.js";
 import { integrateLateralState } from "./lateral.js";
-import { writePhysicsTelemetry } from "./telemetry.js";
-import {
-  STEER_LATERAL_ACCEL,
-  SPIN_ANGULAR_VELOCITY,
-} from "../../constants/index.js";
+import { buildPhysicsTelemetry } from "./telemetry.js";
+import { SPIN_ANGULAR_VELOCITY } from "../../constants/index.js";
 
 function resolveTrackState(gameState, currentTrackInfo) {
   gameState.trackType = currentTrackInfo.type;
@@ -18,8 +16,13 @@ function resolveTrackState(gameState, currentTrackInfo) {
 }
 
 function resolveCurrentSegment(gameState, track, lapZ) {
-  const seg = track.segments.find((s) => lapZ >= s.startZ && lapZ < s.endZ);
-  if (seg) gameState.currentSegmentIndex = seg.index;
+  const pos = track.getTrackPosition(lapZ);
+  if (pos) {
+    gameState.currentSegmentIndex = pos.segment.index;
+    gameState.trackPhase = pos.phase;
+    gameState.segmentProgress = pos.segmentProgress;
+    gameState.distanceToSegmentEnd = pos.distanceToSegmentEnd;
+  }
 }
 
 function advanceAlongTrack(gameState, lapLength, dt) {
@@ -47,31 +50,22 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     Math.abs(curvature) < CURVATURE_DEADZONE ? 0 : curvature;
 
   // 2. Velocidade longitudinal
-  const vz = computeForwardVelocity(gameState, dt);
+  const strategy = getAeroStrategy(gameState.aeroMode);
+  const vz = computeForwardVelocity(gameState, dt, strategy);
 
-  // 3. Steer force from player input (arrow keys / device tilt)
-  const steerInput = gameState.steerInput || 0;
-  const steerForce = steerInput * STEER_LATERAL_ACCEL;
-
-  // Update visual heading smoothly from steer input
-  const targetVisualHeading = steerInput * 0.5;
-  gameState.carVisualHeading = lerp(
-    gameState.carVisualHeading || 0,
-    targetVisualHeading,
-    clamp(0.15 * dt, 0, 1),
-  );
-
-  // 4. Lateral dynamics + off-track penalties
+  // 3. Lateral dynamics + off-track penalties
   const { nextVz, forces } = integrateLateralState(
     gameState,
     effectiveCurvature,
     vz,
-    steerForce,
     dt,
+    strategy,
   );
 
+  gameState.carVisualHeading = gameState.carHeading || 0;
+
   // 5. Telemetria
-  writePhysicsTelemetry(gameState, {
+  const physicsTelemetry = buildPhysicsTelemetry({
     centrifugalForce: forces.centrifugalForce,
     effectiveGrip: forces.effectiveGrip,
   });
@@ -88,7 +82,8 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     gameState.spinRotation = (gameState.spinRotation || 0) * Math.pow(0.85, dt);
   }
 
-  return advanceAlongTrack(gameState, lapLength, dt);
+  const { lapCompleted } = advanceAlongTrack(gameState, lapLength, dt);
+  return { lapCompleted, physicsTelemetry };
 }
 
 export { updateCarPhysics };

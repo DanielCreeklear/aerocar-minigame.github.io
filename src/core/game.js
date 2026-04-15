@@ -34,6 +34,51 @@ class Game {
     this.totalSegments = TOTAL_SEGMENTS;
     this.track.init(this.totalSegments, this.trackSeed);
 
+    this._screenChangeTime = Date.now();
+    this.rankings = this._loadRankings();
+
+    this._nameInput = document.createElement("input");
+    this._nameInput.type = "text";
+    this._nameInput.maxLength = 8;
+    this._nameInput.autocomplete = "off";
+    this._nameInput.spellcheck = false;
+    Object.assign(this._nameInput.style, {
+      position: "fixed",
+      background: "transparent",
+      border: "none",
+      outline: "none",
+      color: "#F0EAE0",
+      fontFamily: "'Barlow Condensed', 'Segoe UI', sans-serif",
+      fontWeight: "700",
+      letterSpacing: "4px",
+      textTransform: "uppercase",
+      caretColor: "#CC001E",
+      display: "none",
+      zIndex: "10",
+      padding: "0",
+      margin: "0",
+    });
+    document.body.appendChild(this._nameInput);
+    this._nameInput.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const raw = this._nameInput.value
+          .trim()
+          .replace(/[^A-Z0-9]/gi, "")
+          .toUpperCase();
+        const name = raw.substring(0, 8) || "ACE";
+        this._saveRanking(name, this.gameState.finalTime);
+        this._hideNameInput();
+        this.gameState.rankingPhase = "results";
+      }
+    });
+    this._nameInput.addEventListener("input", () => {
+      this._nameInput.value = this._nameInput.value
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
+    });
+
     this.input = new InputController(canvas, {
       onBrakeChange: (active) => {
         if (this.gameState.currentScreen === SCREENS.RACE) {
@@ -76,6 +121,9 @@ class Game {
 
   _handleViewportResize() {
     resizeCanvas(this.canvas);
+    if (this._nameInput && this._nameInput.style.display !== "none") {
+      this._showNameInput();
+    }
   }
 
   _setScreen(screen) {
@@ -83,9 +131,15 @@ class Game {
     this.gameState.isWaitingToStart = screen === SCREENS.START;
     this.gameState.isRunning = screen === SCREENS.RACE;
     this.gameState.isGameOver = screen === SCREENS.GAME_OVER;
+    this._screenChangeTime = Date.now();
+    if (screen !== SCREENS.GAME_OVER) {
+      this._hideNameInput();
+    }
   }
 
   reset(initialScreen = SCREENS.START) {
+    this._screenChangeTime = Date.now();
+    this._hideNameInput();
     const carState = createCarStateFields();
 
     this.gameState = {
@@ -103,6 +157,15 @@ class Game {
       startTime: Date.now(),
       currentTime: 0,
       finalTime: 0,
+      bestLapTime: Infinity,
+      lastLapTime: null,
+      lastLapFlashTimer: 0,
+      lapStartTime: Date.now(),
+      rankingPhase: null,
+      rankings: this.rankings,
+      newEntryIndex: -1,
+      screenAge: 0,
+      pendingName: "",
     };
 
     this.energyManager.reset();
@@ -126,6 +189,7 @@ class Game {
     if (this.gameState.currentScreen === SCREENS.START) {
       this._setScreen(SCREENS.RACE);
       this.gameState.startTime = Date.now();
+      this.gameState.lapStartTime = Date.now();
     }
   }
 
@@ -133,11 +197,25 @@ class Game {
     const screen = this.gameState.currentScreen;
     if (screen === SCREENS.PREVIEW) return this._advanceIntroScreen();
     if (screen === SCREENS.START) return this._startRace();
-    if (screen === SCREENS.GAME_OVER) return this.reset(SCREENS.START);
+    if (screen === SCREENS.GAME_OVER) {
+      if (this.gameState.rankingPhase === "results") {
+        return this.reset(SCREENS.START);
+      }
+      return;
+    }
   }
 
   update(dt) {
+    this.gameState.screenAge = (Date.now() - this._screenChangeTime) / 1000;
+    this.gameState.pendingName = this._nameInput
+      ? this._nameInput.value.toUpperCase()
+      : "";
+
     if (this.gameState.currentScreen !== SCREENS.RACE) return;
+
+    if (this.gameState.lastLapFlashTimer > 0) {
+      this.gameState.lastLapFlashTimer -= dt;
+    }
 
     this.gameState.currentTime = Date.now() - this.gameState.startTime;
 
@@ -150,29 +228,109 @@ class Game {
       currentTrackPoint.rawCurve ?? currentTrackPoint.curve ?? 0;
     this.gameState.isInModeXZone = currentTrackPoint.isModeXZone || false;
 
-    const LOOKAHEAD_DISTANCE = 300;
-    const lookaheadPoint = this.track.getTrackPoint(
-      this.gameState.currentZ + LOOKAHEAD_DISTANCE,
+    const CURVE_LOOKAHEAD = 400;
+    const upcomingFeatures = this.track.getUpcomingFeatures(
+      this.gameState.currentZ,
+      CURVE_LOOKAHEAD,
     );
-    this.gameState.upcomingCurvature =
-      lookaheadPoint.rawCurve ?? lookaheadPoint.curve ?? 0;
+    const nextCurveFeature = upcomingFeatures.find(
+      (f) => f.classification !== "straight",
+    );
+    this.gameState.upcomingCurvature = nextCurveFeature
+      ? nextCurveFeature.segment.curveStrength
+      : 0;
+    const lookaheadPoint = this.track.getTrackPoint(
+      this.gameState.currentZ + 300,
+    );
     this.gameState.upcomingIsModeXZone = lookaheadPoint.isModeXZone || false;
 
-    const { lapCompleted } = updateCarPhysics(
+    const { lapCompleted, physicsTelemetry } = updateCarPhysics(
       this.gameState,
       this.track,
       dt,
       currentTrackPoint,
     );
-    this.telemetry.log(this.gameState);
+    this.telemetry.log(this.gameState, physicsTelemetry);
 
     if (lapCompleted) {
+      const now = Date.now();
+      const lapTime = now - this.gameState.lapStartTime;
+      this.gameState.lapStartTime = now;
+      if (lapTime < this.gameState.bestLapTime) {
+        this.gameState.bestLapTime = lapTime;
+      }
+      this.gameState.lastLapTime = lapTime;
+      this.gameState.lastLapFlashTimer = 3.0;
+
       this.gameState.lapCount += 1;
       if (this.gameState.lapCount >= this.gameState.targetLaps) {
         this._setScreen(SCREENS.GAME_OVER);
         this.gameState.finalTime = this.gameState.currentTime;
         this.gameState.speed = 0;
+        this.gameState.rankingPhase = "entering";
+        this._showNameInput();
       }
+    }
+  }
+
+  _loadRankings() {
+    try {
+      const raw = localStorage.getItem("apexz_rankings");
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter(
+          (e) => e && typeof e.time === "number" && typeof e.name === "string",
+        )
+        .slice(0, 10);
+    } catch {
+      return [];
+    }
+  }
+
+  _saveRanking(name, time) {
+    this.rankings.push({
+      name: name.substring(0, 8),
+      time,
+      date: new Date().toISOString().slice(0, 10),
+    });
+    this.rankings.sort((a, b) => a.time - b.time);
+    this.rankings = this.rankings.slice(0, 10);
+    this.gameState.newEntryIndex = this.rankings.findIndex(
+      (r) => r.time === time && r.name === name,
+    );
+    this.gameState.rankings = this.rankings;
+    try {
+      localStorage.setItem("apexz_rankings", JSON.stringify(this.rankings));
+    } catch {
+      // localStorage not available
+    }
+  }
+
+  _showNameInput() {
+    const cw = this.canvas.width;
+    const ch = this.canvas.height;
+    const isPortrait = ch > cw;
+    const x = isPortrait ? Math.round(cw * 0.22) : Math.round(cw * 0.565);
+    const y = isPortrait ? Math.round(ch * 0.832) : Math.round(ch * 0.838);
+    const w = isPortrait ? Math.round(cw * 0.52) : Math.round(cw * 0.2);
+    const fs = Math.max(14, Math.min(22, cw * 0.022));
+    Object.assign(this._nameInput.style, {
+      left: `${x}px`,
+      top: `${y}px`,
+      width: `${w}px`,
+      fontSize: `${fs}px`,
+      display: "block",
+    });
+    this._nameInput.value = "";
+    setTimeout(() => this._nameInput.focus(), 80);
+  }
+
+  _hideNameInput() {
+    if (this._nameInput) {
+      this._nameInput.style.display = "none";
+      this._nameInput.blur();
     }
   }
 

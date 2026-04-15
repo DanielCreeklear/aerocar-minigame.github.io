@@ -36,14 +36,11 @@ function drawTrack(ctx, gameState, track, metrics) {
     const bw = metrics.borderWidth;
     const step = metrics.roadSampleStep;
 
-    // ── Side layout (outward from track edge) ───────────────────────
-    //  kerb | run-off | ad board | grass
     const leftRunoffX = left - bw - runoffW;
     const leftDetailX = leftRunoffX - detailW;
     const rightRunoffX = right + bw;
     const rightDetailX = rightRunoffX + runoffW;
 
-    // Alternating grass stripes for depth perception
     const grassBeat = Math.floor(sliceZ / 150) % 2 === 0;
     if (!grassBeat) {
       ctx.fillStyle = RENDER_COLORS.grassDark;
@@ -57,7 +54,6 @@ function drawTrack(ctx, gameState, track, metrics) {
         );
     }
 
-    // Advertising hoardings (colour cycles every ~1500 z-units)
     const adIdx =
       ((Math.floor(sliceZ / 1500) % AD_COLORS.length) + AD_COLORS.length) %
       AD_COLORS.length;
@@ -65,12 +61,10 @@ function drawTrack(ctx, gameState, track, metrics) {
     ctx.fillRect(leftDetailX, y, detailW, step);
     ctx.fillRect(rightDetailX, y, detailW, step);
 
-    // Run-off asphalt (dark strip immediately beyond kerb)
     ctx.fillStyle = RENDER_COLORS.runoff;
     ctx.fillRect(leftRunoffX, y, runoffW, step);
     ctx.fillRect(rightRunoffX, y, runoffW, step);
 
-    // Kerb stripes — zebra only on curves; solid white on straights
     const isCurve = info.type === TRACK_TYPES.CURVE;
     let stripeColor;
     if (isCurve) {
@@ -84,7 +78,6 @@ function drawTrack(ctx, gameState, track, metrics) {
     ctx.fillRect(left - bw, y, bw, step);
     ctx.fillRect(right, y, bw, step);
 
-    // Asphalt surface
     const asphaltColor = isCurve
       ? RENDER_COLORS.asphaltCurve
       : RENDER_COLORS.asphaltStraight;
@@ -96,9 +89,6 @@ function drawTrack(ctx, gameState, track, metrics) {
       ctx.fillRect(left, y, metrics.trackWidth, step);
     }
 
-    // ── Track markings ───────────────────────────────────────────────
-
-    // Checkered start/finish line
     if (info.marker === "start-finish") {
       const checkRow = Math.floor(info.z / 10);
       const numCols = 8;
@@ -112,7 +102,6 @@ function drawTrack(ctx, gameState, track, metrics) {
       }
     }
 
-    // Grid position boxes (P1/P3/P5 right side, P2/P4/P6 left side)
     if (info.marker && info.marker.startsWith("grid-")) {
       const gridPos = parseInt(info.marker.slice(5), 10);
       const isRight = gridPos % 2 === 1;

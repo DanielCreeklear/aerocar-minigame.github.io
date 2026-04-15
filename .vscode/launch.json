@@ -5,7 +5,7 @@
       "name": "Launch Game in Chrome",
       "type": "pwa-chrome",
       "request": "launch",
-      "url": "http://localhost:8080",
+      "url": "http://localhost:5173",
       "webRoot": "${workspaceFolder}",
       "preLaunchTask": "Start local server"
     }

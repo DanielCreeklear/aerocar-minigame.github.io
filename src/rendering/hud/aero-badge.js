@@ -1,5 +1,5 @@
 import { responsiveSize } from "../../utils/canvas.js";
-import { HUD_COLORS, HUD_FONTS } from "../../constants/index.js";
+import { AERO_MODES, HUD_COLORS, HUD_FONTS } from "../../constants/index.js";
 
 const BADGE_WIDTH_RATIO = 0.28;
 const BADGE_MIN_WIDTH = 100;
@@ -13,7 +13,7 @@ const BADGE_BOTTOM_MARGIN_MAX = 22;
 const BADGE_RADIUS = 8;
 
 function drawAeroBadge(ctx, gameState, width, height) {
-  const isX = gameState.aeroMode === "X";
+  const isX = gameState.aeroMode === AERO_MODES.X;
 
   const badgeW = Math.max(
     BADGE_MIN_WIDTH,

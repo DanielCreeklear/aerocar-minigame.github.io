@@ -1,4 +1,3 @@
-import { getAeroStrategy } from "../aero.js";
 import { clamp } from "../../utils/math.js";
 import {
   BOOST_BASE_GAIN,
@@ -7,9 +6,7 @@ import {
   MANUAL_BRAKE_DECEL,
 } from "../../constants/index.js";
 
-function computeForwardVelocity(gameState, dt) {
-  const strategy = getAeroStrategy(gameState.aeroMode);
-
+function computeForwardVelocity(gameState, dt, strategy) {
   // 1. Empuxo + arrasto aerodinâmico
   let vz = gameState.speed || 0;
   if (!gameState.isOffTrack && !gameState.isSpinning) {

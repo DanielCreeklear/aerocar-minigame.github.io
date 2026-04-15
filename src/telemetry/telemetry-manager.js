@@ -19,7 +19,7 @@ class TelemetryManager {
     this._lastSampleMs = -Infinity;
   }
 
-  log(gameState) {
+  log(gameState, physicsTelemetry = null) {
     const now = gameState.currentTime;
     if (now - this._lastSampleMs < SAMPLE_INTERVAL_MS) return;
     this._lastSampleMs = now;
@@ -41,8 +41,10 @@ class TelemetryManager {
       vx: gameState.lateralVelocity,
       curvature: gameState.currentCurvature,
       slip: gameState.currentSlip,
-      centrifugalForce: gameState._telCentrifugalForce ?? 0,
-      effectiveGrip: gameState._telEffectiveGrip ?? 0,
+      centrifugalForce: physicsTelemetry
+        ? physicsTelemetry.centrifugalForce
+        : 0,
+      effectiveGrip: physicsTelemetry ? physicsTelemetry.effectiveGrip : 0,
       aeroMode: gameState.aeroMode,
       battery: gameState.battery,
       isOffTrack: gameState.isOffTrack ? 1 : 0,

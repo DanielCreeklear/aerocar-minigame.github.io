@@ -9,12 +9,12 @@ import {
 class EnergyManager {
   constructor() {
     this.battery = BATTERY_MAX;
+    this._prevSpeed = null;
   }
 
   update(gameState, dt = 1) {
     const { isBoosting, isBraking, speed } = gameState;
-    const prevSpeed =
-      gameState._prevSpeed !== undefined ? gameState._prevSpeed : speed;
+    const prevSpeed = this._prevSpeed !== null ? this._prevSpeed : speed;
 
     if (isBoosting && this.battery > 0) {
       this.battery = Math.max(0, this.battery - BOOST_BATTERY_DRAIN * dt);
@@ -33,11 +33,12 @@ class EnergyManager {
       this.battery = Math.min(BATTERY_MAX, this.battery + passiveRegen);
     }
 
-    gameState._prevSpeed = speed;
+    this._prevSpeed = speed;
   }
 
   reset() {
     this.battery = BATTERY_MAX;
+    this._prevSpeed = null;
   }
 
   getCurrentCharge() {

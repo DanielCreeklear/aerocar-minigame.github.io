@@ -2,7 +2,7 @@ import { drawSpeedometer } from "./hud/speedometer.js";
 import { drawBatteryBar } from "./hud/battery-bar.js";
 import { drawAeroBadge } from "./hud/aero-badge.js";
 import { drawLapPanel } from "./hud/lap-panel.js";
-import { drawGripWarning, resetGripWarning } from "./hud/grip-warning.js";
+import { drawGripWarning } from "./hud/grip-warning.js";
 import { drawCurveIndicator } from "./hud/curve-indicator.js";
 
 const SPEEDOMETER_SCALE_TO_KMH = 17;
@@ -12,11 +12,12 @@ const SPEEDOMETER_SMOOTHING = 0.18;
 class HudRenderer {
   constructor() {
     this.displayedSpeedKmh = 0;
+    this._warningTick = 0;
   }
 
   reset() {
     this.displayedSpeedKmh = 0;
-    resetGripWarning();
+    this._warningTick = 0;
   }
 
   draw(ctx, gameState, width, height) {
@@ -28,7 +29,13 @@ class HudRenderer {
     this.displayedSpeedKmh +=
       (targetSpeedKmh - this.displayedSpeedKmh) * SPEEDOMETER_SMOOTHING;
 
-    drawGripWarning(ctx, gameState, width, height);
+    this._warningTick = drawGripWarning(
+      ctx,
+      gameState,
+      width,
+      height,
+      this._warningTick,
+    );
     drawCurveIndicator(ctx, gameState, width);
     drawLapPanel(ctx, gameState, width, height);
     drawBatteryBar(ctx, gameState, width, height);

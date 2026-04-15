@@ -1,6 +1,8 @@
-function writePhysicsTelemetry(gameState, data) {
-  gameState._telCentrifugalForce = data.centrifugalForce;
-  gameState._telEffectiveGrip = data.effectiveGrip;
+function buildPhysicsTelemetry(data) {
+  return {
+    centrifugalForce: data.centrifugalForce,
+    effectiveGrip: data.effectiveGrip,
+  };
 }
 
-export { writePhysicsTelemetry };
+export { buildPhysicsTelemetry };

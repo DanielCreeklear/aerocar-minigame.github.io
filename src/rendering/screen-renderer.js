@@ -1,21 +1,221 @@
 import { formatTime } from "../utils/math.js";
-import { drawRoundedRect, responsiveFont, responsiveSize } from "../utils/canvas.js";
-import {
-  getResponsiveUILayout,
-  getViewportProfile,
-  UI_COLORS,
-  UI_FONT,
-  UI_LAYOUT,
-  UI_SHAPE,
-  UI_TEXT,
-} from "../constants/index.js";
 
-function buildLayoutContext(width, height) {
-  const profile = getViewportProfile(width, height);
-  const layout = getResponsiveUILayout(UI_LAYOUT, profile);
-  return { layout, profile };
+// ── R4-inspired design tokens ──────────────────────────────────────────────────
+const R = {
+  bg:          "#04030A",
+  crimson:     "#CC001E",
+  crimsonDim:  "rgba(204, 0, 30, 0.50)",
+  crimsonFill: "rgba(204, 0, 30, 0.11)",
+  crimsonHigh: "rgba(204, 0, 30, 0.22)",
+  gold:        "#C07B10",
+  steel:       "#3A5070",
+  steelDim:    "rgba(58, 80, 112, 0.70)",
+  text:        "#F0EAE0",
+  textDim:     "rgba(240, 234, 224, 0.55)",
+  textFaint:   "rgba(240, 234, 224, 0.22)",
+  barBg:       "#090004",
+  divider:     "rgba(204, 0, 30, 0.30)",
+  font:        "'Barlow Condensed', 'Segoe UI', Arial, sans-serif",
+};
+
+function csz(ref, ratio, lo, hi) {
+  return Math.max(lo, Math.min(hi, ref * ratio));
 }
 
+// ── Shared drawing primitives ──────────────────────────────────────────────────
+function scanlines(ctx, w, h) {
+  ctx.save();
+  ctx.fillStyle = "rgba(0,0,0,0.05)";
+  for (let y = 0; y < h; y += 2) ctx.fillRect(0, y, w, 1);
+  ctx.restore();
+}
+
+function bottomBar(ctx, w, h, leftTxt, rightTxt, blink) {
+  const bh = 44, by = h - bh;
+  ctx.save();
+  ctx.fillStyle = R.barBg;
+  ctx.fillRect(0, by, w, bh);
+  ctx.strokeStyle = R.divider;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, by); ctx.lineTo(w, by); ctx.stroke();
+  ctx.textBaseline = "middle";
+  const cy = by + bh * 0.5;
+  ctx.font = `400 ${csz(w, 0.016, 12, 16)}px ${R.font}`;
+  ctx.fillStyle = R.textDim;
+  ctx.textAlign = "left";
+  ctx.fillText(leftTxt, 22, cy);
+  ctx.font = `700 ${csz(w, 0.018, 13, 18)}px ${R.font}`;
+  if (blink) {
+    ctx.shadowColor = R.crimson;
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = R.crimson;
+  } else {
+    ctx.fillStyle = R.textFaint;
+  }
+  ctx.textAlign = "right";
+  ctx.fillText(rightTxt, w - 22, cy);
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+function topStripe(ctx, w, leftTxt, rightTxt) {
+  const sh = 32;
+  ctx.save();
+  ctx.fillStyle = "#0C0009";
+  ctx.fillRect(0, 0, w, sh);
+  ctx.strokeStyle = R.divider;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, sh); ctx.lineTo(w, sh); ctx.stroke();
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = R.steel;
+  ctx.font = `700 ${csz(w, 0.016, 11, 15)}px ${R.font}`;
+  ctx.textAlign = "left";
+  ctx.fillText(leftTxt, 20, sh * 0.5);
+  ctx.fillStyle = R.textDim;
+  ctx.textAlign = "right";
+  ctx.fillText(rightTxt, w - 20, sh * 0.5);
+  ctx.restore();
+}
+
+function diagonalCut(ctx, w, size) {
+  ctx.save();
+  ctx.fillStyle = R.crimson;
+  ctx.beginPath();
+  ctx.moveTo(w - size, 0); ctx.lineTo(w, 0); ctx.lineTo(w, size);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function sectionLabel(ctx, x, y, w, text) {
+  ctx.save();
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
+  ctx.fillStyle = R.steel;
+  ctx.font = `700 ${csz(w, 0.040, 10, 15)}px ${R.font}`;
+  ctx.fillText(text, x, y);
+  const lw = ctx.measureText(text).width;
+  ctx.strokeStyle = R.divider;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x + lw + 10, y); ctx.lineTo(x + w, y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// Draw a simple ranking list (no entering state)
+function drawRankList(ctx, x, y, w, rowH, rankings, slotCount) {
+  const numW   = csz(w, 0.08, 16, 24);
+  const nameSz = csz(w, 0.056, 11, 17);
+  const timeSz = csz(w, 0.052, 11, 16);
+  for (let i = 0; i < slotCount; i++) {
+    const ry  = y + i * (rowH + 4);
+    const mid = ry + rowH * 0.5;
+    const entry = (rankings || [])[i];
+    ctx.save();
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = R.steelDim;
+    ctx.font = `700 ${csz(w, 0.042, 9, 13)}px ${R.font}`;
+    ctx.textAlign = "left";
+    ctx.fillText(`${(i + 1).toString().padStart(2, "0")}`, x, mid);
+    if (entry) {
+      ctx.fillStyle = R.textDim;
+      ctx.font = `700 ${nameSz}px ${R.font}`;
+      ctx.fillText(entry.name.substring(0, 8), x + numW, mid);
+      ctx.fillStyle = R.textDim;
+      ctx.font = `700 ${timeSz}px ${R.font}`;
+      ctx.textAlign = "right";
+      ctx.fillText(formatTime(entry.time), x + w, mid);
+    } else {
+      ctx.fillStyle = R.textFaint;
+      ctx.font = `400 ${nameSz}px ${R.font}`;
+      ctx.fillText("---", x + numW, mid);
+      ctx.textAlign = "right";
+      ctx.fillText("--:--.---", x + w, mid);
+    }
+    ctx.restore();
+  }
+}
+
+// Draw ranking rows with new-entry highlight for results state
+function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
+  const numW   = csz(w, 0.08, 16, 24);
+  const nameSz = csz(w, 0.056, 11, 17);
+  const timeSz = csz(w, 0.052, 11, 16);
+  for (let i = 0; i < slotCount; i++) {
+    const ry   = y + i * (rowH + 4);
+    const mid  = ry + rowH * 0.5;
+    const isHL = i === hlIdx;
+    const entry = (rankings && rankings[i]);
+    if (isHL) {
+      ctx.save();
+      ctx.fillStyle = R.crimsonHigh;
+      ctx.fillRect(x - 4, ry - 1, w + 8, rowH + 2);
+      ctx.strokeStyle = R.crimson;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x - 4, ry - 1, w + 8, rowH + 2);
+      ctx.restore();
+    }
+    ctx.save();
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = isHL ? R.crimson : R.steelDim;
+    ctx.font = `700 ${csz(w, 0.042, 9, 13)}px ${R.font}`;
+    ctx.textAlign = "left";
+    ctx.fillText(`${(i + 1).toString().padStart(2, "0")}`, x, mid);
+    if (entry) {
+      ctx.fillStyle = isHL ? R.text : R.textDim;
+      ctx.font = `700 ${nameSz}px ${R.font}`;
+      ctx.fillText(entry.name.substring(0, 8), x + numW, mid);
+      ctx.fillStyle = isHL ? R.gold : R.textDim;
+      ctx.font = `700 ${timeSz}px ${R.font}`;
+      ctx.textAlign = "right";
+      ctx.fillText(formatTime(entry.time), x + w, mid);
+      if (isHL) {
+        ctx.fillStyle = R.crimson;
+        ctx.font = `700 ${csz(w, 0.038, 8, 11)}px ${R.font}`;
+        const tw = ctx.measureText(formatTime(entry.time)).width;
+        ctx.fillText("NEW", x + w - tw - 8, mid);
+      }
+    } else {
+      ctx.fillStyle = R.textFaint;
+      ctx.font = `400 ${nameSz}px ${R.font}`;
+      ctx.fillText("---", x + numW, mid);
+      ctx.textAlign = "right";
+      ctx.fillText("--:--.---", x + w, mid);
+    }
+    ctx.restore();
+  }
+}
+
+// Draw the "NEW" name-entry row (entering state)
+function drawNewEntryRow(ctx, x, y, w, rowH, entryTime, pending, blink) {
+  const mid    = y + rowH * 0.5;
+  const numW   = csz(w, 0.08, 16, 24);
+  const nameSz = csz(w, 0.056, 11, 17);
+  const timeSz = csz(w, 0.052, 11, 16);
+  ctx.save();
+  ctx.fillStyle = R.crimsonFill;
+  ctx.fillRect(x - 4, y - 1, w + 8, rowH + 2);
+  ctx.strokeStyle = R.crimsonDim;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x - 4, y - 1, w + 8, rowH + 2);
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = R.crimson;
+  ctx.font = `700 ${csz(w, 0.042, 9, 13)}px ${R.font}`;
+  ctx.textAlign = "left";
+  ctx.fillText("—", x, mid);
+  const cursor  = blink ? "▮" : "▯";
+  const display = (pending + cursor).substring(0, 9);
+  ctx.fillStyle = R.text;
+  ctx.font = `700 ${nameSz}px ${R.font}`;
+  ctx.fillText(display, x + numW, mid);
+  ctx.fillStyle = R.gold;
+  ctx.font = `700 ${timeSz}px ${R.font}`;
+  ctx.textAlign = "right";
+  ctx.fillText(formatTime(entryTime), x + w, mid);
+  ctx.restore();
+}
+
+// ── Track minimap helpers ──────────────────────────────────────────────────────
 function calculateTrackBounds(points) {
   let minX = Infinity;
   let maxX = -Infinity;
@@ -38,337 +238,407 @@ function projectTrackPoint(points, index, bounds, map) {
 }
 
 function sampleTrackPointIndexes(pointsLength) {
-  const step = Math.max(1, Math.floor(pointsLength / UI_SHAPE.previewMaxPointsStep));
-  const sampledIndexes = [];
-
-  for (let i = 0; i < pointsLength; i += step) {
-    sampledIndexes.push(i);
-  }
-
-  const lastIndex = pointsLength - 1;
-  if (sampledIndexes[sampledIndexes.length - 1] !== lastIndex) {
-    sampledIndexes.push(lastIndex);
-  }
-
-  return sampledIndexes;
+  const step = Math.max(1, Math.floor(pointsLength / 800));
+  const out = [];
+  for (let i = 0; i < pointsLength; i += step) out.push(i);
+  if (out[out.length - 1] !== pointsLength - 1) out.push(pointsLength - 1);
+  return out;
 }
 
-function drawStartScreen(ctx, width, height) {
-  const { layout, profile } = buildLayoutContext(width, height);
-  const centerX = width * layout.halfRatio;
-  const panelWidth = Math.min(
-    width * layout.startPanelWidthRatio,
-    layout.startPanelMaxWidth,
-  );
-  const panelHeight = Math.min(
-    height * layout.startPanelHeightRatio,
-    layout.startPanelMaxHeight,
-  );
-  const panelX = (width - panelWidth) * layout.halfRatio;
-  const panelY = Math.max(
-    layout.startPanelMinTopMargin,
-    (height - panelHeight) * layout.halfRatio,
-  );
-
-  ctx.fillStyle = UI_COLORS.startBgA;
-  ctx.fillRect(0, 0, width, height);
-
-  ctx.strokeStyle = "rgba(0, 245, 255, 0.04)";
+function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
+  ctx.fillStyle = "rgba(2,1,8,0.97)";
+  ctx.fillRect(mapX, mapY, mapW, mapH);
+  ctx.strokeStyle = "rgba(58,80,112,0.35)";
   ctx.lineWidth = 1;
-  const gridSize = 48;
-  for (let gx = 0; gx < width; gx += gridSize) {
-    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, height); ctx.stroke();
-  }
-  for (let gy = 0; gy < height; gy += gridSize) {
-    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(width, gy); ctx.stroke();
-  }
-
-  const vignette = ctx.createRadialGradient(
-    centerX,
-    height * layout.startVignetteCenterYRatio,
-    width * layout.startVignetteInnerRatio,
-    centerX,
-    height * layout.startVignetteCenterYRatio,
-    width * layout.startVignetteOuterRatio,
-  );
-  vignette.addColorStop(0, UI_COLORS.transparentBlack);
-  vignette.addColorStop(1, UI_COLORS.vignette);
-  ctx.fillStyle = vignette;
-  ctx.fillRect(0, 0, width, height);
-
-  ctx.shadowColor = UI_COLORS.panelStroke;
-  ctx.shadowBlur = 22;
-  drawRoundedRect(ctx, panelX, panelY, panelWidth, panelHeight, UI_SHAPE.panelRadius);
-  ctx.fillStyle = UI_COLORS.panelFill;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = UI_COLORS.panelStroke;
-  ctx.lineWidth = UI_SHAPE.strokeWidth;
-  ctx.stroke();
-
-  ctx.fillStyle = UI_COLORS.panelAccent;
-  ctx.fillRect(panelX + 2, panelY + 2, panelWidth - 4, UI_SHAPE.accentHeight);
-
-
-  ctx.textAlign = "center";
-  ctx.shadowColor = UI_COLORS.gold;
-  ctx.shadowBlur = UI_SHAPE.shadowStrong;
-  ctx.fillStyle = UI_COLORS.gold;
-  ctx.font = responsiveFont(width, UI_FONT.startTitle, UI_FONT.bold);
-  ctx.fillText(UI_TEXT.gameTitle, centerX, panelY + panelHeight * layout.titleYRatio);
-
-  ctx.shadowColor = UI_COLORS.neonCyan;
-  ctx.shadowBlur = UI_SHAPE.shadowSoft;
-  ctx.fillStyle = UI_COLORS.neonCyan;
-  ctx.font = responsiveFont(width, UI_FONT.startSubtitle, UI_FONT.bold);
-  ctx.fillText(UI_TEXT.startSubtitle, centerX, panelY + panelHeight * layout.subtitleYRatio);
-
-  ctx.shadowBlur = UI_SHAPE.shadowOff;
-  ctx.textAlign = "left";
-  const textX = panelX + panelWidth * layout.leftColumnXRatio;
-  const rightX = panelX + panelWidth * layout.rightColumnXRatio;
-  const sectionTop = panelY + panelHeight * layout.sectionTopYRatio;
-  const useSingleColumn = profile.isPortrait && profile.isCompactWidth;
-
-  ctx.fillStyle = UI_COLORS.infoBlue;
-  ctx.font = responsiveFont(width, UI_FONT.startSection, UI_FONT.bold);
-  ctx.fillText(UI_TEXT.controlsTitle, textX, sectionTop);
-
-  ctx.fillStyle = UI_COLORS.textLight;
-  ctx.font = responsiveFont(width, UI_FONT.startBody, UI_FONT.bold);
-  ctx.fillText(UI_TEXT.controlsLeft, textX, sectionTop + layout.lineSpacing1);
-  ctx.fillText(UI_TEXT.controlsRight, textX, sectionTop + layout.lineSpacing2);
-
-  ctx.fillStyle = UI_COLORS.tipGray;
-  ctx.font = responsiveFont(width, UI_FONT.startTip);
-  ctx.fillText(UI_TEXT.controlsTip, textX, sectionTop + layout.lineSpacing3);
-
-  const goalColumn = useSingleColumn ? textX : rightX;
-  const goalTop = useSingleColumn
-    ? sectionTop + layout.lineSpacing3 + 38
-    : sectionTop;
-
-  ctx.fillStyle = UI_COLORS.success;
-  ctx.font = responsiveFont(width, UI_FONT.startSection, UI_FONT.bold);
-  ctx.fillText(UI_TEXT.goalTitle, goalColumn, goalTop);
-
-  ctx.fillStyle = UI_COLORS.textLight;
-  ctx.font = responsiveFont(width, UI_FONT.startBody);
-  ctx.fillText(UI_TEXT.goalLine1, goalColumn, goalTop + layout.lineSpacing1);
-  ctx.fillText(UI_TEXT.goalLine2, goalColumn, goalTop + layout.lineSpacing2);
-
-  ctx.fillStyle = UI_COLORS.accentOrange;
-  ctx.font = responsiveFont(width, UI_FONT.startTip);
-  ctx.fillText(UI_TEXT.goalTagline, goalColumn, goalTop + layout.lineSpacing3);
-
-  ctx.fillStyle = UI_COLORS.success;
-  ctx.textAlign = "center";
-  ctx.font = responsiveFont(width, UI_FONT.startCta, UI_FONT.bold);
-  ctx.fillText(UI_TEXT.startCta, centerX, panelY + panelHeight * layout.startCtaYRatio);
-
-  ctx.fillStyle = UI_COLORS.subtleText;
-  ctx.font = responsiveFont(width, UI_FONT.startTip);
-  ctx.fillText(UI_TEXT.startFootnote, centerX, panelY + panelHeight * layout.startTipYRatio);
-  ctx.textAlign = "left";
-}
-
-function drawGameOverScreen(ctx, width, height, finalTime) {
-  const centerX = width * 0.5;
-
-  ctx.fillStyle = UI_COLORS.gameOverOverlay;
-  ctx.fillRect(0, 0, width, height);
-
-  ctx.fillStyle = "rgba(0, 0, 0, 0.12)";
-  for (let sy = 0; sy < height; sy += 8) {
-    ctx.fillRect(0, sy, width, 4);
-  }
-
-  const panelW = Math.min(width * 0.72, 520);
-  const panelH = Math.min(height * 0.5, 320);
-  const panelX = (width - panelW) * 0.5;
-  const panelY = (height - panelH) * 0.5;
-
-  ctx.shadowColor = UI_COLORS.neonGreen;
-  ctx.shadowBlur = 20;
-  drawRoundedRect(ctx, panelX, panelY, panelW, panelH, 4);
-  ctx.fillStyle = UI_COLORS.panelFill;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = UI_COLORS.panelStroke;
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  ctx.fillStyle = UI_COLORS.neonGreen;
-  ctx.fillRect(panelX + 2, panelY + 2, panelW - 4, 4);
-
-  ctx.textAlign = "center";
-
-  const titleSize = responsiveFont(width, UI_FONT.gameOverTitle, UI_FONT.bold);
-  ctx.font = titleSize;
-  ctx.shadowColor = UI_COLORS.neonPink;
-  ctx.shadowBlur = 14;
-  ctx.fillStyle = UI_COLORS.white;
-  ctx.textBaseline = "middle";
-  ctx.fillText(UI_TEXT.gameOverTitle, centerX, panelY + panelH * 0.28);
-
-  const timeSize = responsiveFont(width, UI_FONT.gameOverTime, UI_FONT.bold);
-  ctx.font = timeSize;
-  ctx.shadowColor = UI_COLORS.gold;
-  ctx.shadowBlur = 18;
-  ctx.fillStyle = UI_COLORS.gold;
-  ctx.fillText(formatTime(finalTime), centerX, panelY + panelH * 0.54);
-
-  ctx.shadowBlur = 0;
-  const hintSize = responsiveFont(width, UI_FONT.gameOverHint);
-  ctx.font = hintSize;
-  ctx.fillStyle = UI_COLORS.subtleText;
-  ctx.fillText(UI_TEXT.gameOverHint, centerX, panelY + panelH * 0.76);
-
-  ctx.textAlign = "left";
-}
-
-function drawTrackPreviewScreen(ctx, width, height, track) {
-  const profile = getViewportProfile(width, height);
-  const layout = getResponsiveUILayout(UI_LAYOUT, profile);
-  const centerX = width * layout.halfRatio;
-  const panelWidth = Math.min(
-    width * layout.previewPanelWidthRatio,
-    layout.previewPanelMaxWidth,
-  );
-  const panelHeight = Math.min(
-    height * layout.previewPanelHeightRatio,
-    layout.previewPanelMaxHeight,
-  );
-  const panelX = (width - panelWidth) * layout.halfRatio;
-  const panelY = (height - panelHeight) * layout.halfRatio;
-  const mapPadding = Math.min(layout.mapPaddingMax, panelWidth * layout.mapPaddingRatio);
-  const mapX = panelX + mapPadding;
-  const mapY = panelY + panelHeight * layout.previewMapYRatio;
-  const mapWidth = panelWidth - mapPadding * 2;
-  const mapHeight = panelHeight * layout.previewMapHeightRatio;
-
-  const bg = ctx.createLinearGradient(0, 0, 0, height);
-  bg.addColorStop(0, UI_COLORS.previewBgA);
-  bg.addColorStop(1, UI_COLORS.previewBgB);
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, width, height);
-
-  ctx.strokeStyle = "rgba(0, 255, 136, 0.03)";
-  ctx.lineWidth = 1;
-  const gs = 40;
-  for (let gx = 0; gx < width; gx += gs) {
-    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, height); ctx.stroke();
-  }
-  for (let gy = 0; gy < height; gy += gs) {
-    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(width, gy); ctx.stroke();
-  }
-
-  ctx.shadowColor = UI_COLORS.previewPanelStroke;
-  ctx.shadowBlur = 18;
-  drawRoundedRect(ctx, panelX, panelY, panelWidth, panelHeight, UI_SHAPE.panelRadius);
-  ctx.fillStyle = UI_COLORS.previewPanelFill;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = UI_COLORS.previewPanelStroke;
-  ctx.lineWidth = UI_SHAPE.strokeWidth;
-  ctx.stroke();
-
-  ctx.fillStyle = UI_COLORS.previewPanelStroke;
-  ctx.fillRect(panelX + 2, panelY + 2, panelWidth - 4, UI_SHAPE.accentHeight);
-
-  ctx.textAlign = "center";
-  ctx.shadowColor = UI_COLORS.success;
-  ctx.shadowBlur = 10;
-  ctx.fillStyle = UI_COLORS.success;
-  ctx.font = responsiveFont(width, UI_FONT.previewTitle, UI_FONT.bold);
-  ctx.fillText(UI_TEXT.previewTitle, centerX, panelY + panelHeight * layout.previewTitleYRatio);
-  ctx.shadowBlur = 0;
-
-  const totalKm = ((track.lapLength || 0) / 1000).toFixed(2);
-  ctx.fillStyle = UI_COLORS.textLight;
-  ctx.font = responsiveFont(width, UI_FONT.previewInfo);
-  const previewInfo = UI_TEXT.previewInfoTemplate
-    .replace("{seed}", String(track.seed))
-    .replace("{segments}", String(track.segments.length))
-    .replace("{km}", String(totalKm));
-  ctx.fillText(previewInfo, centerX, panelY + panelHeight * layout.previewInfoYRatio);
-
-  drawRoundedRect(ctx, mapX, mapY, mapWidth, mapHeight, UI_SHAPE.mapRadius);
-  ctx.fillStyle = UI_COLORS.previewMapFill;
-  ctx.fill();
-  ctx.strokeStyle = UI_COLORS.previewMapStroke;
-  ctx.lineWidth = UI_SHAPE.thinStrokeWidth;
-  ctx.stroke();
-
+  ctx.strokeRect(mapX, mapY, mapW, mapH);
   const points = track.trackData;
-  if (points && points.length > 1) {
-    const bounds = calculateTrackBounds(points);
-    const drawPad = UI_SHAPE.mapDrawPadding;
-    const map = {
-      mapX,
-      mapY,
-      drawPad,
-      usableW: Math.max(1, mapWidth - drawPad * 2),
-      usableH: Math.max(1, mapHeight - drawPad * 2),
-    };
+  if (!points || points.length < 2) return;
+  const pad  = 16;
+  const map  = { mapX, mapY, drawPad: pad, usableW: mapW - pad * 2, usableH: mapH - pad * 2 };
+  const bnd  = calculateTrackBounds(points);
+  const idx  = sampleTrackPointIndexes(points.length);
+  const path = idx.map((i) => projectTrackPoint(points, i, bnd, map));
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(path[0].x, path[0].y);
+  for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+  ctx.shadowColor = R.steel;
+  ctx.shadowBlur = 6;
+  ctx.strokeStyle = R.steel;
+  ctx.lineWidth = 2;
+  ctx.lineJoin = "round";
+  ctx.lineCap  = "round";
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = R.crimson;
+  ctx.beginPath();
+  ctx.arc(path[0].x, path[0].y, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = R.gold;
+  ctx.beginPath();
+  ctx.arc(path[path.length - 1].x, path[path.length - 1].y, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = R.textDim;
+  ctx.font = `700 10px ${R.font}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText("START", path[0].x + 8, path[0].y);
+  ctx.restore();
+}
 
-    const sampledIndexes = sampleTrackPointIndexes(points.length);
-    const sampledPath = sampledIndexes.map((index) =>
-      projectTrackPoint(points, index, bounds, map),
-    );
+// ── START SCREEN ─────────────────────────────────────────────────────────────
+function drawStartScreen(ctx, w, h, gameState, track) {
+  const isPortrait = h > w;
+  const age      = gameState ? (gameState.screenAge || 0) : 0;
+  const fade     = Math.min(1, age / 0.5);
+  const blink    = Math.sin(age * Math.PI * 1.4) > 0;
+  const rankings = (gameState && gameState.rankings) || [];
+  const km   = track ? ((track.lapLength || 0) / 1000).toFixed(2) : "?.??";
+  const seed = track ? track.seed : "—";
+  const segs = track && track.segments ? track.segments.length : 0;
 
-    ctx.beginPath();
-    ctx.moveTo(sampledPath[0].x, sampledPath[0].y);
-    for (let i = 1; i < sampledPath.length; i++) {
-      ctx.lineTo(sampledPath[i].x, sampledPath[i].y);
-    }
-    ctx.shadowColor = UI_COLORS.neonCyan;
-    ctx.shadowBlur = 8;
-    ctx.strokeStyle = UI_COLORS.neonCyan;
-    ctx.lineWidth = UI_SHAPE.mapRouteWidth;
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
-    ctx.stroke();
-    ctx.shadowBlur = 0;
+  ctx.save();
+  ctx.globalAlpha = fade;
 
-    const startPoint = projectTrackPoint(points, 0, bounds, map);
-    const endPoint = projectTrackPoint(points, points.length - 1, bounds, map);
+  ctx.fillStyle = R.bg;
+  ctx.fillRect(0, 0, w, h);
+  scanlines(ctx, w, h);
+  diagonalCut(ctx, w, isPortrait ? 50 : 72);
+
+  if (isPortrait) {
+    const tx = csz(w, 0.06, 18, 36);
+    const apexSz  = csz(w, 0.20, 48, 80);
+    const typezSz = csz(w, 0.168, 40, 66);
 
     ctx.save();
-    ctx.setLineDash([5, 5]);
-    ctx.strokeStyle = UI_COLORS.tipGray;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(startPoint.x, startPoint.y);
-    ctx.lineTo(endPoint.x, endPoint.y);
-    ctx.stroke();
+    ctx.shadowColor = R.crimson; ctx.shadowBlur = 18;
+    ctx.fillStyle = R.crimson;
+    ctx.font = `700 ${apexSz}px ${R.font}`;
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillText("APEX", tx, h * 0.155);
     ctx.restore();
 
-    ctx.fillStyle = UI_COLORS.danger;
-    ctx.beginPath();
-    ctx.arc(startPoint.x, startPoint.y, UI_SHAPE.markerRadius, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.save();
+    ctx.fillStyle = R.text;
+    ctx.font = `700 ${typezSz}px ${R.font}`;
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillText("TYPE Z", tx, h * 0.155 + apexSz * 1.1);
+    ctx.restore();
 
-    ctx.fillStyle = UI_COLORS.success;
-    ctx.beginPath();
-    ctx.arc(endPoint.x, endPoint.y, Math.max(3, UI_SHAPE.markerRadius - 2), 0, Math.PI * 2);
-    ctx.fill();
+    ctx.save();
+    ctx.fillStyle = R.steel;
+    ctx.font = `400 ${csz(w, 0.028, 12, 16)}px ${R.font}`;
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillText("TIME ATTACK", tx, h * 0.36);
+    ctx.restore();
 
-    ctx.fillStyle = UI_COLORS.textLight;
-    ctx.font = responsiveFont(width, UI_FONT.previewLabel);
-    const labelXMax = mapX + mapWidth - UI_SHAPE.mapDrawPadding;
-    const defaultLabelX = startPoint.x + layout.launchLabelXOffset;
-    const labelX = Math.min(labelXMax, defaultLabelX);
-    ctx.fillText(UI_TEXT.launchLabel, labelX, startPoint.y + 5);
+    ctx.save();
+    ctx.strokeStyle = R.divider; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(tx, h * 0.40); ctx.lineTo(w * 0.90, h * 0.40); ctx.stroke();
+    ctx.restore();
+
+    const ctrlSz = csz(w, 0.034, 12, 16);
+    const ctrlY  = h * 0.44;
+    sectionLabel(ctx, tx, ctrlY, w * 0.88, "CONTROLES");
+    ctx.save();
+    ctx.textBaseline = "top"; ctx.textAlign = "left";
+    ctx.fillStyle = R.textDim;
+    ctx.font = `400 ${ctrlSz}px ${R.font}`;
+    ctx.fillText("←  SEGURAR ESQUERDA  —  FREIO / ERS", tx, ctrlY + 14);
+    ctx.fillText("→  SEGURAR DIREITA   —  BOOST",         tx, ctrlY + 14 + ctrlSz + 5);
+    ctx.fillStyle = R.steelDim;
+    ctx.font = `400 ${csz(w, 0.028, 10, 14)}px ${R.font}`;
+    ctx.fillText("CENTRO-DIREITA / Z ou X  —  ALTERNA MODO", tx, ctrlY + 14 + (ctrlSz + 5) * 2);
+    ctx.restore();
+
+    const rkY = h * 0.60;
+    sectionLabel(ctx, tx, rkY, w * 0.88, "RANKING");
+    const rkAvail = h - 44 - (rkY + 16) - 8;
+    const rowH    = Math.min(36, rkAvail / 5 - 4);
+    drawRankList(ctx, tx, rkY + 16, w - tx * 2, rowH, rankings, 5);
+
+  } else {
+    const divX   = Math.round(w * 0.60);
+    const titleX = csz(w, 0.04, 18, 40);
+    const leftW  = divX - titleX - 24;
+    const rightX = divX + 20;
+    const rightW = w - rightX - 16;
+
+    ctx.save();
+    ctx.strokeStyle = R.divider; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(divX, 22); ctx.lineTo(divX, h - 52); ctx.stroke();
+    ctx.restore();
+
+    const apexSz  = csz(w, 0.12, 52, 108);
+    const typezSz = csz(w, 0.095, 42, 86);
+
+    ctx.save();
+    ctx.shadowColor = R.crimson; ctx.shadowBlur = 22;
+    ctx.fillStyle = R.crimson;
+    ctx.font = `700 ${apexSz}px ${R.font}`;
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillText("APEX", titleX, h * 0.26);
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = R.text;
+    ctx.font = `700 ${typezSz}px ${R.font}`;
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillText("TYPE Z", titleX, h * 0.26 + apexSz * 1.1);
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = R.steel;
+    ctx.font = `400 ${csz(w, 0.018, 12, 17)}px ${R.font}`;
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillText("TIME ATTACK", titleX, h * 0.26 + apexSz * 1.1 + typezSz);
+    ctx.restore();
+
+    const ruleY = h * 0.57;
+    ctx.save();
+    ctx.strokeStyle = R.divider; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(titleX, ruleY); ctx.lineTo(divX - 20, ruleY); ctx.stroke();
+    ctx.restore();
+
+    const ctrlY  = ruleY + 18;
+    const ctrlSz = csz(w, 0.022, 12, 17);
+    sectionLabel(ctx, titleX, ctrlY, leftW, "CONTROLES");
+    ctx.save();
+    ctx.textBaseline = "top"; ctx.textAlign = "left";
+    ctx.fillStyle = R.textDim;
+    ctx.font = `400 ${ctrlSz}px ${R.font}`;
+    ctx.fillText("←  SEGURAR ESQUERDA  —  FREIO / ERS",  titleX, ctrlY + 14);
+    ctx.fillText("→  SEGURAR DIREITA   —  BOOST",          titleX, ctrlY + 14 + ctrlSz + 5);
+    ctx.fillStyle = R.steelDim;
+    ctx.font = `400 ${csz(w, 0.018, 10, 14)}px ${R.font}`;
+    ctx.fillText("CENTRO-DIREITA / Z ou X  —  ALTERNA MODO AERO", titleX, ctrlY + 14 + (ctrlSz + 5) * 2);
+    ctx.restore();
+
+    sectionLabel(ctx, rightX, h * 0.12, rightW, "RANKING");
+    const rkAvail = h - 44 - (h * 0.12 + 16) - 8;
+    const rowH    = Math.min(48, rkAvail / 5 - 4);
+    drawRankList(ctx, rightX, h * 0.12 + 16, rightW, rowH, rankings, 5);
   }
 
-  ctx.shadowColor = UI_COLORS.neonGreen;
-  ctx.shadowBlur = 12;
-  ctx.fillStyle = UI_COLORS.neonGreen;
-  ctx.font = responsiveFont(width, UI_FONT.previewCta, UI_FONT.bold);
-  ctx.fillText(UI_TEXT.previewCta, centerX, panelY + panelHeight * layout.previewCtaYRatio);
-  ctx.shadowBlur = 0;
-  ctx.textAlign = "left";
+  bottomBar(ctx, w, h, `SEED ${seed}  ·  ${segs} SEG  ·  ${km} km`, "INICIAR  ▶", blink);
+  ctx.restore();
+}
+
+// ── GAME OVER SCREEN ─────────────────────────────────────────────────────────
+function drawGameOverScreen(ctx, w, h, gameState) {
+  const isPortrait = h > w;
+  const age      = gameState ? (gameState.screenAge || 0) : 0;
+  const fade     = Math.min(1, age / 0.6);
+  const blink    = Math.sin(age * Math.PI * 1.4) > 0;
+  const finalTime = (gameState && gameState.finalTime) || 0;
+  const rankings  = (gameState && gameState.rankings) || [];
+  const phase     = (gameState && gameState.rankingPhase) || "results";
+  const hlIdx     = gameState ? (gameState.newEntryIndex != null ? gameState.newEntryIndex : -1) : -1;
+  const pending   = (gameState && gameState.pendingName) || "";
+  const isEntering = phase === "entering";
+
+  ctx.save();
+  ctx.globalAlpha = fade;
+
+  ctx.fillStyle = "rgba(2,1,6,0.97)";
+  ctx.fillRect(0, 0, w, h);
+  scanlines(ctx, w, h);
+
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, R.crimson);
+  grad.addColorStop(1, "rgba(204,0,30,0)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 3, h);
+
+  if (isPortrait) {
+    const headSz = csz(w, 0.09, 28, 48);
+    ctx.save();
+    ctx.shadowColor = R.crimson; ctx.shadowBlur = 14;
+    ctx.fillStyle = R.text;
+    ctx.font = `700 ${headSz}px ${R.font}`;
+    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.fillText("RACE RESULT", w * 0.5, h * 0.10);
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = R.crimson;
+    ctx.fillRect(w * 0.5 - 60, h * 0.10 + 6, 120, 2);
+    ctx.restore();
+
+    ctx.save();
+    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = R.steelDim;
+    ctx.font = `700 ${csz(w, 0.030, 11, 15)}px ${R.font}`;
+    ctx.fillText("TEMPO TOTAL", w * 0.5, h * 0.18);
+    const timeSz = csz(w, 0.12, 40, 70);
+    ctx.shadowColor = R.gold; ctx.shadowBlur = 18;
+    ctx.fillStyle = R.gold;
+    ctx.font = `700 ${timeSz}px ${R.font}`;
+    ctx.fillText(formatTime(finalTime), w * 0.5, h * 0.18 + timeSz + 8);
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = R.divider; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(16, h * 0.36); ctx.lineTo(w - 16, h * 0.36); ctx.stroke();
+    ctx.restore();
+
+    const rkX = 20;
+    const rkW = w - 40;
+    const rkY = h * 0.38;
+    sectionLabel(ctx, rkX, rkY, rkW, "LEADERBOARD");
+    const rkAvail = h - 44 - (rkY + 16) - 8;
+    const rowH    = Math.min(36, rkAvail / 5 - 4);
+    const rkStart = rkY + 16;
+    if (isEntering) {
+      drawRankList(ctx, rkX, rkStart, rkW, rowH, rankings, 4);
+      drawNewEntryRow(ctx, rkX, rkStart + 4 * (rowH + 4), rkW, rowH, finalTime, pending, blink);
+    } else {
+      drawResultRows(ctx, rkX, rkStart, rkW, rowH, rankings, 5, hlIdx);
+    }
+
+  } else {
+    const divX   = Math.round(w * 0.50);
+    const leftX  = csz(w, 0.06, 24, 56);
+    const leftW  = divX - leftX - 16;
+    const rightX = divX + 20;
+    const rightW = w - rightX - 20;
+
+    ctx.save();
+    ctx.strokeStyle = R.divider; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(divX, 20); ctx.lineTo(divX, h - 52); ctx.stroke();
+    ctx.restore();
+
+    const headSz = csz(leftW, 0.18, 28, 54);
+    ctx.save();
+    ctx.shadowColor = R.crimson; ctx.shadowBlur = 14;
+    ctx.fillStyle = R.text;
+    ctx.font = `700 ${headSz}px ${R.font}`;
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillText("RACE",   leftX, h * 0.22);
+    ctx.fillText("RESULT", leftX, h * 0.22 + headSz * 1.1);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = R.crimson;
+    ctx.fillRect(leftX, h * 0.22 + headSz * 2.35, Math.min(120, leftW * 0.5), 2);
+    ctx.restore();
+
+    ctx.save();
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = R.steelDim;
+    ctx.font = `700 ${csz(leftW, 0.040, 11, 15)}px ${R.font}`;
+    ctx.fillText("TEMPO TOTAL", leftX, h * 0.62);
+    const timeSz = csz(leftW, 0.15, 38, 70);
+    ctx.shadowColor = R.gold; ctx.shadowBlur = 16;
+    ctx.fillStyle = R.gold;
+    ctx.font = `700 ${timeSz}px ${R.font}`;
+    ctx.fillText(formatTime(finalTime), leftX, h * 0.62 + timeSz + 8);
+    ctx.restore();
+
+    sectionLabel(ctx, rightX, h * 0.12, rightW, "LEADERBOARD");
+    const rkAvail = h - 44 - (h * 0.12 + 16) - 8;
+    const rowH    = Math.min(48, rkAvail / 5 - 4);
+    const rkStart = h * 0.12 + 16;
+    if (isEntering) {
+      drawRankList(ctx, rightX, rkStart, rightW, rowH, rankings, 4);
+      drawNewEntryRow(ctx, rightX, rkStart + 4 * (rowH + 4), rightW, rowH, finalTime, pending, blink);
+    } else {
+      drawResultRows(ctx, rightX, rkStart, rightW, rowH, rankings, 5, hlIdx);
+    }
+  }
+
+  const ctaLeft  = isEntering ? "INSIRA SEU NOME E PRESSIONE ENTER" : "";
+  const ctaRight = isEntering ? "ENTER PARA SALVAR" : "JOGAR NOVAMENTE  ▶";
+  bottomBar(ctx, w, h, ctaLeft, ctaRight, !isEntering || blink);
+  ctx.restore();
+}
+
+// ── TRACK PREVIEW SCREEN ─────────────────────────────────────────────────────
+function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
+  const isPortrait = h > w;
+  const age   = gameState ? (gameState.screenAge || 0) : 0;
+  const fade  = Math.min(1, age / 0.5);
+  const blink = Math.sin(age * Math.PI * 1.4) > 0;
+  const km    = ((track.lapLength || 0) / 1000).toFixed(2);
+  const segs  = track.segments ? track.segments.length : "?";
+
+  ctx.save();
+  ctx.globalAlpha = fade;
+
+  ctx.fillStyle = R.bg;
+  ctx.fillRect(0, 0, w, h);
+  scanlines(ctx, w, h);
+  topStripe(ctx, w, "CIRCUIT SELECT", "CIRCUIT 01");
+
+  const stripeH = 32;
+  const barH    = 44;
+  const infoRows = [
+    ["SEED",      String(track.seed)],
+    ["SEGMENTOS", String(segs)],
+    ["VOLTA",     `${km} km`],
+    ["VOLTAS",    "3"],
+  ];
+
+  if (isPortrait) {
+    const mapH = Math.round((h - stripeH - barH) * 0.50);
+    drawMinimap(ctx, 10, stripeH + 6, w - 20, mapH, track);
+
+    const infoX  = 20;
+    const infoW  = w - 40;
+    const infoY  = stripeH + 6 + mapH + 16;
+    const rowSz  = csz(w, 0.035, 14, 20);
+    const labSz  = csz(w, 0.026, 10, 14);
+    sectionLabel(ctx, infoX, infoY, infoW, "CONFIGURAÇÃO");
+    ctx.save();
+    infoRows.forEach(([label, value], i) => {
+      const ry = infoY + 20 + i * (rowSz + 8);
+      ctx.textBaseline = "alphabetic";
+      ctx.textAlign = "left";
+      ctx.fillStyle = R.steelDim;
+      ctx.font = `700 ${labSz}px ${R.font}`;
+      ctx.fillText(label, infoX, ry);
+      ctx.fillStyle = R.text;
+      ctx.font = `700 ${rowSz}px ${R.font}`;
+      ctx.textAlign = "right";
+      ctx.fillText(value, infoX + infoW, ry);
+    });
+    ctx.restore();
+
+  } else {
+    const mapW = Math.round(w * 0.52);
+    const mapH = Math.round((h - stripeH - barH) * 0.90);
+    drawMinimap(ctx, 10, stripeH + 6, mapW - 10, mapH, track);
+
+    ctx.save();
+    ctx.strokeStyle = R.divider; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(mapW + 8, stripeH + 14); ctx.lineTo(mapW + 8, h - barH - 10); ctx.stroke();
+    ctx.restore();
+
+    const infoX = mapW + 22;
+    const infoW = w - infoX - 16;
+    const infoY = stripeH + 20;
+    const rowSz = csz(w, 0.028, 14, 22);
+    const labSz = csz(w, 0.018, 10, 14);
+    sectionLabel(ctx, infoX, infoY, infoW, "CONFIGURAÇÃO");
+    ctx.save();
+    infoRows.forEach(([label, value], i) => {
+      const ry = infoY + 22 + i * (rowSz + 14);
+      ctx.textBaseline = "alphabetic";
+      ctx.textAlign = "left";
+      ctx.fillStyle = R.steelDim;
+      ctx.font = `700 ${labSz}px ${R.font}`;
+      ctx.fillText(label, infoX, ry);
+      ctx.fillStyle = R.text;
+      ctx.font = `700 ${rowSz}px ${R.font}`;
+      ctx.textAlign = "right";
+      ctx.fillText(value, infoX + infoW, ry);
+    });
+    ctx.restore();
+  }
+
+  bottomBar(ctx, w, h, "", "CONTINUAR  ▶", blink);
+  ctx.restore();
 }
 
 export { drawStartScreen, drawGameOverScreen, drawTrackPreviewScreen };

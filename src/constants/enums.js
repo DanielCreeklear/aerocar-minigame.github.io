@@ -14,3 +14,10 @@ export const AERO_MODES = {
   X: "X",
   Z: "Z",
 };
+
+export const CURVE_PHASE = {
+  STRAIGHT: "straight",
+  ENTRY: "entry",
+  APEX: "apex",
+  EXIT: "exit",
+};

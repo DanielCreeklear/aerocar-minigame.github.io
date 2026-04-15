@@ -52,6 +52,14 @@ class Renderer {
     this.canvas = canvas;
     this.ctx = ctx;
     this.hud = new HudRenderer();
+
+    this._screenRenderers = {
+      [SCREENS.PREVIEW]: (ctx, w, h, gs, track) =>
+        drawTrackPreviewScreen(ctx, w, h, track, gs),
+      [SCREENS.START]: (ctx, w, h, gs, track) =>
+        drawStartScreen(ctx, w, h, gs, track),
+      [SCREENS.GAME_OVER]: (ctx, w, h, gs) => drawGameOverScreen(ctx, w, h, gs),
+    };
   }
 
   draw(gameState, track, telemetry = null) {
@@ -59,18 +67,9 @@ class Renderer {
     const width = canvas.width;
     const height = canvas.height;
 
-    if (gameState.currentScreen === SCREENS.PREVIEW) {
-      drawTrackPreviewScreen(ctx, width, height, track);
-      return;
-    }
-
-    if (gameState.currentScreen === SCREENS.START) {
-      drawStartScreen(ctx, width, height);
-      return;
-    }
-
-    if (gameState.currentScreen === SCREENS.GAME_OVER) {
-      drawGameOverScreen(ctx, width, height, gameState.finalTime);
+    const screenFn = this._screenRenderers[gameState.currentScreen];
+    if (screenFn) {
+      screenFn(ctx, width, height, gameState, track);
       return;
     }
 

@@ -4,13 +4,22 @@
     {
       "label": "Start local server",
       "type": "shell",
-      "command": "npx --yes kill-port 8080 2>nul & npx --yes http-server -p 8080 -c-1",
+      "command": "npm run dev",
       "presentation": {
         "reveal": "always",
         "panel": "dedicated"
       },
       "isBackground": true,
-      "problemMatcher": []
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "\\bvite\\b",
+          "endsPattern": "Local:"
+        }
+      }
     }
   ]
 }

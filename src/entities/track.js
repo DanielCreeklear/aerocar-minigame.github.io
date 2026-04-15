@@ -5,6 +5,7 @@ import {
   CHICANE_MIN_STRENGTH,
   CHICANE_STRENGTH_VARIATION,
   CURVE_ENTRY_EXIT_PORTION,
+  CURVE_PHASE,
   CURVE_LENGTH_VARIATION,
   CURVE_MIN_LENGTH,
   CURVE_MIN_STRENGTH,
@@ -15,16 +16,18 @@ import {
   HAIRPIN_LENGTH_VARIATION,
   HAIRPIN_MIN_STRENGTH,
   HAIRPIN_STRENGTH_VARIATION,
+  PHYSICS_TRACK_HALF,
+  RACING_LINE_OFFSET_FACTOR,
   RNG_DIVISOR,
   RNG_INCREMENT,
   RNG_MULTIPLIER,
   STRAIGHT_LENGTH_VARIATION,
   STRAIGHT_MIN_LENGTH,
+  TIGHT_CURVE_THRESHOLD,
   TRACK_SEED,
   TRACK_TYPES,
   YAW_FACTOR,
   Z_RESOLUTION,
-  RACING_LINE_STEP,
 } from "../constants/index.js";
 
 function clamp01(value) {
@@ -51,6 +54,7 @@ class Track {
     this.segments = [];
     this.trackData = [];
     this.racingLine = [];
+    this.racingLineData = null;
     this.totalDistance = 0;
     this.lapLength = 0;
     this.seed = TRACK_SEED;
@@ -104,17 +108,48 @@ class Track {
         ? HAIRPIN_MIN_LENGTH + this.random() * HAIRPIN_LENGTH_VARIATION
         : length;
 
+      const startZ = zOffset;
+      const endZ = startZ + finalLength;
+      const entryPortion = isChicane
+        ? CHICANE_ENTRY_EXIT_PORTION
+        : CURVE_ENTRY_EXIT_PORTION;
+      const isCurve = type === TRACK_TYPES.CURVE;
+      const entryBoundary = isCurve
+        ? startZ + finalLength * entryPortion
+        : startZ;
+      const exitBoundary = isCurve ? endZ - finalLength * entryPortion : endZ;
+      const apexZ = (entryBoundary + exitBoundary) / 2;
+      const direction =
+        curveStrength > 0 ? "right" : curveStrength < 0 ? "left" : "none";
+      let classification;
+      if (!isCurve) {
+        classification = "straight";
+      } else if (isHairpin) {
+        classification = "hairpin";
+      } else if (isChicane) {
+        classification = "chicane";
+      } else if (Math.abs(curveStrength) >= TIGHT_CURVE_THRESHOLD) {
+        classification = "tight-curve";
+      } else {
+        classification = "fast-curve";
+      }
+
       this.segments.push({
         index: i,
         type,
         length: finalLength,
-        startZ: zOffset,
-        endZ: zOffset + finalLength,
+        startZ,
+        endZ,
         curveStrength,
         isChicane,
         isHairpin,
+        direction,
+        classification,
+        entryBoundary,
+        exitBoundary,
+        apexZ,
       });
-      zOffset += finalLength;
+      zOffset = endZ;
     }
     this.totalDistance = zOffset;
     this.lapLength = zOffset;
@@ -192,11 +227,26 @@ class Track {
     return Math.max(2, Math.floor(this.lapLength / Z_RESOLUTION));
   }
 
+  _binarySearchSegment(lapZ) {
+    const segs = this.segments;
+    let lo = 0;
+    let hi = segs.length - 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >>> 1;
+      const seg = segs[mid];
+      if (lapZ < seg.startZ) {
+        hi = mid - 1;
+      } else if (lapZ >= seg.endZ) {
+        lo = mid + 1;
+      } else {
+        return seg;
+      }
+    }
+    return segs[segs.length - 1];
+  }
+
   findSegmentForZ(z) {
-    return (
-      this.segments.find((s) => z >= s.startZ && z < s.endZ) ||
-      this.segments[this.segments.length - 1]
-    );
+    return this._binarySearchSegment(z);
   }
 
   getSegmentProgress(seg, z) {
@@ -205,6 +255,95 @@ class Track {
     if (t < 0) t = 0;
     if (t > 1) t = 1;
     return t;
+  }
+
+  /**
+   * Returns a rich description of the car's position on the track.
+   * @param {number} z  - any z value (auto-wrapped to lap)
+   * @returns {{ lapProgress, segment, segmentProgress, phase, distanceToSegmentEnd, classification, direction }}
+   */
+  getTrackPosition(z) {
+    const lap = this.lapLength || this.totalDistance;
+    if (!lap || this.segments.length === 0) return null;
+
+    let wrappedZ = z % lap;
+    if (wrappedZ < 0) wrappedZ += lap;
+
+    const seg = this._binarySearchSegment(wrappedZ);
+    const segmentProgress = this.getSegmentProgress(seg, wrappedZ);
+
+    let phase;
+    if (seg.type === TRACK_TYPES.STRAIGHT) {
+      phase = CURVE_PHASE.STRAIGHT;
+    } else if (wrappedZ < seg.entryBoundary) {
+      phase = CURVE_PHASE.ENTRY;
+    } else if (wrappedZ > seg.exitBoundary) {
+      phase = CURVE_PHASE.EXIT;
+    } else {
+      phase = CURVE_PHASE.APEX;
+    }
+
+    return {
+      lapProgress: wrappedZ / lap,
+      segment: seg,
+      segmentProgress,
+      phase,
+      distanceToSegmentEnd: seg.endZ - wrappedZ,
+      classification: seg.classification,
+      direction: seg.direction,
+    };
+  }
+
+  /**
+   * Returns all track segments that start within `lookAheadDistance` of z,
+   * sorted by distance ahead. Handles lap wrap-around.
+   * @param {number} z
+   * @param {number} lookAheadDistance
+   * @returns {Array<{ segment, distanceAhead, classification, direction, intensity, apexDistanceAhead }>}
+   */
+  getUpcomingFeatures(z, lookAheadDistance) {
+    const lap = this.lapLength || this.totalDistance;
+    if (!lap || this.segments.length === 0) return [];
+
+    let wrappedZ = z % lap;
+    if (wrappedZ < 0) wrappedZ += lap;
+
+    const results = [];
+    for (const seg of this.segments) {
+      const isInside = wrappedZ >= seg.startZ && wrappedZ < seg.endZ;
+
+      let distanceAhead;
+      if (isInside) {
+        distanceAhead = 0;
+      } else {
+        let startDist = seg.startZ - wrappedZ;
+        if (startDist < 0) startDist += lap;
+        distanceAhead = startDist;
+      }
+
+      if (distanceAhead > lookAheadDistance) continue;
+
+      let apexDistanceAhead;
+      if (isInside) {
+        apexDistanceAhead = Math.max(0, seg.apexZ - wrappedZ);
+      } else {
+        let d = seg.apexZ - wrappedZ;
+        if (d < 0) d += lap;
+        apexDistanceAhead = d;
+      }
+
+      results.push({
+        segment: seg,
+        distanceAhead,
+        classification: seg.classification,
+        direction: seg.direction,
+        intensity: Math.abs(seg.curveStrength),
+        apexDistanceAhead,
+      });
+    }
+
+    results.sort((a, b) => a.distanceAhead - b.distanceAhead);
+    return results;
   }
 
   getTargetCurve(seg, t) {
@@ -293,7 +432,6 @@ class Track {
   }
 
   _markModeXZones() {
-    // Retas longas são zonas de Modo X — apenas a faixa central (excluindo 20% de entrada/saída)
     const MIN_STRAIGHT_LENGTH = 400;
     for (const seg of this.segments) {
       if (
@@ -312,11 +450,87 @@ class Track {
   }
 
   _buildRacingLine() {
-    this.racingLine = [];
-    for (let z = 0; z < this.lapLength; z += RACING_LINE_STEP) {
-      const pt = this.getTrackPoint(z);
-      this.racingLine.push({ z, targetX: 0, curve: pt.rawCurve });
+    this.racingLine = []; // kept for backward compat; no longer populated
+    const count = this.trackData.length;
+    this.racingLineData = new Float32Array(count);
+
+    const offset = RACING_LINE_OFFSET_FACTOR * PHYSICS_TRACK_HALF;
+
+    for (let i = 0; i < count; i++) {
+      const z = i * Z_RESOLUTION;
+      const seg = this._binarySearchSegment(z);
+
+      if (seg.type === TRACK_TYPES.STRAIGHT || seg.isChicane) {
+        this.racingLineData[i] = 0;
+        continue;
+      }
+
+      const t = this.getSegmentProgress(seg, z);
+      const sign = seg.curveStrength > 0 ? 1 : -1;
+      const edgePortion = CURVE_ENTRY_EXIT_PORTION;
+      this.racingLineData[i] = this._racingLineCurveProfile(
+        t,
+        sign,
+        offset,
+        edgePortion,
+      );
     }
+  }
+
+  /**
+   * Computes the ideal lateral offset for a given progress t ∈ [0,1] through
+   * a curve segment, following a wide-entry → apex-cut → wide-exit profile.
+   * @param {number} t          - normalised segment progress [0,1]
+   * @param {number} sign       - +1 = right-hander, -1 = left-hander
+   * @param {number} offset     - maximum lateral offset magnitude
+   * @param {number} edgePortion - fraction of segment used for entry/exit ramps
+   */
+  _racingLineCurveProfile(t, sign, offset, edgePortion) {
+    const te = edgePortion; // end of entry ramp
+    const tx = 1 - edgePortion; // start of exit ramp
+    const ta = 0.5; // apex at midpoint
+
+    if (t <= te) {
+      // Ramp from centre toward outside (wide entry approach)
+      const tn = te > 0 ? t / te : 1;
+      return -sign * offset * smoothstep01(tn);
+    } else if (t <= ta) {
+      // Sweep from outside to inside (cut apex)
+      const tn = ta - te > 0 ? (t - te) / (ta - te) : 1;
+      return -sign * offset + 2 * sign * offset * smoothstep01(tn);
+    } else if (t <= tx) {
+      // Sweep from inside back to outside (exit wide)
+      const tn = tx - ta > 0 ? (t - ta) / (tx - ta) : 1;
+      return sign * offset - 2 * sign * offset * smoothstep01(tn);
+    } else {
+      // Ramp from outside back to centre (ready for next straight)
+      const tn = 1 - tx > 0 ? (t - tx) / (1 - tx) : 1;
+      return -sign * offset * (1 - smoothstep01(tn));
+    }
+  }
+
+  /**
+   * Returns the ideal lateral offset (racing line targetX) at position z.
+   * Positive = right of centre, negative = left.
+   * @param {number} z
+   * @returns {number}
+   */
+  getRacingLineTarget(z) {
+    if (!this.racingLineData || this.racingLineData.length === 0) return 0;
+    const lap = this.lapLength || this.totalDistance;
+    if (!lap) return 0;
+
+    let wrappedZ = z % lap;
+    if (wrappedZ < 0) wrappedZ += lap;
+
+    const baseIndex = Math.floor(wrappedZ / Z_RESOLUTION);
+    const currentIndex = Math.min(baseIndex, this.racingLineData.length - 1);
+    const nextIndex = (currentIndex + 1) % this.racingLineData.length;
+    const t = (wrappedZ - currentIndex * Z_RESOLUTION) / Z_RESOLUTION;
+
+    const a = this.racingLineData[currentIndex];
+    const b = this.racingLineData[nextIndex];
+    return a + (b - a) * t;
   }
 
   getTrackPoint(z) {
