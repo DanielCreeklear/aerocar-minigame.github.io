@@ -35,7 +35,7 @@ function computeForwardVelocity(gameState, dt) {
     vz *= Math.pow(MANUAL_BRAKE_DECEL, dt);
   }
 
-  return Math.max(0, vz);
+  return Math.max(0, Math.min(vz, strategy.maxVz));
 }
 
 export { computeForwardVelocity };

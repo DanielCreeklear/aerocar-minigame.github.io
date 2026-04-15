@@ -5,7 +5,7 @@ import { drawLapPanel } from "./hud/lap-panel.js";
 import { drawGripWarning, resetGripWarning } from "./hud/grip-warning.js";
 import { drawCurveIndicator } from "./hud/curve-indicator.js";
 
-const SPEEDOMETER_SCALE_TO_KMH = 8;
+const SPEEDOMETER_SCALE_TO_KMH = 17;
 const SPEEDOMETER_MAX_KMH = 399;
 const SPEEDOMETER_SMOOTHING = 0.18;
 

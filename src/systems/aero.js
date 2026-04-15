@@ -17,8 +17,7 @@ const LowDragMode = {
   drag: VZ_DRAG_MODE_X,
   maxVz: VZ_MAX_MODE_X,
   lateralFriction: LATERAL_FRICTION_GRIP_X,
-  cornerSafeSpeed: 70,
-  autoSteerScale: 0.35,
+  cornerSafeSpeed: 35,
 };
 
 // Modo Z: alto downforce — velocidade de curva segura alta, modo de corrida nas curvas.
@@ -28,8 +27,7 @@ const HighDownforceMode = {
   drag: VZ_DRAG_MODE_Z,
   maxVz: VZ_MAX_MODE_Z,
   lateralFriction: LATERAL_FRICTION_GRIP_Z,
-  cornerSafeSpeed: 80,
-  autoSteerScale: 1.0,
+  cornerSafeSpeed: 40,
 };
 
 function getAeroStrategy(aeroMode) {

@@ -43,10 +43,6 @@ class TelemetryManager {
       slip: gameState.currentSlip,
       centrifugalForce: gameState._telCentrifugalForce ?? 0,
       effectiveGrip: gameState._telEffectiveGrip ?? 0,
-      targetHeading: gameState._telTargetHeading ?? 0,
-      carHeadingDelta: gameState.carHeadingDelta,
-      kpForce: gameState._telKpForce ?? 0,
-      autoSteerForce: gameState._telAutoSteerForce ?? 0,
       aeroMode: gameState.aeroMode,
       battery: gameState.battery,
       isOffTrack: gameState.isOffTrack ? 1 : 0,
@@ -81,10 +77,6 @@ class TelemetryManager {
               "slip",
               "centrifugalForce",
               "effectiveGrip",
-              "targetHeading",
-              "carHeadingDelta",
-              "kpForce",
-              "autoSteerForce",
               "aeroMode",
               "battery",
               "isOffTrack",
@@ -223,18 +215,12 @@ class TelemetryManager {
     cy += 5;
 
     ctx.fillStyle = "rgba(86, 180, 233, 0.9)";
-    ctx.fillText("AUTO-STEER", COL, cy);
+    ctx.fillText("STEER", COL, cy);
     cy += LH;
 
     ctx.fillStyle = "#ecf0f1";
     ctx.fillText(
-      `tgtH: ${_sign(d.targetHeading)}${d.targetHeading.toFixed(3)}   \u0394h: ${_sign(d.carHeadingDelta)}${d.carHeadingDelta.toFixed(3)}`,
-      COL,
-      cy,
-    );
-    cy += LH;
-    ctx.fillText(
-      ` Kp: ${_sign(d.kpForce)}${d.kpForce.toFixed(3)}   AS: ${_sign(d.autoSteerForce)}${d.autoSteerForce.toFixed(3)}`,
+      `steer: ${_sign(d.steer)}${(d.steer ?? 0).toFixed(3)}`,
       COL,
       cy,
     );

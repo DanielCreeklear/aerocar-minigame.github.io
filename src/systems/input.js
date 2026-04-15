@@ -1,15 +1,13 @@
 import {
   ACTION_KEYS,
   getInputRatios,
-  MODE_CORNER_X_RATIO,
-  MODE_CORNER_Y_MIN_RATIO,
-  MODE_CORNER_Y_MAX_RATIO,
+  MODE_BUTTON_X_MIN_RATIO,
+  MODE_BUTTON_X_MAX_RATIO,
+  MODE_BUTTON_Y_MIN_RATIO,
   PREVENT_DEFAULT_KEYS,
   STEER_DEADZONE_DEG,
   STEER_MAX_TILT_DEG,
 } from "../constants/index.js";
-
-const TOUCH_STEER_HALF_RANGE_RATIO = 0.25;
 
 function normalizeTilt(raw) {
   const sign = Math.sign(raw);
@@ -17,7 +15,10 @@ function normalizeTilt(raw) {
   if (abs < STEER_DEADZONE_DEG) return 0;
   return (
     sign *
-    Math.min(1, (abs - STEER_DEADZONE_DEG) / (STEER_MAX_TILT_DEG - STEER_DEADZONE_DEG))
+    Math.min(
+      1,
+      (abs - STEER_DEADZONE_DEG) / (STEER_MAX_TILT_DEG - STEER_DEADZONE_DEG),
+    )
   );
 }
 
@@ -28,7 +29,6 @@ class InputController {
     this.lastTouchTimestamp = 0;
     this.isKeyBraking = false;
     this.isKeyBoosting = false;
-    this.activeTouchSteering = false;
     this._iosPermissionRequested = false;
     this.bindEvents();
   }
@@ -38,16 +38,22 @@ class InputController {
     const scaleX = rect.width ? this.canvas.width / rect.width : 1;
     const scaleY = rect.height ? this.canvas.height / rect.height : 1;
     return {
-      x: Math.max(0, Math.min(this.canvas.width, (clientX - rect.left) * scaleX)),
-      y: Math.max(0, Math.min(this.canvas.height, (clientY - rect.top) * scaleY)),
+      x: Math.max(
+        0,
+        Math.min(this.canvas.width, (clientX - rect.left) * scaleX),
+      ),
+      y: Math.max(
+        0,
+        Math.min(this.canvas.height, (clientY - rect.top) * scaleY),
+      ),
     };
   }
 
-  isInModeCorner(x, y) {
+  isInModeButton(x, y) {
     return (
-      x >= this.canvas.width * MODE_CORNER_X_RATIO &&
-      y >= this.canvas.height * MODE_CORNER_Y_MIN_RATIO &&
-      y <= this.canvas.height * MODE_CORNER_Y_MAX_RATIO
+      x >= this.canvas.width * MODE_BUTTON_X_MIN_RATIO &&
+      x <= this.canvas.width * MODE_BUTTON_X_MAX_RATIO &&
+      y >= this.canvas.height * MODE_BUTTON_Y_MIN_RATIO
     );
   }
 
@@ -68,34 +74,20 @@ class InputController {
   evaluateTouchStates(touchList) {
     let hasBrake = false;
     let hasBoost = false;
-    let centerZoneTouchX = null;
 
     Array.from(touchList).forEach((touch) => {
       const { x, y } = this.getCanvasCoords(touch.clientX, touch.clientY);
-      if (this.isInModeCorner(x, y)) return;
+      if (this.isInModeButton(x, y)) return;
 
       if (this.isInBoostZone(x)) {
         hasBoost = true;
       } else if (this.isInBrakeZone(x)) {
         hasBrake = true;
-      } else if (centerZoneTouchX === null) {
-        centerZoneTouchX = x;
       }
     });
 
     this.handlers.onBrakeChange(hasBrake);
     this.handlers.onBoostChange(hasBoost);
-
-    if (centerZoneTouchX !== null) {
-      this.activeTouchSteering = true;
-      const centerX = this.canvas.width * 0.5;
-      const steerRange = this.canvas.width * TOUCH_STEER_HALF_RANGE_RATIO;
-      const steer = Math.max(-1, Math.min(1, (centerZoneTouchX - centerX) / steerRange));
-      this.handlers.onSteerChange(steer);
-    } else if (this.activeTouchSteering) {
-      this.activeTouchSteering = false;
-      this.handlers.onSteerChange(0);
-    }
   }
 
   _bindDeviceOrientationEvent() {
@@ -150,7 +142,7 @@ class InputController {
             e.changedTouches[i].clientX,
             e.changedTouches[i].clientY,
           );
-          if (this.isInModeCorner(x, y)) {
+          if (this.isInModeButton(x, y)) {
             this.handlers.onModeToggle();
           } else if (!this.isInBoostZone(x) && !this.isInBrakeZone(x)) {
             this.handlers.onScreenTap(x, y);
@@ -195,7 +187,7 @@ class InputController {
     this.canvas.addEventListener("mousedown", (e) => {
       if (this.isLikelySyntheticMouse()) return;
       const { x, y } = this.getCanvasCoords(e.clientX, e.clientY);
-      if (this.isInModeCorner(x, y)) {
+      if (this.isInModeButton(x, y)) {
         this.handlers.onModeToggle();
       } else if (this.isInBoostZone(x)) {
         this.handlers.onBoostChange(true);

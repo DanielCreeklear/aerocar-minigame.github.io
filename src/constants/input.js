@@ -2,9 +2,10 @@ export const SCREEN_HALF_RATIO = 0.5;
 export const LEFT_INPUT_RATIO = 0.25;
 export const RIGHT_INPUT_RATIO = 0.75;
 
-export const MODE_CORNER_X_RATIO = 0.72;
-export const MODE_CORNER_Y_MIN_RATIO = 0.38;
-export const MODE_CORNER_Y_MAX_RATIO = 0.62;
+// Mode toggle button: bottom-center zone
+export const MODE_BUTTON_X_MIN_RATIO = 0.33;
+export const MODE_BUTTON_X_MAX_RATIO = 0.67;
+export const MODE_BUTTON_Y_MIN_RATIO = 0.82;
 
 export function getInputRatios(width, height) {
   if (height <= width) {

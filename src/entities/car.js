@@ -13,7 +13,7 @@ function createCarStateFields() {
     currentSlip: 0,
     curveForce: 0,
     currentSegmentIndex: 1,
-    carHeadingDelta: 0,
+    carVisualHeading: 0,
     lateralOffset: 0,
     lateralVelocity: 0,
     currentCurvature: 0,
@@ -24,7 +24,6 @@ function createCarStateFields() {
     offTrackDustTimer: 0,
     isSpinning: false,
     spinRotation: 0,
-    wpIdx: 0,
   };
 }
 

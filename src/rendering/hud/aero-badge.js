@@ -1,40 +1,36 @@
 import { responsiveSize } from "../../utils/canvas.js";
-import { HUD_COLORS, HUD_FONTS, HUD_LAYOUT } from "../../constants/index.js";
+import { HUD_COLORS, HUD_FONTS } from "../../constants/index.js";
+
+const BADGE_WIDTH_RATIO = 0.28;
+const BADGE_MIN_WIDTH = 100;
+const BADGE_MAX_WIDTH = 200;
+const BADGE_HEIGHT_RATIO = 0.07;
+const BADGE_MIN_HEIGHT = 34;
+const BADGE_MAX_HEIGHT = 54;
+const BADGE_BOTTOM_MARGIN_RATIO = 0.025;
+const BADGE_BOTTOM_MARGIN_MIN = 8;
+const BADGE_BOTTOM_MARGIN_MAX = 22;
+const BADGE_RADIUS = 8;
 
 function drawAeroBadge(ctx, gameState, width, height) {
-  const L = HUD_LAYOUT;
   const isX = gameState.aeroMode === "X";
 
   const badgeW = Math.max(
-    L.badgeMinWidth,
-    Math.min(L.badgeMaxWidth, width * L.badgeWidthRatio),
+    BADGE_MIN_WIDTH,
+    Math.min(BADGE_MAX_WIDTH, width * BADGE_WIDTH_RATIO),
   );
   const badgeH = Math.max(
-    L.badgeMinHeight,
-    Math.min(L.badgeMaxHeight, height * L.badgeHeightRatio),
-  );
-
-  const speedW = Math.max(
-    L.speedMinWidth,
-    Math.min(L.speedMaxWidth, width * L.speedWidthRatio),
-  );
-  const speedH = Math.max(
-    L.speedMinHeight,
-    Math.min(L.speedMaxHeight, height * L.speedHeightRatio),
-  );
-  const rightMargin = Math.max(
-    L.speedMinMargin,
-    Math.min(L.speedMaxMargin, width * L.speedRightMarginRatio),
+    BADGE_MIN_HEIGHT,
+    Math.min(BADGE_MAX_HEIGHT, height * BADGE_HEIGHT_RATIO),
   );
   const bottomMargin = Math.max(
-    L.speedMinMargin,
-    Math.min(L.speedMaxMargin, height * L.speedBottomMarginRatio),
+    BADGE_BOTTOM_MARGIN_MIN,
+    Math.min(BADGE_BOTTOM_MARGIN_MAX, height * BADGE_BOTTOM_MARGIN_RATIO),
   );
 
-  const speedY = height - speedH - bottomMargin;
-  const x = width - rightMargin - badgeW;
-  const y = speedY - badgeH - 6;
-  const lean = Math.round(badgeH * 0.28);
+  // Centered horizontally, anchored to the bottom
+  const x = (width - badgeW) / 2;
+  const y = height - badgeH - bottomMargin;
 
   const fillColor = isX ? HUD_COLORS.badgeModeX : HUD_COLORS.badgeModeZ;
   const borderColor = isX
@@ -44,28 +40,24 @@ function drawAeroBadge(ctx, gameState, width, height) {
 
   ctx.save();
 
+  // Rounded rectangle pill button
   ctx.beginPath();
-  ctx.moveTo(x - lean, y);
-  ctx.lineTo(x + badgeW, y);
-  ctx.lineTo(x + badgeW, y + badgeH);
-  ctx.lineTo(x, y + badgeH);
-  ctx.closePath();
+  ctx.roundRect(x, y, badgeW, badgeH, BADGE_RADIUS);
 
   ctx.shadowColor = glowColor;
-  ctx.shadowBlur = 12;
+  ctx.shadowBlur = 14;
   ctx.fillStyle = fillColor;
   ctx.fill();
   ctx.shadowBlur = 0;
   ctx.strokeStyle = borderColor;
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 2;
   ctx.stroke();
 
+  // Top accent line
   ctx.beginPath();
-  ctx.moveTo(x - lean, y);
-  ctx.lineTo(x + badgeW, y);
-  ctx.strokeStyle = borderColor;
-  ctx.lineWidth = 3;
-  ctx.stroke();
+  ctx.roundRect(x, y, badgeW, 3, [BADGE_RADIUS, BADGE_RADIUS, 0, 0]);
+  ctx.fillStyle = borderColor;
+  ctx.fill();
 
   const fontSize = responsiveSize(width, HUD_FONTS.badgeMode);
   ctx.fillStyle = HUD_COLORS.badgeText;
@@ -74,11 +66,7 @@ function drawAeroBadge(ctx, gameState, width, height) {
   ctx.textBaseline = "middle";
   ctx.shadowColor = "rgba(0,0,0,0.5)";
   ctx.shadowBlur = 3;
-  ctx.fillText(
-    isX ? "MODO X" : "MODO Z",
-    x + badgeW * 0.5 - lean * 0.5,
-    y + badgeH * 0.5,
-  );
+  ctx.fillText(isX ? "MODO X" : "MODO Z", x + badgeW * 0.5, y + badgeH * 0.5);
 
   ctx.restore();
 }

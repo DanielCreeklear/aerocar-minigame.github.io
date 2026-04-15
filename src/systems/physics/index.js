@@ -1,10 +1,9 @@
-import { getLapData } from "../../utils/math.js";
+import { getLapData, lerp, clamp } from "../../utils/math.js";
 import { computeForwardVelocity } from "./longitudinal.js";
 import { integrateLateralState } from "./lateral.js";
-import { computeAutoSteer } from "./autosteer.js";
 import { writePhysicsTelemetry } from "./telemetry.js";
 import {
-  CURVATURE_DEADZONE,
+  STEER_LATERAL_ACCEL,
   SPIN_ANGULAR_VELOCITY,
 } from "../../constants/index.js";
 
@@ -43,27 +42,31 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
   gameState.curveForce = Math.abs(curvature);
   resolveCurrentSegment(gameState, track, lapZ);
 
-  // Deadzone de curvatura: evita forças centrífugas fantasmas por ruído de ponto flutuante.
+  const CURVATURE_DEADZONE = 0.001;
   const effectiveCurvature =
     Math.abs(curvature) < CURVATURE_DEADZONE ? 0 : curvature;
 
   // 2. Velocidade longitudinal
   const vz = computeForwardVelocity(gameState, dt);
 
-  // 3. AutoSteer (PD + feedforward)
-  const { force: autoSteerForce, telemetry: steerTel } = computeAutoSteer(
-    gameState,
-    track,
-    vz,
-    dt,
+  // 3. Steer force from player input (arrow keys / device tilt)
+  const steerInput = gameState.steerInput || 0;
+  const steerForce = steerInput * STEER_LATERAL_ACCEL;
+
+  // Update visual heading smoothly from steer input
+  const targetVisualHeading = steerInput * 0.5;
+  gameState.carVisualHeading = lerp(
+    gameState.carVisualHeading || 0,
+    targetVisualHeading,
+    clamp(0.15 * dt, 0, 1),
   );
 
-  // 4. Dinâmica lateral + penalidades fora da pista
+  // 4. Lateral dynamics + off-track penalties
   const { nextVz, forces } = integrateLateralState(
     gameState,
     effectiveCurvature,
     vz,
-    autoSteerForce,
+    steerForce,
     dt,
   );
 
@@ -71,9 +74,6 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
   writePhysicsTelemetry(gameState, {
     centrifugalForce: forces.centrifugalForce,
     effectiveGrip: forces.effectiveGrip,
-    targetHeading: steerTel.targetHeading,
-    kpForce: steerTel.kpForce,
-    autoSteerForce: steerTel.autoSteerForce,
   });
 
   // 6. Confirma velocidade e avança
