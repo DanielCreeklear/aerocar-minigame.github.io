@@ -46,6 +46,7 @@ class Game {
     this.track.init(this.totalSegments, this.trackSeed);
 
     this._screenChangeTime = Date.now();
+    this._gyroscopeWarning = false;
     this.rankingService = createRankingService();
     this.rankings = [];
 
@@ -142,6 +143,9 @@ class Game {
       onTelemetryExport: () => this.telemetry.exportJSON(),
       onTelemetryHudToggle: () => this.telemetry.toggleHUD(),
       isRaceActive: () => this.gameState.currentScreen === SCREENS.RACE,
+      onGyroscopeUnavailable: () => {
+        this._gyroscopeWarning = true;
+      },
     });
 
     this._handleViewportResize = this._handleViewportResize.bind(this);
@@ -231,6 +235,7 @@ class Game {
       newEntryIndex: -1,
       screenAge: 0,
       pendingName: "",
+      gyroscopeWarning: this._gyroscopeWarning,
     };
 
     this.energyManager.reset();
