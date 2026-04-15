@@ -1,7 +1,6 @@
 export const TRACK_WIDTH = 460;
 export const BORDER_WIDTH = 24;
 
-
 export const LATERAL_RENDER_SCALE = 2.3;
 export const CAR_WIDTH = 50;
 export const CAR_HEIGHT = 100;

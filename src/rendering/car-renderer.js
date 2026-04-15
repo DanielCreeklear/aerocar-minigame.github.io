@@ -18,10 +18,9 @@ import {
 
 function computeCarDrawPosition(gameState, width, height) {
   const carY = height * CAR_Y_RATIO;
-  
-  
-  
-  let drawX = width * HALF_RATIO + (gameState.lateralOffset || 0) * LATERAL_RENDER_SCALE;
+
+  let drawX =
+    width * HALF_RATIO + (gameState.lateralOffset || 0) * LATERAL_RENDER_SCALE;
   let drawY = carY;
 
   if (!gameState.isGameOver && gameState.isOffTrack) {
