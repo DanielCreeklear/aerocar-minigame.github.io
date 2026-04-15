@@ -4,6 +4,7 @@ import { drawAeroBadge } from "./hud/aero-badge.js";
 import { drawLapPanel } from "./hud/lap-panel.js";
 import { drawGripWarning } from "./hud/grip-warning.js";
 import { drawCurveIndicator } from "./hud/curve-indicator.js";
+import { createWindState, drawWindStreaks } from "./hud/wind-streaks.js";
 
 const SPEEDOMETER_SCALE_TO_KMH = 17;
 const SPEEDOMETER_MAX_KMH = 399;
@@ -107,11 +108,13 @@ class HudRenderer {
   constructor() {
     this.displayedSpeedKmh = 0;
     this._warningTick = 0;
+    this._windState = createWindState();
   }
 
   reset() {
     this.displayedSpeedKmh = 0;
     this._warningTick = 0;
+    this._windState = createWindState();
   }
 
   draw(ctx, gameState, width, height) {
@@ -129,6 +132,7 @@ class HudRenderer {
       drawTouchZoneHints(ctx, gameState, width, height);
     }
 
+    drawWindStreaks(ctx, gameState, width, height, this._windState);
     this._warningTick = drawGripWarning(
       ctx,
       gameState,

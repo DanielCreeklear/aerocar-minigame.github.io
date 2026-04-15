@@ -112,7 +112,6 @@ function integrateLateralState(
 
   let rescuedVz = nextVz;
   if (gameState.rescueInProgress) {
-    // Gradually slide back to center at fixed speed
     const step = OFF_TRACK_RESCUE_RETURN_SPEED * dt;
     if (Math.abs(x) <= step) {
       x = 0;
@@ -122,7 +121,6 @@ function integrateLateralState(
     }
     rescuedVz = Math.min(nextVz, gameState.rescuePenaltySpeed || nextVz);
   } else if (Math.abs(x) > OFF_TRACK_RESCUE_THRESHOLD) {
-    // Trigger rescue: freeze lateral position, start sliding to center
     gameState.rescueInProgress = true;
     gameState.rescuePenaltySpeed = nextVz * OFF_TRACK_RESCUE_SPEED_FACTOR;
     gameState.carHeading = 0;
