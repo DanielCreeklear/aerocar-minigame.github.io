@@ -3,7 +3,7 @@ import { getAeroStrategy } from "../aero.js";
 import { computeForwardVelocity } from "./longitudinal.js";
 import { integrateLateralState } from "./lateral.js";
 import { buildPhysicsTelemetry } from "./telemetry.js";
-import { SPIN_ANGULAR_VELOCITY } from "../../constants/index.js";
+import { SPIN_ANGULAR_VELOCITY, VISUAL_HEADING_LERP } from "../../constants/index.js";
 
 function resolveTrackState(gameState, currentTrackInfo) {
   gameState.trackType = currentTrackInfo.type;
@@ -68,7 +68,10 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     surfaceType,
   );
 
-  gameState.carVisualHeading = gameState.carHeading || 0;
+  gameState.carVisualHeading =
+    (gameState.carVisualHeading || 0) +
+    ((gameState.carHeading || 0) - (gameState.carVisualHeading || 0)) *
+      Math.min(1, VISUAL_HEADING_LERP * dt);
 
   // 5. Telemetria
   const physicsTelemetry = buildPhysicsTelemetry({

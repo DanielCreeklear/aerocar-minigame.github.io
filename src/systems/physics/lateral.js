@@ -1,6 +1,5 @@
 import { clamp } from "../../utils/math.js";
 import {
-  HEADING_CURVE_FACTOR,
   STEER_YAW_RATE,
   SLIP_PENALTY_THRESHOLD,
   MAX_LATERAL_VX,
@@ -21,17 +20,11 @@ function updateHeadingAndLateral(
   curvature,
   vz,
   dt,
-  lateralFriction,
 ) {
   const steerInput = gameState.steerInput || 0;
   let theta = gameState.carHeading || 0;
-  theta += curvature * HEADING_CURVE_FACTOR * vz * dt;
 
   theta += steerInput * STEER_YAW_RATE * dt;
-
-  // Self-alignment: heading decays toward 0 when no curvature/steer input.
-  // Uses the aero-mode grip factor so Mode Z (high downforce) re-aligns faster.
-  theta *= Math.pow(lateralFriction, dt);
 
   gameState.carHeading = clamp(theta, -Math.PI / 2, Math.PI / 2);
 
@@ -58,12 +51,12 @@ function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt) {
   let nextVz = vz;
 
   if (isOffTrack) {
-    // Grass: hard speed cap, heading damping (kills lateral velocity next frame),
-    // spin trigger, and dust timer.
+    // Grass: speed drag, spin trigger, and dust timer.
+    // carHeading is NOT extra-damped here: that killed steering authority because
+    // lateralFriction already self-centers the heading each frame.
+    // The player needs full steer response to drive back onto the track.
     nextVz *= Math.pow(OFF_TRACK_VZ_DRAG, dt);
     nextVz = Math.min(nextVz, OFF_TRACK_MAX_SPEED);
-    // Damp carHeading so vx = vz*sin(theta) decays on subsequent frames.
-    gameState.carHeading *= Math.pow(OFF_TRACK_VX_DRAG, dt);
     gameState.offTrackDustTimer = OFF_TRACK_DUST_FRAMES;
 
     if (vz > SPIN_TRIGGER_SPEED) {
@@ -114,7 +107,6 @@ function integrateLateralState(
     curvature,
     vz,
     dt,
-    strategy.lateralFriction,
   );
 
   const { nextVz, isOffTrack } = applyOffTrackPenalties(

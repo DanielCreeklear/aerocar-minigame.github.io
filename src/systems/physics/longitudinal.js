@@ -4,13 +4,18 @@ import {
   BOOST_MIN_EFFECT,
   BOOST_SLIP_EFFECT_FACTOR,
   MANUAL_BRAKE_DECEL,
+  OFF_TRACK_ACCEL_FACTOR,
+  OVERSPEED_DRAG,
 } from "../../constants/index.js";
 
 function computeForwardVelocity(gameState, dt, strategy) {
   // 1. Empuxo + arrasto aerodinâmico
+  // Off-track: allow reduced accel so the car can steer itself back to the track.
+  // Spinning: no accel until spin exits.
   let vz = gameState.speed || 0;
-  if (!gameState.isOffTrack && !gameState.isSpinning) {
-    vz = Math.max(0, vz + strategy.accel * dt);
+  if (!gameState.isSpinning) {
+    const accelFactor = gameState.isOffTrack ? OFF_TRACK_ACCEL_FACTOR : 1;
+    vz = Math.max(0, vz + strategy.accel * accelFactor * dt);
   }
   vz *= Math.pow(strategy.drag, dt);
 
@@ -32,7 +37,15 @@ function computeForwardVelocity(gameState, dt, strategy) {
     vz *= Math.pow(MANUAL_BRAKE_DECEL, dt);
   }
 
-  return Math.max(0, Math.min(vz, strategy.maxVz));
+  // 4. Gradual overspeed decay: instead of hard-clamping to maxVz (which causes
+  // a jarring instant snap when switching modes), bleed off excess speed smoothly.
+  if (vz > strategy.maxVz) {
+    vz =
+      strategy.maxVz +
+      (vz - strategy.maxVz) * Math.pow(OVERSPEED_DRAG, dt);
+  }
+
+  return Math.max(0, vz);
 }
 
 export { computeForwardVelocity };
