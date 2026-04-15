@@ -28,8 +28,6 @@ function drawSpeedometer(
     Math.min(L.speedMaxMargin, height * L.speedBottomMarginRatio),
   );
 
-  
-  
   const x = isPortrait ? edgeMargin : width - panelW - edgeMargin;
   const y = height - panelH - bottomMargin;
 
@@ -38,38 +36,22 @@ function drawSpeedometer(
 
   ctx.save();
 
-  
-  ctx.fillStyle = HUD_COLORS.speedPanel;
-  ctx.fillRect(x, y, panelW, panelH);
-  ctx.strokeStyle = HUD_COLORS.speedPanelBorder;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x, y, panelW, panelH);
-  
-  ctx.fillStyle = HUD_COLORS.speedPanelBorder;
-  ctx.fillRect(x, y, panelW, 3);
-
-  
-  
-  
   const r = Math.min(panelW * 0.4, panelH * 0.58);
   const cx = x + panelW / 2;
   const cy = y + panelH - 6;
 
-  
   ctx.beginPath();
   ctx.arc(cx, cy, r, Math.PI, Math.PI * 2, false);
   ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  
   ctx.beginPath();
   ctx.arc(cx, cy, r, Math.PI * 1.8, Math.PI * 2, false);
   ctx.strokeStyle = "rgba(204, 0, 30, 0.35)";
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  
   const needleAngle = Math.PI + ratio * Math.PI;
   ctx.beginPath();
   ctx.arc(cx, cy, r, Math.PI, needleAngle, false);
@@ -77,7 +59,6 @@ function drawSpeedometer(
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  
   const nx = cx + Math.cos(needleAngle) * r;
   const ny = cy + Math.sin(needleAngle) * r;
   ctx.beginPath();
@@ -87,13 +68,11 @@ function drawSpeedometer(
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  
   ctx.beginPath();
   ctx.arc(cx, cy, 3, 0, Math.PI * 2);
   ctx.fillStyle = HUD_COLORS.speedPanelBorder;
   ctx.fill();
 
-  
   const gaugeCenter = cy - r * 0.42;
   const speedFontSize = responsiveSize(width, HUD_FONTS.speedValue);
   ctx.fillStyle = HUD_COLORS.speedValue;

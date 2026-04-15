@@ -34,6 +34,8 @@ export const MAX_STEER_HEADING = 0.22;
 
 export const HEADING_ALIGNMENT_RATE = 0.25;
 
+export const CENTRIFUGAL_FACTOR = 0.018;
+
 export const VISUAL_HEADING_LERP = 0.25;
 
 export const OVERSPEED_DRAG = 0.92;
@@ -71,7 +73,12 @@ export const OFF_TRACK_OUTWARD_VX_DAMP = 0.9;
 
 export const OFF_TRACK_DUST_FRAMES = 20;
 
-export const OFF_TRACK_MAX_OFFSET_MARGIN = 300;
+export const OFF_TRACK_MAX_OFFSET_MARGIN = 100;
+
+export const OFF_TRACK_RESCUE_THRESHOLD = 150;
+export const OFF_TRACK_RESCUE_SPEED_FACTOR = 0.35;
+export const OFF_TRACK_RESCUE_FLASH_DURATION = 5.0;
+export const OFF_TRACK_RESCUE_RETURN_SPEED = 40; // units/s lateral slide back to center
 
 export const CURB_VZ_DRAG = 0.94;
 

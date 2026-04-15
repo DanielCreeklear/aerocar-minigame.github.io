@@ -40,7 +40,7 @@ class Game {
     this._screenChangeTime = Date.now();
     this.rankingService = createRankingService();
     this.rankings = [];
-    
+
     this.rankingService
       .load()
       .then((entries) => {
@@ -54,6 +54,7 @@ class Game {
     this._nameInput.maxLength = 8;
     this._nameInput.autocomplete = "off";
     this._nameInput.spellcheck = false;
+    this._nameInput.enterKeyHint = "done";
     Object.assign(this._nameInput.style, {
       position: "fixed",
       background: "transparent",
@@ -218,6 +219,12 @@ class Game {
     if (screen === SCREENS.PREVIEW) return this._advanceIntroScreen();
     if (screen === SCREENS.START) return this._startRace();
     if (screen === SCREENS.GAME_OVER) {
+      if (this.gameState.rankingPhase === "entering") {
+        // Called from a touch/click handler — valid user gesture, so
+        // focus() will show the virtual keyboard on mobile too.
+        this._nameInput.focus();
+        return;
+      }
       if (this.gameState.rankingPhase === "results") {
         return this.reset(SCREENS.START);
       }
@@ -235,6 +242,9 @@ class Game {
 
     if (this.gameState.lastLapFlashTimer > 0) {
       this.gameState.lastLapFlashTimer -= dt;
+    }
+    if (this.gameState.rescueFlashTimer > 0) {
+      this.gameState.rescueFlashTimer -= dt;
     }
 
     this.gameState.currentTime = Date.now() - this.gameState.startTime;
@@ -264,14 +274,12 @@ class Game {
     );
     this.gameState.upcomingIsModeXZone = lookaheadPoint.isModeXZone || false;
 
-    
-    
     {
       const target = this.gameState.steerTarget || 0;
       const current = this.gameState.steerInput || 0;
       const dir = Math.sign(target - current);
       this.gameState.steerInput = clamp(current + dir * STEER_RATE * dt, -1, 1);
-      
+
       if (
         target === 0 &&
         Math.sign(this.gameState.steerInput) !== Math.sign(current) &&
@@ -326,6 +334,10 @@ class Game {
       display: "block",
     });
     this._nameInput.value = "";
+    // setTimeout allows the display change to apply first.
+    // On desktop this is enough; on mobile, focus() called here
+    // (outside a gesture) won't open the keyboard — the user must
+    // tap the screen, which routes through handleScreenTap → focus().
     setTimeout(() => this._nameInput.focus(), 80);
   }
 

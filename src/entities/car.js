@@ -26,6 +26,8 @@ function createCarStateFields() {
     offTrackDustTimer: 0,
     isSpinning: false,
     spinRotation: 0,
+    rescueInProgress: false,
+    rescuePenaltySpeed: 0,
   };
 }
 
