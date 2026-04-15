@@ -9,9 +9,6 @@ import {
 } from "../../constants/index.js";
 
 function computeForwardVelocity(gameState, dt, strategy) {
-  
-  
-  
   let vz = gameState.speed || 0;
   if (!gameState.isSpinning) {
     const accelFactor = gameState.isOffTrack ? OFF_TRACK_ACCEL_FACTOR : 1;
@@ -19,7 +16,6 @@ function computeForwardVelocity(gameState, dt, strategy) {
   }
   vz *= Math.pow(strategy.drag, dt);
 
-  
   const battery = gameState.battery || 0;
   if (gameState.isBoosting && battery > 0) {
     const slip = Math.max(0, gameState.currentSlip || 0);
@@ -32,17 +28,12 @@ function computeForwardVelocity(gameState, dt, strategy) {
     vz *= boostFactor;
   }
 
-  
   if (gameState.isBraking && vz > 0) {
     vz *= Math.pow(MANUAL_BRAKE_DECEL, dt);
   }
 
-  
-  
   if (vz > strategy.maxVz) {
-    vz =
-      strategy.maxVz +
-      (vz - strategy.maxVz) * Math.pow(OVERSPEED_DRAG, dt);
+    vz = strategy.maxVz + (vz - strategy.maxVz) * Math.pow(OVERSPEED_DRAG, dt);
   }
 
   return Math.max(0, vz);

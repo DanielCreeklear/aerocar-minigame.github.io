@@ -15,12 +15,7 @@ import {
   SURFACE_TYPES,
 } from "../../constants/index.js";
 
-function updateHeadingAndLateral(
-  gameState,
-  curvature,
-  vz,
-  dt,
-) {
+function updateHeadingAndLateral(gameState, curvature, vz, dt) {
   const steerInput = gameState.steerInput || 0;
   let theta = gameState.carHeading || 0;
 
@@ -34,18 +29,12 @@ function updateHeadingAndLateral(
   return { x };
 }
 
-
-
 function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt) {
   const isOffTrack = surfaceType === SURFACE_TYPES.GRASS;
   const isOnCurb = surfaceType === SURFACE_TYPES.CURB;
   let nextVz = vz;
 
   if (isOffTrack) {
-    
-    
-    
-    
     nextVz *= Math.pow(OFF_TRACK_VZ_DRAG, dt);
     nextVz = Math.min(nextVz, OFF_TRACK_MAX_SPEED);
     gameState.offTrackDustTimer = OFF_TRACK_DUST_FRAMES;
@@ -57,7 +46,6 @@ function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt) {
       gameState.isSpinning = false;
     }
   } else if (isOnCurb) {
-    
     nextVz *= Math.pow(CURB_VZ_DRAG, dt);
     gameState.isSpinning = false;
     gameState.offTrackDustTimer = Math.max(
@@ -65,7 +53,6 @@ function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt) {
       (gameState.offTrackDustTimer || 0) - dt,
     );
   } else {
-    
     gameState.isSpinning = false;
     gameState.offTrackDustTimer = Math.max(
       0,
@@ -76,8 +63,6 @@ function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt) {
   return { nextVz, isOffTrack };
 }
 
-
-
 function integrateLateralState(
   gameState,
   curvature,
@@ -86,12 +71,7 @@ function integrateLateralState(
   strategy,
   surfaceType,
 ) {
-  const { x: rawX } = updateHeadingAndLateral(
-    gameState,
-    curvature,
-    vz,
-    dt,
-  );
+  const { x: rawX } = updateHeadingAndLateral(gameState, curvature, vz, dt);
 
   const { nextVz, isOffTrack } = applyOffTrackPenalties(
     gameState,
@@ -101,8 +81,6 @@ function integrateLateralState(
     dt,
   );
 
-  
-  
   const wall = CURB_HALF + OFF_TRACK_MAX_OFFSET_MARGIN;
   let x = rawX;
   if (x > wall) {
@@ -113,7 +91,6 @@ function integrateLateralState(
     if (gameState.carHeading < 0) gameState.carHeading = 0;
   }
 
-  
   const vx = vz * Math.sin(gameState.carHeading);
 
   gameState.currentSlip = clamp(Math.abs(vx) / MAX_LATERAL_VX, 0, 1);

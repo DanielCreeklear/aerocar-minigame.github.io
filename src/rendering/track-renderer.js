@@ -9,7 +9,6 @@ import {
   TRACK_WIDTH,
 } from "../constants/index.js";
 
-
 const AD_COLORS = ["#aa0018", "#1020a0", "#b07400", "#005828", "#5a606c"];
 
 function drawTrack(ctx, gameState, track, metrics) {
@@ -20,7 +19,6 @@ function drawTrack(ctx, gameState, track, metrics) {
     gameState.currentTrackPoint || track.getTrackPoint(gameState.currentZ);
   const cameraX = carTrackInfo.x;
 
-  
   ctx.fillStyle = RENDER_COLORS.grass;
   ctx.fillRect(0, 0, width, height);
 
@@ -91,12 +89,10 @@ function drawTrack(ctx, gameState, track, metrics) {
     ctx.fillStyle = asphaltColor;
     ctx.fillRect(left, y, metrics.trackWidth, step);
 
-    
-    
     if (isCurve) {
       const rlOffset = track.getRacingLineTarget(sliceZ);
       const rlX = Math.round(centerX + rlOffset * LATERAL_RENDER_SCALE);
-      
+
       if (Math.floor(sliceZ / 60) % 3 !== 0) {
         ctx.fillStyle = "rgba(255,255,255,0.15)";
         ctx.fillRect(rlX - 2, y, 4, step);
