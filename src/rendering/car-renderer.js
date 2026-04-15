@@ -55,9 +55,10 @@ function drawDustCloud(ctx, gameState, drawX, drawY, carWidth, carHeight) {
 
     ctx.fillStyle =
       Math.random() < 0.5
-        ? `rgba(194, 168, 128, ${dustAlpha})`
-        : `rgba(131, 124, 112, ${dustAlpha * 0.9})`;
+        ? `rgba(255, 255, 255, ${dustAlpha})`
+        : `rgba(255, 215, 0, ${dustAlpha * 0.85})`;
 
+    ctx.globalAlpha = 0.7;
     ctx.beginPath();
     ctx.ellipse(px, py, size, size * 0.6, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -75,6 +76,7 @@ function drawDustCloud(ctx, gameState, drawX, drawY, carWidth, carHeight) {
       ctx.closePath();
       ctx.fill();
     }
+    ctx.globalAlpha = 1.0;
   }
 }
 
@@ -99,8 +101,18 @@ function drawCarBody(ctx, gameState, metrics) {
   ctx.fill();
 
   ctx.strokeStyle = bodyDark;
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 2;
   ctx.stroke();
+
+  // Panel separation line (technical detail)
+  const panelLineY = bodyY + bodyHeight * 0.55;
+  ctx.beginPath();
+  ctx.moveTo(bodyX + 4, panelLineY);
+  ctx.lineTo(bodyX + bodyWidth - 4, panelLineY);
+  ctx.strokeStyle = bodyDark;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.lineWidth = 2;
 
   const cockpitWidth = bodyWidth * 0.58;
   const cockpitHeight = bodyHeight * 0.28;
@@ -108,8 +120,12 @@ function drawCarBody(ctx, gameState, metrics) {
   const cockpitX = -cockpitWidth / 2;
 
   drawRoundedRect(ctx, cockpitX, cockpitY, cockpitWidth, cockpitHeight, 7);
-  ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
+  ctx.fillStyle = "#000000";
   ctx.fill();
+
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
 
   ctx.fillStyle = "rgba(255, 255, 255, 0.24)";
   drawRoundedRect(

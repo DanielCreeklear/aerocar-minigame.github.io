@@ -74,6 +74,7 @@ class Renderer {
     }
 
     const metrics = buildRenderMetrics(width, height);
+    ctx.imageSmoothingEnabled = false;
     drawTrack(ctx, gameState, track, metrics);
     drawCar(ctx, gameState, track, metrics);
     this.hud.draw(ctx, gameState, width, height);
