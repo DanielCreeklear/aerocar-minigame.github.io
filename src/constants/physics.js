@@ -26,10 +26,21 @@ export const SLIP_PENALTY_THRESHOLD = 0.15;
 
 export const PASSIVE_REGEN_FACTOR = 0.4;
 
-export const HEADING_CURVE_FACTOR = 0.0004;
-export const STEER_YAW_RATE = 0.05;
+// Reduced 0.0004 → 0.00006: old value caused equilibrium heading of 64° at Mode X
+// max speed (vz=21) through a medium curve, sending car off-track in ~5 frames.
+export const HEADING_CURVE_FACTOR = 0.00006;
+// Reduced 0.05 → 0.02: 0.05 produced equilibrium heading ~95° at full steer input,
+// causing violent snap turns. 0.02 → ~20° equilibrium, controllable.
+export const STEER_YAW_RATE = 0.02;
 
-// Side length of each cell in the 2D world-space track grid (units = game world units).
+// Lerp rate for carVisualHeading toward carHeading (per dt unit).
+// Prevents single-frame rotation jerks when heading changes abruptly.
+export const VISUAL_HEADING_LERP = 0.25;
+
+// Per-frame exponential decay applied to speed when above mode's maxVz.
+// Smooths the jarring instant snap when switching from Mode X → Mode Z.
+export const OVERSPEED_DRAG = 0.92;
+
 export const TRACK_GRID_CELL_SIZE = 10;
 
 export const LATERAL_FRICTION_GRIP_X = 0.97;
@@ -43,14 +54,21 @@ export const PHYSICS_TRACK_HALF = 100;
 
 export const CURB_HALF = 120;
 
-export const OFF_TRACK_VZ_DRAG = 0.8;
+// Relaxed 0.8 → 0.92: less punishing drag so the car can still escape the grass.
+export const OFF_TRACK_VZ_DRAG = 0.92;
 
 export const OFF_TRACK_VX_DRAG = 0.9;
 
-export const OFF_TRACK_MAX_SPEED = 7.0;
+// Raised 7 → 16: previous cap + drag almost zeroed speed, making recovery impossible.
+export const OFF_TRACK_MAX_SPEED = 16.0;
 
-export const SPIN_TRIGGER_SPEED = 10;
-export const SPIN_EXIT_SPEED = 2;
+// Fraction of normal accel available on grass. Enough to steer out, not enough to race.
+export const OFF_TRACK_ACCEL_FACTOR = 0.35;
+
+// Raised trigger 10 → 18: casual off-tracks no longer trigger spin.
+// Lowered exit 2 → 7: spin ends sooner so the car can recover and drive out.
+export const SPIN_TRIGGER_SPEED = 18;
+export const SPIN_EXIT_SPEED = 7;
 export const SPIN_ANGULAR_VELOCITY = 3.5;
 
 export const OFF_TRACK_CENTERING_BONUS = 0.2;

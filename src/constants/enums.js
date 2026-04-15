@@ -22,8 +22,6 @@ export const CURVE_PHASE = {
   EXIT: "exit",
 };
 
-// Surface type values stored in the track grid (Uint8Array).
-// GRASS is 0 so a freshly allocated Uint8Array is entirely grass by default.
 export const SURFACE_TYPES = {
   GRASS: 0,
   CURB: 1,
