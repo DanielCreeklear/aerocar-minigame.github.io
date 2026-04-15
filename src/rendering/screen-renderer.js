@@ -2,20 +2,20 @@ import { formatTime } from "../utils/math.js";
 
 // ── R4-inspired design tokens ──────────────────────────────────────────────────
 const R = {
-  bg:          "#04030A",
-  crimson:     "#CC001E",
-  crimsonDim:  "rgba(204, 0, 30, 0.50)",
+  bg: "#04030A",
+  crimson: "#CC001E",
+  crimsonDim: "rgba(204, 0, 30, 0.50)",
   crimsonFill: "rgba(204, 0, 30, 0.11)",
   crimsonHigh: "rgba(204, 0, 30, 0.22)",
-  gold:        "#C07B10",
-  steel:       "#3A5070",
-  steelDim:    "rgba(58, 80, 112, 0.70)",
-  text:        "#F0EAE0",
-  textDim:     "rgba(240, 234, 224, 0.55)",
-  textFaint:   "rgba(240, 234, 224, 0.22)",
-  barBg:       "#090004",
-  divider:     "rgba(204, 0, 30, 0.30)",
-  font:        "'Barlow Condensed', 'Segoe UI', Arial, sans-serif",
+  gold: "#C07B10",
+  steel: "#3A5070",
+  steelDim: "rgba(58, 80, 112, 0.70)",
+  text: "#F0EAE0",
+  textDim: "rgba(240, 234, 224, 0.55)",
+  textFaint: "rgba(240, 234, 224, 0.22)",
+  barBg: "#090004",
+  divider: "rgba(204, 0, 30, 0.30)",
+  font: "'Barlow Condensed', 'Segoe UI', Arial, sans-serif",
 };
 
 function csz(ref, ratio, lo, hi) {
@@ -31,13 +31,17 @@ function scanlines(ctx, w, h) {
 }
 
 function bottomBar(ctx, w, h, leftTxt, rightTxt, blink) {
-  const bh = 44, by = h - bh;
+  const bh = 44,
+    by = h - bh;
   ctx.save();
   ctx.fillStyle = R.barBg;
   ctx.fillRect(0, by, w, bh);
   ctx.strokeStyle = R.divider;
   ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(0, by); ctx.lineTo(w, by); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, by);
+  ctx.lineTo(w, by);
+  ctx.stroke();
   ctx.textBaseline = "middle";
   const cy = by + bh * 0.5;
   ctx.font = `400 ${csz(w, 0.016, 12, 16)}px ${R.font}`;
@@ -65,7 +69,10 @@ function topStripe(ctx, w, leftTxt, rightTxt) {
   ctx.fillRect(0, 0, w, sh);
   ctx.strokeStyle = R.divider;
   ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(0, sh); ctx.lineTo(w, sh); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, sh);
+  ctx.lineTo(w, sh);
+  ctx.stroke();
   ctx.textBaseline = "middle";
   ctx.fillStyle = R.steel;
   ctx.font = `700 ${csz(w, 0.016, 11, 15)}px ${R.font}`;
@@ -81,8 +88,11 @@ function diagonalCut(ctx, w, size) {
   ctx.save();
   ctx.fillStyle = R.crimson;
   ctx.beginPath();
-  ctx.moveTo(w - size, 0); ctx.lineTo(w, 0); ctx.lineTo(w, size);
-  ctx.closePath(); ctx.fill();
+  ctx.moveTo(w - size, 0);
+  ctx.lineTo(w, 0);
+  ctx.lineTo(w, size);
+  ctx.closePath();
+  ctx.fill();
   ctx.restore();
 }
 
@@ -91,24 +101,25 @@ function sectionLabel(ctx, x, y, w, text) {
   ctx.textBaseline = "middle";
   ctx.textAlign = "left";
   ctx.fillStyle = R.steel;
-  ctx.font = `700 ${csz(w, 0.040, 10, 15)}px ${R.font}`;
+  ctx.font = `700 ${csz(w, 0.04, 10, 15)}px ${R.font}`;
   ctx.fillText(text, x, y);
   const lw = ctx.measureText(text).width;
   ctx.strokeStyle = R.divider;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(x + lw + 10, y); ctx.lineTo(x + w, y);
+  ctx.moveTo(x + lw + 10, y);
+  ctx.lineTo(x + w, y);
   ctx.stroke();
   ctx.restore();
 }
 
 // Draw a simple ranking list (no entering state)
 function drawRankList(ctx, x, y, w, rowH, rankings, slotCount) {
-  const numW   = csz(w, 0.08, 16, 24);
+  const numW = csz(w, 0.08, 16, 24);
   const nameSz = csz(w, 0.056, 11, 17);
   const timeSz = csz(w, 0.052, 11, 16);
   for (let i = 0; i < slotCount; i++) {
-    const ry  = y + i * (rowH + 4);
+    const ry = y + i * (rowH + 4);
     const mid = ry + rowH * 0.5;
     const entry = (rankings || [])[i];
     ctx.save();
@@ -138,14 +149,14 @@ function drawRankList(ctx, x, y, w, rowH, rankings, slotCount) {
 
 // Draw ranking rows with new-entry highlight for results state
 function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
-  const numW   = csz(w, 0.08, 16, 24);
+  const numW = csz(w, 0.08, 16, 24);
   const nameSz = csz(w, 0.056, 11, 17);
   const timeSz = csz(w, 0.052, 11, 16);
   for (let i = 0; i < slotCount; i++) {
-    const ry   = y + i * (rowH + 4);
-    const mid  = ry + rowH * 0.5;
+    const ry = y + i * (rowH + 4);
+    const mid = ry + rowH * 0.5;
     const isHL = i === hlIdx;
-    const entry = (rankings && rankings[i]);
+    const entry = rankings && rankings[i];
     if (isHL) {
       ctx.save();
       ctx.fillStyle = R.crimsonHigh;
@@ -188,8 +199,8 @@ function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
 
 // Draw the "NEW" name-entry row (entering state)
 function drawNewEntryRow(ctx, x, y, w, rowH, entryTime, pending, blink) {
-  const mid    = y + rowH * 0.5;
-  const numW   = csz(w, 0.08, 16, 24);
+  const mid = y + rowH * 0.5;
+  const numW = csz(w, 0.08, 16, 24);
   const nameSz = csz(w, 0.056, 11, 17);
   const timeSz = csz(w, 0.052, 11, 16);
   ctx.save();
@@ -203,7 +214,7 @@ function drawNewEntryRow(ctx, x, y, w, rowH, entryTime, pending, blink) {
   ctx.font = `700 ${csz(w, 0.042, 9, 13)}px ${R.font}`;
   ctx.textAlign = "left";
   ctx.fillText("—", x, mid);
-  const cursor  = blink ? "▮" : "▯";
+  const cursor = blink ? "▮" : "▯";
   const display = (pending + cursor).substring(0, 9);
   ctx.fillStyle = R.text;
   ctx.font = `700 ${nameSz}px ${R.font}`;
@@ -253,10 +264,16 @@ function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
   ctx.strokeRect(mapX, mapY, mapW, mapH);
   const points = track.trackData;
   if (!points || points.length < 2) return;
-  const pad  = 16;
-  const map  = { mapX, mapY, drawPad: pad, usableW: mapW - pad * 2, usableH: mapH - pad * 2 };
-  const bnd  = calculateTrackBounds(points);
-  const idx  = sampleTrackPointIndexes(points.length);
+  const pad = 16;
+  const map = {
+    mapX,
+    mapY,
+    drawPad: pad,
+    usableW: mapW - pad * 2,
+    usableH: mapH - pad * 2,
+  };
+  const bnd = calculateTrackBounds(points);
+  const idx = sampleTrackPointIndexes(points.length);
   const path = idx.map((i) => projectTrackPoint(points, i, bnd, map));
   ctx.save();
   ctx.beginPath();
@@ -267,7 +284,7 @@ function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
   ctx.strokeStyle = R.steel;
   ctx.lineWidth = 2;
   ctx.lineJoin = "round";
-  ctx.lineCap  = "round";
+  ctx.lineCap = "round";
   ctx.stroke();
   ctx.shadowBlur = 0;
   ctx.fillStyle = R.crimson;
@@ -289,11 +306,11 @@ function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
 // ── START SCREEN ─────────────────────────────────────────────────────────────
 function drawStartScreen(ctx, w, h, gameState, track) {
   const isPortrait = h > w;
-  const age      = gameState ? (gameState.screenAge || 0) : 0;
-  const fade     = Math.min(1, age / 0.5);
-  const blink    = Math.sin(age * Math.PI * 1.4) > 0;
+  const age = gameState ? gameState.screenAge || 0 : 0;
+  const fade = Math.min(1, age / 0.5);
+  const blink = Math.sin(age * Math.PI * 1.4) > 0;
   const rankings = (gameState && gameState.rankings) || [];
-  const km   = track ? ((track.lapLength || 0) / 1000).toFixed(2) : "?.??";
+  const km = track ? ((track.lapLength || 0) / 1000).toFixed(2) : "?.??";
   const seed = track ? track.seed : "—";
   const segs = track && track.segments ? track.segments.length : 0;
 
@@ -307,134 +324,178 @@ function drawStartScreen(ctx, w, h, gameState, track) {
 
   if (isPortrait) {
     const tx = csz(w, 0.06, 18, 36);
-    const apexSz  = csz(w, 0.20, 48, 80);
+    const apexSz = csz(w, 0.2, 48, 80);
     const typezSz = csz(w, 0.168, 40, 66);
 
     ctx.save();
-    ctx.shadowColor = R.crimson; ctx.shadowBlur = 18;
+    ctx.shadowColor = R.crimson;
+    ctx.shadowBlur = 18;
     ctx.fillStyle = R.crimson;
     ctx.font = `700 ${apexSz}px ${R.font}`;
-    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
     ctx.fillText("APEX", tx, h * 0.155);
     ctx.restore();
 
     ctx.save();
     ctx.fillStyle = R.text;
     ctx.font = `700 ${typezSz}px ${R.font}`;
-    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
     ctx.fillText("TYPE Z", tx, h * 0.155 + apexSz * 1.1);
     ctx.restore();
 
     ctx.save();
     ctx.fillStyle = R.steel;
     ctx.font = `400 ${csz(w, 0.028, 12, 16)}px ${R.font}`;
-    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
     ctx.fillText("TIME ATTACK", tx, h * 0.36);
     ctx.restore();
 
     ctx.save();
-    ctx.strokeStyle = R.divider; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(tx, h * 0.40); ctx.lineTo(w * 0.90, h * 0.40); ctx.stroke();
+    ctx.strokeStyle = R.divider;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(tx, h * 0.4);
+    ctx.lineTo(w * 0.9, h * 0.4);
+    ctx.stroke();
     ctx.restore();
 
     const ctrlSz = csz(w, 0.034, 12, 16);
-    const ctrlY  = h * 0.44;
+    const ctrlY = h * 0.44;
     sectionLabel(ctx, tx, ctrlY, w * 0.88, "CONTROLES");
     ctx.save();
-    ctx.textBaseline = "top"; ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.textAlign = "left";
     ctx.fillStyle = R.textDim;
     ctx.font = `400 ${ctrlSz}px ${R.font}`;
     ctx.fillText("←  SEGURAR ESQUERDA  —  FREIO / ERS", tx, ctrlY + 14);
-    ctx.fillText("→  SEGURAR DIREITA   —  BOOST",         tx, ctrlY + 14 + ctrlSz + 5);
+    ctx.fillText("→  SEGURAR DIREITA   —  BOOST", tx, ctrlY + 14 + ctrlSz + 5);
     ctx.fillStyle = R.steelDim;
     ctx.font = `400 ${csz(w, 0.028, 10, 14)}px ${R.font}`;
-    ctx.fillText("CENTRO-DIREITA / Z ou X  —  ALTERNA MODO", tx, ctrlY + 14 + (ctrlSz + 5) * 2);
+    ctx.fillText(
+      "CENTRO-DIREITA / Z ou X  —  ALTERNA MODO",
+      tx,
+      ctrlY + 14 + (ctrlSz + 5) * 2,
+    );
     ctx.restore();
 
-    const rkY = h * 0.60;
+    const rkY = h * 0.6;
     sectionLabel(ctx, tx, rkY, w * 0.88, "RANKING");
     const rkAvail = h - 44 - (rkY + 16) - 8;
-    const rowH    = Math.min(36, rkAvail / 5 - 4);
+    const rowH = Math.min(36, rkAvail / 5 - 4);
     drawRankList(ctx, tx, rkY + 16, w - tx * 2, rowH, rankings, 5);
-
   } else {
-    const divX   = Math.round(w * 0.60);
+    const divX = Math.round(w * 0.6);
     const titleX = csz(w, 0.04, 18, 40);
-    const leftW  = divX - titleX - 24;
+    const leftW = divX - titleX - 24;
     const rightX = divX + 20;
     const rightW = w - rightX - 16;
 
     ctx.save();
-    ctx.strokeStyle = R.divider; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(divX, 22); ctx.lineTo(divX, h - 52); ctx.stroke();
+    ctx.strokeStyle = R.divider;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(divX, 22);
+    ctx.lineTo(divX, h - 52);
+    ctx.stroke();
     ctx.restore();
 
-    const apexSz  = csz(w, 0.12, 52, 108);
+    const apexSz = csz(w, 0.12, 52, 108);
     const typezSz = csz(w, 0.095, 42, 86);
 
     ctx.save();
-    ctx.shadowColor = R.crimson; ctx.shadowBlur = 22;
+    ctx.shadowColor = R.crimson;
+    ctx.shadowBlur = 22;
     ctx.fillStyle = R.crimson;
     ctx.font = `700 ${apexSz}px ${R.font}`;
-    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
     ctx.fillText("APEX", titleX, h * 0.26);
     ctx.restore();
 
     ctx.save();
     ctx.fillStyle = R.text;
     ctx.font = `700 ${typezSz}px ${R.font}`;
-    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
     ctx.fillText("TYPE Z", titleX, h * 0.26 + apexSz * 1.1);
     ctx.restore();
 
     ctx.save();
     ctx.fillStyle = R.steel;
     ctx.font = `400 ${csz(w, 0.018, 12, 17)}px ${R.font}`;
-    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
     ctx.fillText("TIME ATTACK", titleX, h * 0.26 + apexSz * 1.1 + typezSz);
     ctx.restore();
 
     const ruleY = h * 0.57;
     ctx.save();
-    ctx.strokeStyle = R.divider; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(titleX, ruleY); ctx.lineTo(divX - 20, ruleY); ctx.stroke();
+    ctx.strokeStyle = R.divider;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(titleX, ruleY);
+    ctx.lineTo(divX - 20, ruleY);
+    ctx.stroke();
     ctx.restore();
 
-    const ctrlY  = ruleY + 18;
+    const ctrlY = ruleY + 18;
     const ctrlSz = csz(w, 0.022, 12, 17);
     sectionLabel(ctx, titleX, ctrlY, leftW, "CONTROLES");
     ctx.save();
-    ctx.textBaseline = "top"; ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.textAlign = "left";
     ctx.fillStyle = R.textDim;
     ctx.font = `400 ${ctrlSz}px ${R.font}`;
-    ctx.fillText("←  SEGURAR ESQUERDA  —  FREIO / ERS",  titleX, ctrlY + 14);
-    ctx.fillText("→  SEGURAR DIREITA   —  BOOST",          titleX, ctrlY + 14 + ctrlSz + 5);
+    ctx.fillText("←  SEGURAR ESQUERDA  —  FREIO / ERS", titleX, ctrlY + 14);
+    ctx.fillText(
+      "→  SEGURAR DIREITA   —  BOOST",
+      titleX,
+      ctrlY + 14 + ctrlSz + 5,
+    );
     ctx.fillStyle = R.steelDim;
     ctx.font = `400 ${csz(w, 0.018, 10, 14)}px ${R.font}`;
-    ctx.fillText("CENTRO-DIREITA / Z ou X  —  ALTERNA MODO AERO", titleX, ctrlY + 14 + (ctrlSz + 5) * 2);
+    ctx.fillText(
+      "CENTRO-DIREITA / Z ou X  —  ALTERNA MODO AERO",
+      titleX,
+      ctrlY + 14 + (ctrlSz + 5) * 2,
+    );
     ctx.restore();
 
     sectionLabel(ctx, rightX, h * 0.12, rightW, "RANKING");
     const rkAvail = h - 44 - (h * 0.12 + 16) - 8;
-    const rowH    = Math.min(48, rkAvail / 5 - 4);
+    const rowH = Math.min(48, rkAvail / 5 - 4);
     drawRankList(ctx, rightX, h * 0.12 + 16, rightW, rowH, rankings, 5);
   }
 
-  bottomBar(ctx, w, h, `SEED ${seed}  ·  ${segs} SEG  ·  ${km} km`, "INICIAR  ▶", blink);
+  bottomBar(
+    ctx,
+    w,
+    h,
+    `SEED ${seed}  ·  ${segs} SEG  ·  ${km} km`,
+    "INICIAR  ▶",
+    blink,
+  );
   ctx.restore();
 }
 
 // ── GAME OVER SCREEN ─────────────────────────────────────────────────────────
 function drawGameOverScreen(ctx, w, h, gameState) {
   const isPortrait = h > w;
-  const age      = gameState ? (gameState.screenAge || 0) : 0;
-  const fade     = Math.min(1, age / 0.6);
-  const blink    = Math.sin(age * Math.PI * 1.4) > 0;
+  const age = gameState ? gameState.screenAge || 0 : 0;
+  const fade = Math.min(1, age / 0.6);
+  const blink = Math.sin(age * Math.PI * 1.4) > 0;
   const finalTime = (gameState && gameState.finalTime) || 0;
-  const rankings  = (gameState && gameState.rankings) || [];
-  const phase     = (gameState && gameState.rankingPhase) || "results";
-  const hlIdx     = gameState ? (gameState.newEntryIndex != null ? gameState.newEntryIndex : -1) : -1;
-  const pending   = (gameState && gameState.pendingName) || "";
+  const rankings = (gameState && gameState.rankings) || [];
+  const phase = (gameState && gameState.rankingPhase) || "results";
+  const hlIdx = gameState
+    ? gameState.newEntryIndex != null
+      ? gameState.newEntryIndex
+      : -1
+    : -1;
+  const pending = (gameState && gameState.pendingName) || "";
   const isEntering = phase === "entering";
 
   ctx.save();
@@ -453,33 +514,41 @@ function drawGameOverScreen(ctx, w, h, gameState) {
   if (isPortrait) {
     const headSz = csz(w, 0.09, 28, 48);
     ctx.save();
-    ctx.shadowColor = R.crimson; ctx.shadowBlur = 14;
+    ctx.shadowColor = R.crimson;
+    ctx.shadowBlur = 14;
     ctx.fillStyle = R.text;
     ctx.font = `700 ${headSz}px ${R.font}`;
-    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
-    ctx.fillText("RACE RESULT", w * 0.5, h * 0.10);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText("RACE RESULT", w * 0.5, h * 0.1);
     ctx.restore();
 
     ctx.save();
     ctx.fillStyle = R.crimson;
-    ctx.fillRect(w * 0.5 - 60, h * 0.10 + 6, 120, 2);
+    ctx.fillRect(w * 0.5 - 60, h * 0.1 + 6, 120, 2);
     ctx.restore();
 
     ctx.save();
-    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
     ctx.fillStyle = R.steelDim;
-    ctx.font = `700 ${csz(w, 0.030, 11, 15)}px ${R.font}`;
+    ctx.font = `700 ${csz(w, 0.03, 11, 15)}px ${R.font}`;
     ctx.fillText("TEMPO TOTAL", w * 0.5, h * 0.18);
     const timeSz = csz(w, 0.12, 40, 70);
-    ctx.shadowColor = R.gold; ctx.shadowBlur = 18;
+    ctx.shadowColor = R.gold;
+    ctx.shadowBlur = 18;
     ctx.fillStyle = R.gold;
     ctx.font = `700 ${timeSz}px ${R.font}`;
     ctx.fillText(formatTime(finalTime), w * 0.5, h * 0.18 + timeSz + 8);
     ctx.restore();
 
     ctx.save();
-    ctx.strokeStyle = R.divider; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(16, h * 0.36); ctx.lineTo(w - 16, h * 0.36); ctx.stroke();
+    ctx.strokeStyle = R.divider;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(16, h * 0.36);
+    ctx.lineTo(w - 16, h * 0.36);
+    ctx.stroke();
     ctx.restore();
 
     const rkX = 20;
@@ -487,50 +556,71 @@ function drawGameOverScreen(ctx, w, h, gameState) {
     const rkY = h * 0.38;
     sectionLabel(ctx, rkX, rkY, rkW, "LEADERBOARD");
     const rkAvail = h - 44 - (rkY + 16) - 8;
-    const rowH    = Math.min(36, rkAvail / 5 - 4);
+    const rowH = Math.min(36, rkAvail / 5 - 4);
     const rkStart = rkY + 16;
     if (isEntering) {
       drawRankList(ctx, rkX, rkStart, rkW, rowH, rankings, 4);
-      drawNewEntryRow(ctx, rkX, rkStart + 4 * (rowH + 4), rkW, rowH, finalTime, pending, blink);
+      drawNewEntryRow(
+        ctx,
+        rkX,
+        rkStart + 4 * (rowH + 4),
+        rkW,
+        rowH,
+        finalTime,
+        pending,
+        blink,
+      );
     } else {
       drawResultRows(ctx, rkX, rkStart, rkW, rowH, rankings, 5, hlIdx);
     }
-
   } else {
-    const divX   = Math.round(w * 0.50);
-    const leftX  = csz(w, 0.06, 24, 56);
-    const leftW  = divX - leftX - 16;
+    const divX = Math.round(w * 0.5);
+    const leftX = csz(w, 0.06, 24, 56);
+    const leftW = divX - leftX - 16;
     const rightX = divX + 20;
     const rightW = w - rightX - 20;
 
     ctx.save();
-    ctx.strokeStyle = R.divider; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(divX, 20); ctx.lineTo(divX, h - 52); ctx.stroke();
+    ctx.strokeStyle = R.divider;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(divX, 20);
+    ctx.lineTo(divX, h - 52);
+    ctx.stroke();
     ctx.restore();
 
     const headSz = csz(leftW, 0.18, 28, 54);
     ctx.save();
-    ctx.shadowColor = R.crimson; ctx.shadowBlur = 14;
+    ctx.shadowColor = R.crimson;
+    ctx.shadowBlur = 14;
     ctx.fillStyle = R.text;
     ctx.font = `700 ${headSz}px ${R.font}`;
-    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-    ctx.fillText("RACE",   leftX, h * 0.22);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText("RACE", leftX, h * 0.22);
     ctx.fillText("RESULT", leftX, h * 0.22 + headSz * 1.1);
     ctx.shadowBlur = 0;
     ctx.restore();
 
     ctx.save();
     ctx.fillStyle = R.crimson;
-    ctx.fillRect(leftX, h * 0.22 + headSz * 2.35, Math.min(120, leftW * 0.5), 2);
+    ctx.fillRect(
+      leftX,
+      h * 0.22 + headSz * 2.35,
+      Math.min(120, leftW * 0.5),
+      2,
+    );
     ctx.restore();
 
     ctx.save();
-    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
     ctx.fillStyle = R.steelDim;
-    ctx.font = `700 ${csz(leftW, 0.040, 11, 15)}px ${R.font}`;
+    ctx.font = `700 ${csz(leftW, 0.04, 11, 15)}px ${R.font}`;
     ctx.fillText("TEMPO TOTAL", leftX, h * 0.62);
     const timeSz = csz(leftW, 0.15, 38, 70);
-    ctx.shadowColor = R.gold; ctx.shadowBlur = 16;
+    ctx.shadowColor = R.gold;
+    ctx.shadowBlur = 16;
     ctx.fillStyle = R.gold;
     ctx.font = `700 ${timeSz}px ${R.font}`;
     ctx.fillText(formatTime(finalTime), leftX, h * 0.62 + timeSz + 8);
@@ -538,17 +628,26 @@ function drawGameOverScreen(ctx, w, h, gameState) {
 
     sectionLabel(ctx, rightX, h * 0.12, rightW, "LEADERBOARD");
     const rkAvail = h - 44 - (h * 0.12 + 16) - 8;
-    const rowH    = Math.min(48, rkAvail / 5 - 4);
+    const rowH = Math.min(48, rkAvail / 5 - 4);
     const rkStart = h * 0.12 + 16;
     if (isEntering) {
       drawRankList(ctx, rightX, rkStart, rightW, rowH, rankings, 4);
-      drawNewEntryRow(ctx, rightX, rkStart + 4 * (rowH + 4), rightW, rowH, finalTime, pending, blink);
+      drawNewEntryRow(
+        ctx,
+        rightX,
+        rkStart + 4 * (rowH + 4),
+        rightW,
+        rowH,
+        finalTime,
+        pending,
+        blink,
+      );
     } else {
       drawResultRows(ctx, rightX, rkStart, rightW, rowH, rankings, 5, hlIdx);
     }
   }
 
-  const ctaLeft  = isEntering ? "INSIRA SEU NOME E PRESSIONE ENTER" : "";
+  const ctaLeft = isEntering ? "INSIRA SEU NOME E PRESSIONE ENTER" : "";
   const ctaRight = isEntering ? "ENTER PARA SALVAR" : "JOGAR NOVAMENTE  ▶";
   bottomBar(ctx, w, h, ctaLeft, ctaRight, !isEntering || blink);
   ctx.restore();
@@ -557,11 +656,11 @@ function drawGameOverScreen(ctx, w, h, gameState) {
 // ── TRACK PREVIEW SCREEN ─────────────────────────────────────────────────────
 function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
   const isPortrait = h > w;
-  const age   = gameState ? (gameState.screenAge || 0) : 0;
-  const fade  = Math.min(1, age / 0.5);
+  const age = gameState ? gameState.screenAge || 0 : 0;
+  const fade = Math.min(1, age / 0.5);
   const blink = Math.sin(age * Math.PI * 1.4) > 0;
-  const km    = ((track.lapLength || 0) / 1000).toFixed(2);
-  const segs  = track.segments ? track.segments.length : "?";
+  const km = ((track.lapLength || 0) / 1000).toFixed(2);
+  const segs = track.segments ? track.segments.length : "?";
 
   ctx.save();
   ctx.globalAlpha = fade;
@@ -572,23 +671,23 @@ function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
   topStripe(ctx, w, "CIRCUIT SELECT", "CIRCUIT 01");
 
   const stripeH = 32;
-  const barH    = 44;
+  const barH = 44;
   const infoRows = [
-    ["SEED",      String(track.seed)],
+    ["SEED", String(track.seed)],
     ["SEGMENTOS", String(segs)],
-    ["VOLTA",     `${km} km`],
-    ["VOLTAS",    "3"],
+    ["VOLTA", `${km} km`],
+    ["VOLTAS", "3"],
   ];
 
   if (isPortrait) {
-    const mapH = Math.round((h - stripeH - barH) * 0.50);
+    const mapH = Math.round((h - stripeH - barH) * 0.5);
     drawMinimap(ctx, 10, stripeH + 6, w - 20, mapH, track);
 
-    const infoX  = 20;
-    const infoW  = w - 40;
-    const infoY  = stripeH + 6 + mapH + 16;
-    const rowSz  = csz(w, 0.035, 14, 20);
-    const labSz  = csz(w, 0.026, 10, 14);
+    const infoX = 20;
+    const infoW = w - 40;
+    const infoY = stripeH + 6 + mapH + 16;
+    const rowSz = csz(w, 0.035, 14, 20);
+    const labSz = csz(w, 0.026, 10, 14);
     sectionLabel(ctx, infoX, infoY, infoW, "CONFIGURAÇÃO");
     ctx.save();
     infoRows.forEach(([label, value], i) => {
@@ -604,15 +703,18 @@ function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
       ctx.fillText(value, infoX + infoW, ry);
     });
     ctx.restore();
-
   } else {
     const mapW = Math.round(w * 0.52);
-    const mapH = Math.round((h - stripeH - barH) * 0.90);
+    const mapH = Math.round((h - stripeH - barH) * 0.9);
     drawMinimap(ctx, 10, stripeH + 6, mapW - 10, mapH, track);
 
     ctx.save();
-    ctx.strokeStyle = R.divider; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(mapW + 8, stripeH + 14); ctx.lineTo(mapW + 8, h - barH - 10); ctx.stroke();
+    ctx.strokeStyle = R.divider;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(mapW + 8, stripeH + 14);
+    ctx.lineTo(mapW + 8, h - barH - 10);
+    ctx.stroke();
     ctx.restore();
 
     const infoX = mapW + 22;

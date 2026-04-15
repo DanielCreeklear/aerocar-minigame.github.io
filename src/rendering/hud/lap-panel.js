@@ -87,21 +87,23 @@ function drawLapPanel(ctx, gameState, width, height) {
 
   const row3Y = divY + 5;
   const bestLabelSz = Math.max(8, labelSize - 1);
-  const bestTimeSz  = Math.max(10, timeSize * 0.72);
+  const bestTimeSz = Math.max(10, timeSize * 0.72);
 
   ctx.font = `${HUD_FONTS.bold} ${bestLabelSz}px ${HUD_FONTS.family}`;
   ctx.fillStyle = "rgba(58, 80, 112, 0.85)";
   ctx.textAlign = "left";
   ctx.fillText("MELHOR", col1, row3Y);
 
-  const bestTxt = gameState.bestLapTime < Infinity
-    ? formatTime(gameState.bestLapTime)
-    : "--:--.---";
+  const bestTxt =
+    gameState.bestLapTime < Infinity
+      ? formatTime(gameState.bestLapTime)
+      : "--:--.---";
 
   ctx.font = `${HUD_FONTS.bold} ${bestTimeSz}px ${HUD_FONTS.family}`;
-  ctx.fillStyle = gameState.bestLapTime < Infinity
-    ? HUD_COLORS.lapPanelBorder
-    : "rgba(240,236,228,0.30)";
+  ctx.fillStyle =
+    gameState.bestLapTime < Infinity
+      ? HUD_COLORS.lapPanelBorder
+      : "rgba(240,236,228,0.30)";
   ctx.textAlign = "right";
   ctx.fillText(bestTxt, col2, row3Y);
 
