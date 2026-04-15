@@ -18,9 +18,9 @@ import {
 } from "../constants/index.js";
 
 const CAMERA_SHAKE_SPEED_KMH_SCALE = 17;
-const CAMERA_SHAKE_SPEED_MIN = 220;
+const CAMERA_SHAKE_SPEED_MIN = 300;
 const CAMERA_SHAKE_SPEED_MAX = 340;
-const CAMERA_SHAKE_MAX_PX = 5.5;
+const CAMERA_SHAKE_MAX_PX = 2.8;
 
 function getCameraShakeOffset(gameState) {
   const rawSpeed = gameState?.speed || 0;
@@ -33,7 +33,7 @@ function getCameraShakeOffset(gameState) {
       (CAMERA_SHAKE_SPEED_MAX - CAMERA_SHAKE_SPEED_MIN),
   );
   const amp = CAMERA_SHAKE_MAX_PX * t;
-  const jitter = amp * 0.35;
+  const jitter = amp * 0.1;
   const time = performance.now() * 0.028;
   return {
     x: Math.sin(time * 1.7) * amp + (Math.random() * 2 - 1) * jitter,
