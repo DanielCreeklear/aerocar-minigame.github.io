@@ -65,7 +65,7 @@ function bottomBar(ctx, w, h, leftTxt, rightTxt, blink) {
 function topStripe(ctx, w, leftTxt, rightTxt) {
   const sh = 32;
   ctx.save();
-  ctx.fillStyle = "#0C0009";
+  ctx.fillStyle = "#0F0D24";
   ctx.fillRect(0, 0, w, sh);
   ctx.strokeStyle = R.divider;
   ctx.lineWidth = 1;
@@ -257,7 +257,7 @@ function sampleTrackPointIndexes(pointsLength) {
 }
 
 function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
-  ctx.fillStyle = "rgba(2,1,8,0.97)";
+  ctx.fillStyle = "rgba(10,8,24,0.97)";
   ctx.fillRect(mapX, mapY, mapW, mapH);
   ctx.strokeStyle = "rgba(58,80,112,0.35)";
   ctx.lineWidth = 1;
@@ -317,7 +317,11 @@ function drawStartScreen(ctx, w, h, gameState, track) {
   ctx.save();
   ctx.globalAlpha = fade;
 
-  ctx.fillStyle = R.bg;
+  const _bgGrad = ctx.createLinearGradient(0, 0, w * 0.4, h);
+  _bgGrad.addColorStop(0, R.bgTop);
+  _bgGrad.addColorStop(0.5, R.bgMid);
+  _bgGrad.addColorStop(1, R.bg);
+  ctx.fillStyle = _bgGrad;
   ctx.fillRect(0, 0, w, h);
   scanlines(ctx, w, h);
   diagonalCut(ctx, w, isPortrait ? 50 : 72);
@@ -501,7 +505,11 @@ function drawGameOverScreen(ctx, w, h, gameState) {
   ctx.save();
   ctx.globalAlpha = fade;
 
-  ctx.fillStyle = "rgba(2,1,6,0.97)";
+  const _goGrad = ctx.createLinearGradient(0, 0, w * 0.4, h);
+  _goGrad.addColorStop(0, R.bgTop);
+  _goGrad.addColorStop(0.5, R.bgMid);
+  _goGrad.addColorStop(1, R.bg);
+  ctx.fillStyle = _goGrad;
   ctx.fillRect(0, 0, w, h);
   scanlines(ctx, w, h);
 
