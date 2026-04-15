@@ -1,6 +1,8 @@
 import { responsiveSize } from "../../utils/canvas.js";
 import { HUD_COLORS, HUD_FONTS, HUD_LAYOUT } from "../../constants/index.js";
 
+const SPEEDOMETER_MAX_KMH = 399;
+
 function drawSpeedometer(ctx, displayedSpeedKmh, width, height) {
   const L = HUD_LAYOUT;
   const panelW = Math.max(
@@ -22,52 +24,82 @@ function drawSpeedometer(ctx, displayedSpeedKmh, width, height) {
 
   const x = width - panelW - rightMargin;
   const y = height - panelH - bottomMargin;
-  const lean = Math.round(panelH * 0.28);
 
   const shownSpeed = Math.round(displayedSpeedKmh);
+  const ratio = Math.min(1, displayedSpeedKmh / SPEEDOMETER_MAX_KMH);
 
   ctx.save();
 
-  ctx.beginPath();
-  ctx.moveTo(x - lean, y);
-  ctx.lineTo(x + panelW, y);
-  ctx.lineTo(x + panelW, y + panelH);
-  ctx.lineTo(x, y + panelH);
-  ctx.closePath();
-
-  ctx.shadowColor = HUD_COLORS.speedPanelGlow;
-  ctx.shadowBlur = 16;
+  // ── Panel background ──────────────────────────────────────────────────────
   ctx.fillStyle = HUD_COLORS.speedPanel;
-  ctx.fill();
-
-  ctx.shadowBlur = 0;
+  ctx.fillRect(x, y, panelW, panelH);
   ctx.strokeStyle = HUD_COLORS.speedPanelBorder;
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, panelW, panelH);
+  // Top accent bar
+  ctx.fillStyle = HUD_COLORS.speedPanelBorder;
+  ctx.fillRect(x, y, panelW, 3);
+
+  // ── Arc tachometer ────────────────────────────────────────────────────────
+  // Semi-circle: from Math.PI (left) clockwise through top to Math.PI*2 (right)
+  // Needle angle = Math.PI + ratio * Math.PI
+  const r = Math.min(panelW * 0.40, panelH * 0.58);
+  const cx = x + panelW / 2;
+  const cy = y + panelH - 6;
+
+  // Track arc (dim)
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, Math.PI, Math.PI * 2, false);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+  ctx.lineWidth = 3;
   ctx.stroke();
 
+  // Danger zone arc — top-right 20% (speed > 80%)
   ctx.beginPath();
-  ctx.moveTo(x - lean, y);
-  ctx.lineTo(x + panelW, y);
-  ctx.strokeStyle = HUD_COLORS.speedPanelBorder;
+  ctx.arc(cx, cy, r, Math.PI * 1.8, Math.PI * 2, false);
+  ctx.strokeStyle = "rgba(230, 0, 0, 0.35)";
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  const speedFontSize = responsiveSize(width, HUD_FONTS.speedValue);
-  ctx.shadowColor = HUD_COLORS.speedValue;
-  ctx.shadowBlur = 10;
-  ctx.fillStyle = HUD_COLORS.speedValue;
-  ctx.font = `${HUD_FONTS.bold} ${speedFontSize}px ${HUD_FONTS.family}`;
-  ctx.textAlign = "right";
-  ctx.textBaseline = "middle";
-  ctx.fillText(`${shownSpeed}`, x + panelW - 12, y + panelH * 0.46);
+  // Progress arc (yellow fill)
+  const needleAngle = Math.PI + ratio * Math.PI;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, Math.PI, needleAngle, false);
+  ctx.strokeStyle = "#FFD700";
+  ctx.lineWidth = 3;
+  ctx.stroke();
 
-  ctx.shadowBlur = 0;
+  // Red needle
+  const nx = cx + Math.cos(needleAngle) * r;
+  const ny = cy + Math.sin(needleAngle) * r;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(nx, ny);
+  ctx.strokeStyle = "#E60000";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Pivot dot
+  ctx.beginPath();
+  ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+  ctx.fillStyle = "#E60000";
+  ctx.fill();
+
+  // ── Digital speed readout ─────────────────────────────────────────────────
+  const gaugeCenter = cy - r * 0.42;
+  const speedFontSize = responsiveSize(width, HUD_FONTS.speedValue);
+  ctx.fillStyle = "#FFD700";
+  ctx.font = `${HUD_FONTS.bold} ${speedFontSize}px ${HUD_FONTS.family}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "bottom";
+  ctx.fillText(`${shownSpeed}`, cx, gaugeCenter);
+
   const labelFontSize = responsiveSize(width, HUD_FONTS.speedLabel);
-  ctx.fillStyle = HUD_COLORS.speedLabel;
+  ctx.fillStyle = "#FFFFFF";
   ctx.font = `${HUD_FONTS.bold} ${labelFontSize}px ${HUD_FONTS.family}`;
-  ctx.textAlign = "right";
-  ctx.textBaseline = "middle";
-  ctx.fillText("KM/H", x + panelW - 12, y + panelH * 0.78);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.fillText("KM/H", cx, gaugeCenter + 2);
 
   ctx.restore();
 }

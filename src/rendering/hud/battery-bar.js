@@ -25,6 +25,31 @@ function drawBatteryBar(ctx, gameState, width, height) {
   const x = marginX;
   const y = marginY;
 
+  // ── RANK block (top-left corner) ──────────────────────────────────────────
+  ctx.save();
+  const rankLabelSz = responsiveSize(width, HUD_FONTS.rankLabel);
+  const rankValSz = responsiveSize(width, HUD_FONTS.rankValue);
+  const rankBlockH = rankLabelSz + rankValSz + 6;
+  const rankY = Math.max(4, y - rankBlockH - 6);
+
+  ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+  ctx.fillRect(x - 2, rankY - 2, barW + 4, rankBlockH + 4);
+  ctx.strokeStyle = "rgba(255, 215, 0, 0.70)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x - 2, rankY - 2, barW + 4, rankBlockH + 4);
+
+  ctx.font = `${HUD_FONTS.bold} ${rankLabelSz}px ${HUD_FONTS.family}`;
+  ctx.fillStyle = "#FFFFFF";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillText("RANK", x + 4, rankY + 2);
+
+  ctx.font = `${HUD_FONTS.bold} ${rankValSz}px ${HUD_FONTS.family}`;
+  ctx.fillStyle = "#FFD700";
+  ctx.textAlign = "right";
+  ctx.fillText("P 1", x + barW - 4, rankY + 2);
+  ctx.restore();
+
   let fillColor;
   if (isBraking && !isBoosting) {
     fillColor = HUD_COLORS.batteryRegen;

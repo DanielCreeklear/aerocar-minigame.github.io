@@ -10,6 +10,7 @@ import {
   CURVE_MIN_LENGTH,
   CURVE_MIN_STRENGTH,
   CURVE_STRENGTH_VARIATION,
+  CURB_HALF,
   DIRECTION_FLIP_CHANCE,
   HAIRPIN_CHANCE,
   HAIRPIN_MIN_LENGTH,
@@ -23,7 +24,9 @@ import {
   RNG_MULTIPLIER,
   STRAIGHT_LENGTH_VARIATION,
   STRAIGHT_MIN_LENGTH,
+  SURFACE_TYPES,
   TIGHT_CURVE_THRESHOLD,
+  TRACK_GRID_CELL_SIZE,
   TRACK_SEED,
   TRACK_TYPES,
   YAW_FACTOR,
@@ -59,6 +62,11 @@ class Track {
     this.lapLength = 0;
     this.seed = TRACK_SEED;
     this.randomState = TRACK_SEED;
+    // 2D world-space grid for O(1) surface-type lookup
+    this.gridData = null; // Uint8Array — SURFACE_TYPES values
+    this.gridCols = 0;
+    this.gridRows = 0;
+    this.gridMinX = 0;
   }
 
   setSeed(seed) {
@@ -180,6 +188,7 @@ class Track {
     this.normalizeTrackData(rawData);
     this.markStartFinish();
     this._markModeXZones();
+    this._buildGrid();
     this._buildRacingLine();
   }
 
@@ -433,6 +442,7 @@ class Track {
 
   _markModeXZones() {
     const MIN_STRAIGHT_LENGTH = 400;
+    const len = this.trackData.length;
     for (const seg of this.segments) {
       if (
         seg.type === TRACK_TYPES.STRAIGHT &&
@@ -440,13 +450,96 @@ class Track {
       ) {
         const zoneStart = seg.startZ + seg.length * 0.2;
         const zoneEnd = seg.endZ - seg.length * 0.2;
-        for (const pt of this.trackData) {
-          if (pt.z >= zoneStart && pt.z < zoneEnd) {
-            pt.isModeXZone = true;
-          }
+        // Direct index arithmetic: trackData[i].z === i * Z_RESOLUTION
+        const startIdx = Math.ceil(zoneStart / Z_RESOLUTION);
+        const endIdx = Math.min(Math.floor(zoneEnd / Z_RESOLUTION), len - 1);
+        for (let i = startIdx; i <= endIdx; i++) {
+          this.trackData[i].isModeXZone = true;
         }
       }
     }
+  }
+
+  /**
+   * Rasterises the track into a 2D Uint8Array grid in world (X, Z) space.
+   * Each cell stores a SURFACE_TYPES value: GRASS (0), CURB (1), or TRACK (2).
+   * Called once per track.init(); lookup via getSurfaceType() is O(1).
+   */
+  _buildGrid() {
+    const pts = this.trackData;
+    if (pts.length === 0) return;
+
+    const cs = TRACK_GRID_CELL_SIZE;
+    const margin = CURB_HALF + cs; // one extra cell on each side
+
+    // Determine world-X extent of the rasterised area
+    let minX = Infinity;
+    let maxX = -Infinity;
+    for (const pt of pts) {
+      if (pt.x < minX) minX = pt.x;
+      if (pt.x > maxX) maxX = pt.x;
+    }
+    this.gridMinX = minX - margin;
+    const gridMaxX = maxX + margin;
+
+    this.gridCols = Math.ceil((gridMaxX - this.gridMinX) / cs) + 1;
+    this.gridRows = Math.ceil(this.lapLength / cs) + 1;
+    this.gridData = new Uint8Array(this.gridRows * this.gridCols); // all GRASS
+
+    const cols = this.gridCols;
+    const gMinX = this.gridMinX;
+
+    for (const pt of pts) {
+      const row = Math.floor(pt.z / cs);
+      if (row >= this.gridRows) continue;
+
+      // lateralOffset is a pure world-X delta, so boundaries are simple ± offsets.
+      // pt.yaw is a cumulative slope (dx/dZ), NOT an angle in radians — no cos() needed.
+
+      // Pass 1: paint CURB band (wider, outer)
+      const curbColL = Math.max(0, Math.floor((pt.x - CURB_HALF - gMinX) / cs));
+      const curbColR = Math.min(
+        cols - 1,
+        Math.ceil((pt.x + CURB_HALF - gMinX) / cs),
+      );
+      for (let c = curbColL; c <= curbColR; c++) {
+        const idx = row * cols + c;
+        if (this.gridData[idx] === SURFACE_TYPES.GRASS) {
+          this.gridData[idx] = SURFACE_TYPES.CURB;
+        }
+      }
+
+      // Pass 2: paint TRACK band (inner, overwrites CURB)
+      const trackColL = Math.max(
+        0,
+        Math.floor((pt.x - PHYSICS_TRACK_HALF - gMinX) / cs),
+      );
+      const trackColR = Math.min(
+        cols - 1,
+        Math.ceil((pt.x + PHYSICS_TRACK_HALF - gMinX) / cs),
+      );
+      for (let c = trackColL; c <= trackColR; c++) {
+        this.gridData[row * cols + c] = SURFACE_TYPES.TRACK;
+      }
+    }
+  }
+
+  /**
+   * Returns the surface type (SURFACE_TYPES.GRASS/CURB/TRACK) for a
+   * world-space position. O(1) lookup via the pre-built grid.
+   * @param {number} worldX  - car world X position
+   * @param {number} lapZ    - car lap-Z position (0 → lapLength)
+   * @returns {number} SURFACE_TYPES value
+   */
+  getSurfaceType(worldX, lapZ) {
+    if (!this.gridData) return SURFACE_TYPES.GRASS;
+    const cs = TRACK_GRID_CELL_SIZE;
+    const row = Math.floor(lapZ / cs);
+    const col = Math.floor((worldX - this.gridMinX) / cs);
+    if (row < 0 || row >= this.gridRows || col < 0 || col >= this.gridCols) {
+      return SURFACE_TYPES.GRASS;
+    }
+    return this.gridData[row * this.gridCols + col];
   }
 
   _buildRacingLine() {

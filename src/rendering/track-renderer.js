@@ -54,10 +54,17 @@ function drawTrack(ctx, gameState, track, metrics) {
         );
     }
 
-    const adIdx =
-      ((Math.floor(sliceZ / 1500) % AD_COLORS.length) + AD_COLORS.length) %
-      AD_COLORS.length;
-    ctx.fillStyle = AD_COLORS[adIdx];
+    // Detail strip — warning signs on curves, ads on straights
+    const isCurveDetail = info.type === TRACK_TYPES.CURVE;
+    if (isCurveDetail) {
+      const warnChecker = Math.floor(sliceZ / 80) % 2 === 0;
+      ctx.fillStyle = warnChecker ? RENDER_COLORS.red : RENDER_COLORS.white;
+    } else {
+      const adIdx =
+        ((Math.floor(sliceZ / 1500) % AD_COLORS.length) + AD_COLORS.length) %
+        AD_COLORS.length;
+      ctx.fillStyle = AD_COLORS[adIdx];
+    }
     ctx.fillRect(leftDetailX, y, detailW, step);
     ctx.fillRect(rightDetailX, y, detailW, step);
 

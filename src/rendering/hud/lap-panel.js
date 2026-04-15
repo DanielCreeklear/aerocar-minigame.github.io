@@ -53,11 +53,11 @@ function drawLapPanel(ctx, gameState, width, height) {
   ctx.fillStyle = HUD_COLORS.lapLabel;
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
-  ctx.fillText("TEMPO", col1, y + 8);
+  ctx.fillText("LAP", col1, y + 8);
 
   ctx.textAlign = "right";
   ctx.fillStyle = HUD_COLORS.lapCountLabel;
-  ctx.fillText("VOLTA", col2, y + 8);
+  ctx.fillText("LAPS", col2, y + 8);
 
   // ── Row 2: values ──────────────────────────────────────────────────────────
   const row2Y = y + 8 + labelSize + 3;
@@ -90,9 +90,9 @@ function drawLapPanel(ctx, gameState, width, height) {
   const bestTimeSz = Math.max(10, timeSize * 0.72);
 
   ctx.font = `${HUD_FONTS.bold} ${bestLabelSz}px ${HUD_FONTS.family}`;
-  ctx.fillStyle = "rgba(58, 80, 112, 0.85)";
+  ctx.fillStyle = HUD_COLORS.lapLabel;
   ctx.textAlign = "left";
-  ctx.fillText("MELHOR", col1, row3Y);
+  ctx.fillText("RECORD", col1, row3Y);
 
   const bestTxt =
     gameState.bestLapTime < Infinity
@@ -102,8 +102,8 @@ function drawLapPanel(ctx, gameState, width, height) {
   ctx.font = `${HUD_FONTS.bold} ${bestTimeSz}px ${HUD_FONTS.family}`;
   ctx.fillStyle =
     gameState.bestLapTime < Infinity
-      ? HUD_COLORS.lapPanelBorder
-      : "rgba(240,236,228,0.30)";
+      ? HUD_COLORS.lapTime
+      : "rgba(255,255,255,0.30)";
   ctx.textAlign = "right";
   ctx.fillText(bestTxt, col2, row3Y);
 
@@ -114,9 +114,9 @@ function drawLapPanel(ctx, gameState, width, height) {
     const flashY = y + panelH + 4;
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = "rgba(204, 0, 30, 0.82)";
+    ctx.fillStyle = "rgba(230, 0, 0, 0.88)";
     ctx.fillRect(x, flashY, panelW, flashH);
-    ctx.fillStyle = "#F0EAE0";
+    ctx.fillStyle = "#FFD700";
     ctx.font = `${HUD_FONTS.bold} ${Math.max(9, bestLabelSz)}px ${HUD_FONTS.family}`;
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";

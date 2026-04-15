@@ -29,6 +29,9 @@ export const PASSIVE_REGEN_FACTOR = 0.4;
 export const HEADING_CURVE_FACTOR = 0.0004;
 export const STEER_YAW_RATE = 0.05;
 
+// Side length of each cell in the 2D world-space track grid (units = game world units).
+export const TRACK_GRID_CELL_SIZE = 10;
+
 export const LATERAL_FRICTION_GRIP_X = 0.97;
 export const LATERAL_FRICTION_GRIP_Z = 0.93;
 

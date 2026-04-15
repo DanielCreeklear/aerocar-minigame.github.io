@@ -9,7 +9,7 @@ function drawCurveIndicator(ctx, gameState, width) {
   if (absCurve < 0.0005) return;
 
   const intensity = clamp(absCurve / 0.003, 0, 1);
-  const arrow = curve > 0 ? "\u2192" : "\u2190";
+  const arrow = curve > 0 ? ">>" : "<<";
 
   let color;
   if (intensity > 0.6) {
