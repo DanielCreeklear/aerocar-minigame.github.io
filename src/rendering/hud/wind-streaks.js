@@ -2,39 +2,43 @@
 const EFFECT_SPEED_MIN = 200;
 const EFFECT_SPEED_MAX = 340;
 
-const RAMP_UP_RATE   = 0.04;
-const RAMP_DOWN_RATE = 0.07;
+const RAMP_UP_RATE = 0.04;
+const RAMP_DOWN_RATE = 0.17;
 
 const STREAK_COUNT = 180;
-const STREAK_MIN_LEN_RATIO = 0.04;
-const STREAK_MAX_LEN_RATIO = 0.18;
-const STREAK_SPAWN_R_MIN = 0.30;   // born near outer ring
-const STREAK_SPAWN_R_MAX = 0.82;   // up to screen edge
-const STREAK_DEAD_R = 0.04;        // die when head reaches near-center
+const STREAK_MIN_LEN_RATIO = 0.02;
+const STREAK_MAX_LEN_RATIO = 0.09;
 const STREAK_BASE_VEL = 0.022;
+const WIND_HEADING_MAX = 0.22;
+const WIND_SIDE_DRIFT_RATIO = 0.9;
+const WIND_VERTICAL_RATIO = 0.52;
+const WIND_TURBULENCE_RATIO = 0.32;
 
 const COLOR_NEAR = "rgba(220, 235, 255,";
-const COLOR_FAR  = "rgba(160, 195, 255,";
+const COLOR_FAR = "rgba(160, 195, 255,";
 
-// All streaks move INWARD toward the vanishing point (horizon)
-function _initStreak(streak, diag, stagger) {
-  streak.angle = Math.random() * Math.PI * 2;
-  // Head starts somewhere in the outer ring; stagger spreads them across full range on first init
-  const rMin = stagger ? STREAK_DEAD_R : STREAK_SPAWN_R_MIN;
-  const rMax = STREAK_SPAWN_R_MAX;
-  streak.r   = (rMin + Math.random() * (rMax - rMin)) * diag;
+function _initStreak(streak, width, height, diag, stagger) {
+  const spawnPad = diag * 0.18;
+  streak.x = (Math.random() - 0.5) * (width + spawnPad * 2);
+  streak.y = stagger
+    ? (Math.random() - 0.5) * (height + spawnPad * 2)
+    : -height * 0.5 - Math.random() * spawnPad;
   streak.len =
     (STREAK_MIN_LEN_RATIO +
       Math.random() * (STREAK_MAX_LEN_RATIO - STREAK_MIN_LEN_RATIO)) *
     diag;
-  streak.width     = 0.8 + Math.random() * 1.8;
-  streak.baseAlpha = 0.50 + Math.random() * 0.45;
+  streak.width = 0.8 + Math.random() * 1.8;
+  streak.baseAlpha = 0.5 + Math.random() * 0.45;
+  streak.drift = 0.7 + Math.random() * 0.9;
+  streak.slant = (Math.random() - 0.5) * 1.5;
+  streak.phase = Math.random() * Math.PI * 2;
 }
 
 function createWindState() {
   return {
     streaks: null,
     intensity: 0,
+    tick: 0,
   };
 }
 
@@ -50,7 +54,8 @@ function drawWindStreaks(ctx, gameState, width, height, state) {
           (speedKmh - EFFECT_SPEED_MIN) / (EFFECT_SPEED_MAX - EFFECT_SPEED_MIN),
         );
 
-  const rate = targetIntensity >= state.intensity ? RAMP_UP_RATE : RAMP_DOWN_RATE;
+  const rate =
+    targetIntensity >= state.intensity ? RAMP_UP_RATE : RAMP_DOWN_RATE;
   state.intensity += (targetIntensity - state.intensity) * rate;
 
   if (state.intensity < 0.01) {
@@ -58,21 +63,26 @@ function drawWindStreaks(ctx, gameState, width, height, state) {
     return;
   }
 
-  const diag   = Math.hypot(width, height);
-  const focusX = width  * 0.5;
-  const focusY = height * 0.40;
+  const diag = Math.hypot(width, height);
+  const heading =
+    gameState.carVisualHeading ??
+    gameState.carHeading ??
+    (gameState.steerInput || 0) * WIND_HEADING_MAX;
+  const headingNorm = Math.max(-1, Math.min(1, heading / WIND_HEADING_MAX));
 
   if (!state.streaks) {
     state.streaks = Array.from({ length: STREAK_COUNT }, () => {
       const s = {};
-      _initStreak(s, diag, true);
+      _initStreak(s, width, height, diag, true);
       return s;
     });
   }
 
-  const vel      = STREAK_BASE_VEL * diag * state.intensity;
-  const deadR    = STREAK_DEAD_R * diag;
-  const spawnMin = STREAK_SPAWN_R_MIN * diag;
+  const vel = STREAK_BASE_VEL * diag * state.intensity;
+  const velY = vel * WIND_VERTICAL_RATIO;
+  const velX = -headingNorm * vel * WIND_SIDE_DRIFT_RATIO;
+  const spawnPad = diag * 0.22;
+  state.tick += 1;
 
   ctx.save();
   ctx.lineCap = "round";
@@ -80,34 +90,39 @@ function drawWindStreaks(ctx, gameState, width, height, state) {
   const streaks = state.streaks;
   for (let i = 0; i < STREAK_COUNT; i++) {
     const sk = streaks[i];
-    sk.r -= vel * (0.7 + sk.width * 0.3);
+    const step = sk.drift * (0.7 + sk.width * 0.3);
+    const flutter = Math.sin(state.tick * 0.08 + sk.phase) * vel * 0.06;
+    sk.x += (velX + sk.slant * vel * WIND_TURBULENCE_RATIO + flutter) * step;
+    sk.y += velY * step;
 
-    if (sk.r + sk.len < deadR) {
-      _initStreak(sk, diag, false);
+    if (
+      sk.y - sk.len > height * 0.5 + spawnPad ||
+      sk.x < -width * 0.5 - spawnPad ||
+      sk.x > width * 0.5 + spawnPad
+    ) {
+      _initStreak(sk, width, height, diag, false);
     }
 
-    const rHead = sk.r;
-    const rTail = rHead + sk.len;
-    if (rTail <= 0) continue;
+    const lineDx = velX + sk.slant * vel * WIND_TURBULENCE_RATIO + flutter;
+    const lineDy = velY * 0.62;
+    const lineMag = Math.hypot(lineDx, lineDy) || 1;
+    const ux = lineDx / lineMag;
+    const uy = lineDy / lineMag;
 
-    const cos = Math.cos(sk.angle);
-    const sin = Math.sin(sk.angle);
+    const x2 = width * 0.5 + sk.x;
+    const y2 = height * 0.5 + sk.y;
+    const x1 = x2 - ux * sk.len;
+    const y1 = y2 - uy * sk.len;
 
-    const x1 = focusX + cos * rTail;
-    const y1 = focusY + sin * rTail;
-    const x2 = focusX + cos * Math.max(rHead, 0);
-    const y2 = focusY + sin * Math.max(rHead, 0);
-
-    const rFrac      = rTail / (STREAK_SPAWN_R_MAX * diag);
-    const spawnFade  = Math.min(1, (rTail - spawnMin * 0.5) / spawnMin);
-    const centerFade = Math.min(1, (rHead - deadR) / (spawnMin * 0.35));
-    const edgeFade   = rFrac > 0.85 ? 1 - (rFrac - 0.85) / 0.15 : 1;
-    const alpha      = sk.baseAlpha * state.intensity * spawnFade * centerFade * edgeFade;
+    const edgeX = 1 - Math.min(1, Math.abs(sk.x) / (width * 0.62));
+    const edgeY = 1 - Math.min(1, Math.abs(sk.y) / (height * 0.62));
+    const edgeFade = Math.max(0, Math.min(1, edgeX * edgeY));
+    const alpha = sk.baseAlpha * state.intensity * (0.35 + 0.65 * edgeFade);
 
     if (alpha <= 0) continue;
 
-    const color = rHead / (STREAK_SPAWN_R_MAX * diag) > 0.40 ? COLOR_FAR : COLOR_NEAR;
-    ctx.lineWidth   = sk.width;
+    const color = edgeFade > 0.5 ? COLOR_NEAR : COLOR_FAR;
+    ctx.lineWidth = sk.width;
     ctx.strokeStyle = `${color} ${alpha.toFixed(3)})`;
     ctx.beginPath();
     ctx.moveTo(x1, y1);
@@ -117,9 +132,16 @@ function drawWindStreaks(ctx, gameState, width, height, state) {
 
   if (state.intensity > 0.25) {
     const vigAlpha = (state.intensity - 0.25) * 0.18;
-    const cx   = width  * 0.5;
-    const cy   = height * 0.5;
-    const grad = ctx.createRadialGradient(cx, cy, diag * 0.25, cx, cy, diag * 0.72);
+    const cx = width * 0.5;
+    const cy = height * 0.5;
+    const grad = ctx.createRadialGradient(
+      cx,
+      cy,
+      diag * 0.25,
+      cx,
+      cy,
+      diag * 0.72,
+    );
     grad.addColorStop(0, "rgba(0,0,0,0)");
     grad.addColorStop(1, `rgba(0,5,18,${vigAlpha.toFixed(3)})`);
     ctx.fillStyle = grad;
