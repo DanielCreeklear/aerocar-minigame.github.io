@@ -305,6 +305,21 @@ function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
 }
 
 
+function drawGyroscopeWarning(ctx, x, y, w) {
+  const sz = csz(w, 0.028, 10, 13);
+  ctx.save();
+  ctx.textBaseline = "top";
+  ctx.textAlign = "left";
+  ctx.fillStyle = R.gold;
+  ctx.font = `700 ${sz}px ${R.font}`;
+  ctx.fillText(
+    "⚠  CHROME NO iOS NÃO SUPORTA SENSOR DE MOVIMENTO — USE O SAFARI",
+    x,
+    y,
+  );
+  ctx.restore();
+}
+
 function drawStartScreen(ctx, w, h, gameState, track) {
   const isPortrait = h > w;
   const age = gameState ? gameState.screenAge || 0 : 0;
@@ -385,6 +400,10 @@ function drawStartScreen(ctx, w, h, gameState, track) {
       ctrlY + 14 + (ctrlSz + 5) * 2,
     );
     ctx.restore();
+
+    if (gameState && gameState.gyroscopeWarning) {
+      drawGyroscopeWarning(ctx, tx, h * 0.54, w - tx * 2);
+    }
 
     const rkY = h * 0.6;
     sectionLabel(ctx, tx, rkY, w * 0.88, "RANKING");
@@ -468,6 +487,10 @@ function drawStartScreen(ctx, w, h, gameState, track) {
       ctrlY + 14 + (ctrlSz + 5) * 2,
     );
     ctx.restore();
+
+    if (gameState && gameState.gyroscopeWarning) {
+      drawGyroscopeWarning(ctx, titleX, ctrlY + 14 + (ctrlSz + 5) * 3 + 4, leftW);
+    }
 
     sectionLabel(ctx, rightX, h * 0.12, rightW, "RANKING");
     const rkAvail = h - 44 - (h * 0.12 + 16) - 8;

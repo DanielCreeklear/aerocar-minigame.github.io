@@ -11,6 +11,7 @@ import {
 import {
   browserSupportsDeviceOrientation,
   requiresOrientationPermission,
+  isIOSWithoutPermission,
 } from "../utils/platform.js";
 
 function normalizeTilt(raw) {
@@ -308,8 +309,15 @@ class InputController {
 
     // Bind gyroscope for browsers that don't require an explicit permission
     // prompt (Android, desktop Firefox, etc.).
+    // On iOS without requestPermission (Chrome on iOS) the browser exposes
+    // DeviceOrientationEvent but iOS blocks the sensor data entirely — skip
+    // binding and immediately notify the caller so it can surface a warning.
     if (browserSupportsDeviceOrientation && !requiresOrientationPermission) {
-      this._bindDeviceOrientationEvent();
+      if (isIOSWithoutPermission) {
+        this.handlers.onGyroscopeUnavailable?.();
+      } else {
+        this._bindDeviceOrientationEvent();
+      }
     }
 
     // Intercept the Android hardware Back button so it doesn't close the
