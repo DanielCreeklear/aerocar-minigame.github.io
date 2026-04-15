@@ -26,9 +26,13 @@ export const SLIP_PENALTY_THRESHOLD = 0.15;
 
 export const PASSIVE_REGEN_FACTOR = 0.4;
 
-export const HEADING_CURVE_FACTOR = 0.00006;
+export const HEADING_CURVE_FACTOR = 0.0008;
 
-export const STEER_YAW_RATE = 0.02;
+export const STEER_YAW_RATE = 0.006;
+
+export const MAX_STEER_HEADING = 0.22;
+
+export const HEADING_ALIGNMENT_RATE = 0.25;
 
 export const VISUAL_HEADING_LERP = 0.25;
 

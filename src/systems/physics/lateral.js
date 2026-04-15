@@ -1,10 +1,10 @@
 import { clamp } from "../../utils/math.js";
 import {
-  STEER_YAW_RATE,
+  MAX_STEER_HEADING,
+  HEADING_ALIGNMENT_RATE,
   SLIP_PENALTY_THRESHOLD,
   MAX_LATERAL_VX,
   OFF_TRACK_VZ_DRAG,
-  OFF_TRACK_VX_DRAG,
   OFF_TRACK_MAX_SPEED,
   OFF_TRACK_MAX_OFFSET_MARGIN,
   OFF_TRACK_DUST_FRAMES,
@@ -15,11 +15,18 @@ import {
   SURFACE_TYPES,
 } from "../../constants/index.js";
 
-function updateHeadingAndLateral(gameState, curvature, vz, dt) {
+function updateHeadingAndLateral(
+  gameState,
+  curvature,
+  vz,
+  dt,
+  lateralFriction,
+) {
   const steerInput = gameState.steerInput || 0;
   let theta = gameState.carHeading || 0;
 
-  theta += steerInput * STEER_YAW_RATE * dt;
+  const targetTheta = steerInput * MAX_STEER_HEADING;
+  theta += (targetTheta - theta) * Math.min(1, HEADING_ALIGNMENT_RATE * dt);
 
   gameState.carHeading = clamp(theta, -Math.PI / 2, Math.PI / 2);
 
@@ -71,7 +78,13 @@ function integrateLateralState(
   strategy,
   surfaceType,
 ) {
-  const { x: rawX } = updateHeadingAndLateral(gameState, curvature, vz, dt);
+  const { x: rawX } = updateHeadingAndLateral(
+    gameState,
+    curvature,
+    vz,
+    dt,
+    strategy.lateralFriction,
+  );
 
   const { nextVz, isOffTrack } = applyOffTrackPenalties(
     gameState,
