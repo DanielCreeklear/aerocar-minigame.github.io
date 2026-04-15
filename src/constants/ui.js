@@ -124,13 +124,13 @@ export const UI_TEXT = {
 
 export const HUD_COLORS = {
   // Speedometer
-  speedPanel: "rgba(11, 9, 24, 0.88)",
+  speedPanel: "rgba(6, 12, 24, 0.92)",
   speedPanelBorder: "#CC001E",
   speedPanelGlow: "rgba(204, 0, 30, 0.25)",
   speedValue: "#C87D12",
   speedLabel: "rgba(242, 237, 228, 0.60)",
   // Battery bar
-  batteryPanel: "rgba(11, 9, 24, 0.88)",
+  batteryPanel: "rgba(6, 12, 24, 0.92)",
   batteryBorder: "rgba(200, 125, 18, 0.70)",
   batteryFull: "#C87D12",
   batteryMid: "#D4760A",
@@ -142,12 +142,12 @@ export const HUD_COLORS = {
   badgeModeX: "rgba(140, 0, 18, 0.92)",
   badgeModeXBorder: "#CC001E",
   badgeModeXGlow: "rgba(204, 0, 30, 0.40)",
-  badgeModeZ: "rgba(14, 24, 56, 0.92)",
+  badgeModeZ: "rgba(10, 22, 48, 0.92)",
   badgeModeZBorder: "rgba(74, 104, 144, 0.90)",
   badgeModeZGlow: "rgba(74, 104, 144, 0.35)",
   badgeText: "#F2EDE4",
   // Lap panel
-  lapPanel: "rgba(11, 9, 24, 0.88)",
+  lapPanel: "rgba(6, 12, 24, 0.92)",
   lapPanelBorder: "rgba(200, 125, 18, 0.80)",
   lapTime: "#C87D12",
   lapLabel: "rgba(242, 237, 228, 0.60)",

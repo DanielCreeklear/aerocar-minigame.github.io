@@ -3,17 +3,23 @@ import { HUD_COLORS, HUD_FONTS, HUD_LAYOUT } from "../../constants/index.js";
 
 const SPEEDOMETER_MAX_KMH = 399;
 
-function drawSpeedometer(ctx, displayedSpeedKmh, width, height) {
+function drawSpeedometer(
+  ctx,
+  displayedSpeedKmh,
+  width,
+  height,
+  isPortrait = false,
+) {
   const L = HUD_LAYOUT;
   const panelW = Math.max(
-    L.speedMinWidth,
-    Math.min(L.speedMaxWidth, width * L.speedWidthRatio),
+    isPortrait ? 100 : L.speedMinWidth,
+    Math.min(isPortrait ? 150 : L.speedMaxWidth, width * L.speedWidthRatio),
   );
   const panelH = Math.max(
-    L.speedMinHeight,
-    Math.min(L.speedMaxHeight, height * L.speedHeightRatio),
+    isPortrait ? 90 : L.speedMinHeight,
+    Math.min(isPortrait ? 130 : L.speedMaxHeight, height * L.speedHeightRatio),
   );
-  const rightMargin = Math.max(
+  const edgeMargin = Math.max(
     L.speedMinMargin,
     Math.min(L.speedMaxMargin, width * L.speedRightMarginRatio),
   );
@@ -22,7 +28,9 @@ function drawSpeedometer(ctx, displayedSpeedKmh, width, height) {
     Math.min(L.speedMaxMargin, height * L.speedBottomMarginRatio),
   );
 
-  const x = width - panelW - rightMargin;
+  // Portrait: bottom-LEFT to keep the boost zone (right side) clear for the thumb.
+  // Landscape: bottom-right (classic position).
+  const x = isPortrait ? edgeMargin : width - panelW - edgeMargin;
   const y = height - panelH - bottomMargin;
 
   const shownSpeed = Math.round(displayedSpeedKmh);
@@ -88,14 +96,14 @@ function drawSpeedometer(ctx, displayedSpeedKmh, width, height) {
   // ── Digital speed readout ─────────────────────────────────────────────────
   const gaugeCenter = cy - r * 0.42;
   const speedFontSize = responsiveSize(width, HUD_FONTS.speedValue);
-  ctx.fillStyle = "#FFD700";
+  ctx.fillStyle = HUD_COLORS.speedValue;
   ctx.font = `${HUD_FONTS.bold} ${speedFontSize}px ${HUD_FONTS.family}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "bottom";
   ctx.fillText(`${shownSpeed}`, cx, gaugeCenter);
 
   const labelFontSize = responsiveSize(width, HUD_FONTS.speedLabel);
-  ctx.fillStyle = "#FFFFFF";
+  ctx.fillStyle = HUD_COLORS.speedLabel;
   ctx.font = `${HUD_FONTS.bold} ${labelFontSize}px ${HUD_FONTS.family}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "top";

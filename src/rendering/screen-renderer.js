@@ -1,10 +1,9 @@
 import { formatTime } from "../utils/math.js";
 
-// ── R4-inspired design tokens ──────────────────────────────────────────────────
 const R = {
-  bg: "#0B0918",
-  bgMid: "#0E0B22",
-  bgTop: "#130F2A",
+  bg: "#060c18",
+  bgMid: "#0c1420",
+  bgTop: "#0f1c2e",
   crimson: "#CC001E",
   crimsonDim: "rgba(204, 0, 30, 0.50)",
   crimsonFill: "rgba(204, 0, 30, 0.13)",
@@ -15,7 +14,7 @@ const R = {
   text: "#F2EDE4",
   textDim: "rgba(242, 237, 228, 0.60)",
   textFaint: "rgba(242, 237, 228, 0.28)",
-  barBg: "#07051A",
+  barBg: "#030a14",
   divider: "rgba(204, 0, 30, 0.35)",
   font: "'Barlow Condensed', 'Segoe UI', Arial, sans-serif",
 };
@@ -67,7 +66,7 @@ function bottomBar(ctx, w, h, leftTxt, rightTxt, blink) {
 function topStripe(ctx, w, leftTxt, rightTxt) {
   const sh = 32;
   ctx.save();
-  ctx.fillStyle = "#0F0D24";
+  ctx.fillStyle = "#0a1220";
   ctx.fillRect(0, 0, w, sh);
   ctx.strokeStyle = R.divider;
   ctx.lineWidth = 1;
@@ -259,7 +258,7 @@ function sampleTrackPointIndexes(pointsLength) {
 }
 
 function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
-  ctx.fillStyle = "rgba(10,8,24,0.97)";
+  ctx.fillStyle = "rgba(4,10,20,0.97)";
   ctx.fillRect(mapX, mapY, mapW, mapH);
   ctx.strokeStyle = "rgba(58,80,112,0.35)";
   ctx.lineWidth = 1;
