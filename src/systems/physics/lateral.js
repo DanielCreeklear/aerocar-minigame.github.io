@@ -1,32 +1,45 @@
 import { clamp } from "../../utils/math.js";
 import {
-  STEER_YAW_RATE,
+  MAX_STEER_HEADING,
+  HEADING_ALIGNMENT_RATE,
   SLIP_PENALTY_THRESHOLD,
   MAX_LATERAL_VX,
   OFF_TRACK_VZ_DRAG,
-  OFF_TRACK_VX_DRAG,
   OFF_TRACK_MAX_SPEED,
   OFF_TRACK_MAX_OFFSET_MARGIN,
+  OFF_TRACK_RESCUE_THRESHOLD,
+  OFF_TRACK_RESCUE_SPEED_FACTOR,
+  OFF_TRACK_RESCUE_FLASH_DURATION,
+  OFF_TRACK_RESCUE_RETURN_SPEED,
   OFF_TRACK_DUST_FRAMES,
   CURB_VZ_DRAG,
   CURB_HALF,
   SPIN_TRIGGER_SPEED,
   SPIN_EXIT_SPEED,
   SURFACE_TYPES,
+  CENTRIFUGAL_FACTOR,
 } from "../../constants/index.js";
 
-function updateHeadingAndLateral(gameState, curvature, vz, dt) {
+function updateHeadingAndLateral(
+  gameState,
+  curvature,
+  vz,
+  dt,
+  lateralFriction,
+) {
   const steerInput = gameState.steerInput || 0;
   let theta = gameState.carHeading || 0;
 
-  theta += steerInput * STEER_YAW_RATE * dt;
+  const targetTheta = steerInput * MAX_STEER_HEADING;
+  theta += (targetTheta - theta) * Math.min(1, HEADING_ALIGNMENT_RATE * dt);
 
   gameState.carHeading = clamp(theta, -Math.PI / 2, Math.PI / 2);
 
-  const vx = vz * Math.sin(theta);
-  const x = (gameState.lateralOffset || 0) + vx * dt;
+  const vxSteer = vz * Math.sin(theta);
+  const vxCentrifugal = curvature * vz * CENTRIFUGAL_FACTOR;
+  const x = (gameState.lateralOffset || 0) + (vxSteer + vxCentrifugal) * dt;
 
-  return { x };
+  return { x, vx: vxSteer + vxCentrifugal };
 }
 
 function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt) {
@@ -71,7 +84,13 @@ function integrateLateralState(
   strategy,
   surfaceType,
 ) {
-  const { x: rawX } = updateHeadingAndLateral(gameState, curvature, vz, dt);
+  const { x: rawX, vx: rawVx } = updateHeadingAndLateral(
+    gameState,
+    curvature,
+    vz,
+    dt,
+    strategy.lateralFriction,
+  );
 
   const { nextVz, isOffTrack } = applyOffTrackPenalties(
     gameState,
@@ -91,16 +110,37 @@ function integrateLateralState(
     if (gameState.carHeading < 0) gameState.carHeading = 0;
   }
 
-  const vx = vz * Math.sin(gameState.carHeading);
+  let rescuedVz = nextVz;
+  if (gameState.rescueInProgress) {
+    // Gradually slide back to center at fixed speed
+    const step = OFF_TRACK_RESCUE_RETURN_SPEED * dt;
+    if (Math.abs(x) <= step) {
+      x = 0;
+      gameState.rescueInProgress = false;
+    } else {
+      x = x - Math.sign(x) * step;
+    }
+    rescuedVz = Math.min(nextVz, gameState.rescuePenaltySpeed || nextVz);
+  } else if (Math.abs(x) > OFF_TRACK_RESCUE_THRESHOLD) {
+    // Trigger rescue: freeze lateral position, start sliding to center
+    gameState.rescueInProgress = true;
+    gameState.rescuePenaltySpeed = nextVz * OFF_TRACK_RESCUE_SPEED_FACTOR;
+    gameState.carHeading = 0;
+    rescuedVz = gameState.rescuePenaltySpeed;
+    gameState.rescueFlashTimer = OFF_TRACK_RESCUE_FLASH_DURATION;
+  }
 
-  gameState.currentSlip = clamp(Math.abs(vx) / MAX_LATERAL_VX, 0, 1);
+  const vx =
+    vz * Math.sin(gameState.carHeading) + curvature * vz * CENTRIFUGAL_FACTOR;
+
+  gameState.currentSlip = clamp(Math.abs(rawVx) / MAX_LATERAL_VX, 0, 1);
   gameState.isPenalized = gameState.currentSlip > SLIP_PENALTY_THRESHOLD;
   gameState.lateralOffset = x;
   gameState.lateralVelocity = vx;
   gameState.isOffTrack = isOffTrack;
 
   return {
-    nextVz,
+    nextVz: rescuedVz,
     forces: { centrifugalForce: 0, effectiveGrip: strategy.lateralFriction },
   };
 }

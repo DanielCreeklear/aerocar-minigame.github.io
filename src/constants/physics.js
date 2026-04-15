@@ -26,9 +26,15 @@ export const SLIP_PENALTY_THRESHOLD = 0.15;
 
 export const PASSIVE_REGEN_FACTOR = 0.4;
 
-export const HEADING_CURVE_FACTOR = 0.00006;
+export const HEADING_CURVE_FACTOR = 0.0008;
 
-export const STEER_YAW_RATE = 0.02;
+export const STEER_YAW_RATE = 0.006;
+
+export const MAX_STEER_HEADING = 0.22;
+
+export const HEADING_ALIGNMENT_RATE = 0.25;
+
+export const CENTRIFUGAL_FACTOR = 0.004;
 
 export const VISUAL_HEADING_LERP = 0.25;
 
@@ -67,7 +73,12 @@ export const OFF_TRACK_OUTWARD_VX_DAMP = 0.9;
 
 export const OFF_TRACK_DUST_FRAMES = 20;
 
-export const OFF_TRACK_MAX_OFFSET_MARGIN = 300;
+export const OFF_TRACK_MAX_OFFSET_MARGIN = 100;
+
+export const OFF_TRACK_RESCUE_THRESHOLD = 150;
+export const OFF_TRACK_RESCUE_SPEED_FACTOR = 0.35;
+export const OFF_TRACK_RESCUE_FLASH_DURATION = 5.0;
+export const OFF_TRACK_RESCUE_RETURN_SPEED = 40; // units/s lateral slide back to center
 
 export const CURB_VZ_DRAG = 0.94;
 

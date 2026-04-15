@@ -9,10 +9,47 @@ const SPEEDOMETER_SCALE_TO_KMH = 17;
 const SPEEDOMETER_MAX_KMH = 399;
 const SPEEDOMETER_SMOOTHING = 0.18;
 
-
 const TOUCH_BRAKE_RATIO = 0.35;
 const TOUCH_BOOST_RATIO = 0.65;
 const TOUCH_HINT_FONT = "'Barlow Condensed', 'Segoe UI', Arial, sans-serif";
+
+const RESCUE_FONT = "'Barlow Condensed', 'Segoe UI', Arial, sans-serif";
+
+function drawRescueBanner(ctx, gameState, width, height) {
+  const timer = gameState.rescueFlashTimer || 0;
+  if (timer <= 0) return;
+
+  const alpha = Math.min(1, timer / 1.5);
+
+  ctx.save();
+  if (timer > 10.85) {
+    ctx.globalAlpha = 0.35 * Math.min(1, (timer - 10.85) / 0.1);
+    ctx.fillStyle = "#CC001E";
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  // Centered banner
+  const bh = Math.max(48, height * 0.1);
+  const by = height * 0.38;
+  ctx.globalAlpha = alpha * 0.92;
+  ctx.fillStyle = "#0a0008";
+  ctx.fillRect(0, by, width, bh);
+  ctx.strokeStyle = "#CC001E";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0, by, width, bh);
+
+  const sz = Math.max(18, Math.min(32, width * 0.055));
+  ctx.globalAlpha = alpha;
+  ctx.font = `700 ${sz}px ${RESCUE_FONT}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.shadowColor = "#CC001E";
+  ctx.shadowBlur = 14;
+  ctx.fillStyle = "#FF2244";
+  ctx.fillText("▲  PENALIDADE — RESGATE  ▲", width * 0.5, by + bh * 0.5);
+
+  ctx.restore();
+}
 
 function drawTouchZoneHints(ctx, gameState, width, height) {
   const { isBoosting, isBraking } = gameState;
@@ -22,12 +59,10 @@ function drawTouchZoneHints(ctx, gameState, width, height) {
 
   ctx.save();
 
-  
   ctx.fillStyle = "#CC001E";
   ctx.globalAlpha = isBraking ? 0.22 : 0.07;
   ctx.fillRect(0, hintY, width * TOUCH_BRAKE_RATIO, hintH);
 
-  
   ctx.fillStyle = "#C87D12";
   ctx.globalAlpha = isBoosting ? 0.22 : 0.07;
   ctx.fillRect(
@@ -37,7 +72,6 @@ function drawTouchZoneHints(ctx, gameState, width, height) {
     hintH,
   );
 
-  
   ctx.globalAlpha = 0.18;
   ctx.strokeStyle = "#CC001E";
   ctx.lineWidth = 1;
@@ -51,7 +85,6 @@ function drawTouchZoneHints(ctx, gameState, width, height) {
   ctx.lineTo(width * TOUCH_BOOST_RATIO, height);
   ctx.stroke();
 
-  
   ctx.font = `700 ${sz}px ${TOUCH_HINT_FONT}`;
   ctx.textBaseline = "middle";
   const midY = hintY + hintH * 0.5;
@@ -108,6 +141,7 @@ class HudRenderer {
     drawBatteryBar(ctx, gameState, width, height);
     drawSpeedometer(ctx, this.displayedSpeedKmh, width, height, isPortrait);
     drawAeroBadge(ctx, gameState, width, height);
+    drawRescueBanner(ctx, gameState, width, height);
   }
 }
 
