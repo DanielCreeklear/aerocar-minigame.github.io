@@ -33,13 +33,11 @@ function applyLateralDynamics(
   // Player steering: direct lateral force from input.
   vx += steerForce * dt;
 
-  // Corner push: excesso de velocidade acima do limite seguro empurra o carro para fora.
-  // safeSpeed = cornerSafeSpeed / |κ| — curvas fechadas exigem velocidades menores.
+  // Centrifugal force: always proportional to speed × curvature.
+  // With no player input on a curve, the car drifts outward — steering is required.
   let centrifugalForce = 0;
   if (!wasOffTrack && Math.abs(curvature) > 0 && vz > 0) {
-    const safeSpeed = strategy.cornerSafeSpeed / Math.abs(curvature);
-    const excess = Math.max(0, vz - safeSpeed);
-    centrifugalForce = excess * CORNER_PUSH_K;
+    centrifugalForce = vz * Math.abs(curvature) * CORNER_PUSH_K;
     vx += Math.sign(curvature) * centrifugalForce * dt;
   }
 

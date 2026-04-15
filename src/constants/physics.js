@@ -22,14 +22,14 @@ export const BOOST_OVERCAP_RATIO = 1.1;
 export const BRAKE_REGEN_BASE = 0.2;
 export const BRAKE_REGEN_SPEED_FACTOR = 0.025;
 
-export const CORNER_PUSH_K = 0.03;
+export const CORNER_PUSH_K = 0.001;
 
 export const SLIP_PENALTY_THRESHOLD = 0.15;
 
 export const PASSIVE_REGEN_FACTOR = 0.4;
 
-export const LATERAL_FRICTION_GRIP_X = 0.93;
-export const LATERAL_FRICTION_GRIP_Z = 0.8;
+export const LATERAL_FRICTION_GRIP_X = 0.97;
+export const LATERAL_FRICTION_GRIP_Z = 0.93;
 
 export const COUNTERSTEER_DAMPING_BONUS = 0.82;
 

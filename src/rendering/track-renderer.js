@@ -4,7 +4,6 @@ import {
   HALF_RATIO,
   RENDER_COLORS,
   ROAD_SAMPLE_STEP,
-  STRAIGHT_STRIPE_LENGTH,
   TRACK_TYPES,
   TRACK_WIDTH,
 } from "../constants/index.js";
@@ -71,17 +70,15 @@ function drawTrack(ctx, gameState, track, metrics) {
     ctx.fillRect(leftRunoffX, y, runoffW, step);
     ctx.fillRect(rightRunoffX, y, runoffW, step);
 
-    // Kerb stripes
+    // Kerb stripes — zebra only on curves; solid white on straights
     const isCurve = info.type === TRACK_TYPES.CURVE;
-    const stripeLength = isCurve ? CURVE_STRIPE_LENGTH : STRAIGHT_STRIPE_LENGTH;
-    const checker = Math.floor(sliceZ / stripeLength) % 2 === 0;
-    const stripeColor = checker
-      ? isCurve
-        ? RENDER_COLORS.red
-        : RENDER_COLORS.white
-      : isCurve
-        ? RENDER_COLORS.white
-        : RENDER_COLORS.red;
+    let stripeColor;
+    if (isCurve) {
+      const checker = Math.floor(sliceZ / CURVE_STRIPE_LENGTH) % 2 === 0;
+      stripeColor = checker ? RENDER_COLORS.red : RENDER_COLORS.white;
+    } else {
+      stripeColor = RENDER_COLORS.white;
+    }
 
     ctx.fillStyle = stripeColor;
     ctx.fillRect(left - bw, y, bw, step);
