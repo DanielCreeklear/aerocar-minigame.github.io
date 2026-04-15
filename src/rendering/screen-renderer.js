@@ -2,19 +2,21 @@ import { formatTime } from "../utils/math.js";
 
 // ── R4-inspired design tokens ──────────────────────────────────────────────────
 const R = {
-  bg: "#04030A",
+  bg: "#0B0918",
+  bgMid: "#0E0B22",
+  bgTop: "#130F2A",
   crimson: "#CC001E",
   crimsonDim: "rgba(204, 0, 30, 0.50)",
-  crimsonFill: "rgba(204, 0, 30, 0.11)",
-  crimsonHigh: "rgba(204, 0, 30, 0.22)",
-  gold: "#C07B10",
-  steel: "#3A5070",
-  steelDim: "rgba(58, 80, 112, 0.70)",
-  text: "#F0EAE0",
-  textDim: "rgba(240, 234, 224, 0.55)",
-  textFaint: "rgba(240, 234, 224, 0.22)",
-  barBg: "#090004",
-  divider: "rgba(204, 0, 30, 0.30)",
+  crimsonFill: "rgba(204, 0, 30, 0.13)",
+  crimsonHigh: "rgba(204, 0, 30, 0.26)",
+  gold: "#C87D12",
+  steel: "#4A6890",
+  steelDim: "rgba(74, 104, 144, 0.75)",
+  text: "#F2EDE4",
+  textDim: "rgba(242, 237, 228, 0.60)",
+  textFaint: "rgba(242, 237, 228, 0.28)",
+  barBg: "#07051A",
+  divider: "rgba(204, 0, 30, 0.35)",
   font: "'Barlow Condensed', 'Segoe UI', Arial, sans-serif",
 };
 
@@ -673,7 +675,11 @@ function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
   ctx.save();
   ctx.globalAlpha = fade;
 
-  ctx.fillStyle = R.bg;
+  const _csGrad = ctx.createLinearGradient(0, 0, w * 0.4, h);
+  _csGrad.addColorStop(0, R.bgTop);
+  _csGrad.addColorStop(0.5, R.bgMid);
+  _csGrad.addColorStop(1, R.bg);
+  ctx.fillStyle = _csGrad;
   ctx.fillRect(0, 0, w, h);
   scanlines(ctx, w, h);
   topStripe(ctx, w, "CIRCUIT SELECT", "CIRCUIT 01");
