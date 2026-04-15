@@ -18,6 +18,9 @@ import {
   TOTAL_SEGMENTS,
   TRACK_SEED,
   STEER_RATE,
+  LATERAL_RENDER_SCALE,
+  OFF_TRACK_RESCUE_SPEED_FACTOR,
+  OFF_TRACK_RESCUE_FLASH_DURATION,
 } from "../constants/index.js";
 import { clamp } from "../utils/math.js";
 import { createRankingService } from "../ranking/index.js";
@@ -296,6 +299,21 @@ class Game {
       currentTrackPoint,
     );
     this.telemetry.log(this.gameState, physicsTelemetry);
+
+    // Rescue the car when it goes off the visible screen (important on mobile
+    // where the viewport is narrow enough that the car can disappear before the
+    // regular off-track rescue threshold is reached).
+    if (!this.gameState.rescueInProgress) {
+      const offScreenThreshold =
+        this.canvas.width / 2 / LATERAL_RENDER_SCALE;
+      if (Math.abs(this.gameState.lateralOffset || 0) >= offScreenThreshold) {
+        this.gameState.rescueInProgress = true;
+        this.gameState.rescuePenaltySpeed =
+          (this.gameState.speed || 0) * OFF_TRACK_RESCUE_SPEED_FACTOR;
+        this.gameState.carHeading = 0;
+        this.gameState.rescueFlashTimer = OFF_TRACK_RESCUE_FLASH_DURATION;
+      }
+    }
 
     if (lapCompleted) {
       const now = Date.now();
