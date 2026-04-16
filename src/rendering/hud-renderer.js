@@ -6,8 +6,9 @@ import { drawGripWarning } from "./hud/grip-warning.js";
 import { drawCurveIndicator } from "./hud/curve-indicator.js";
 import { createWindState, drawWindStreaks } from "./hud/wind-streaks.js";
 import { drawCentrifugalSlideEffect } from "./hud/centrifugal-slide.js";
+import { SPEED_KMH_SCALE } from "../constants/rendering.js";
 
-const SPEEDOMETER_SCALE_TO_KMH = 17;
+const SPEEDOMETER_SCALE_TO_KMH = SPEED_KMH_SCALE;
 const SPEEDOMETER_MAX_KMH = 399;
 const SPEEDOMETER_SMOOTHING = 0.18;
 
@@ -30,7 +31,7 @@ function drawRescueBanner(ctx, gameState, width, height) {
     ctx.fillRect(0, 0, width, height);
   }
 
-  // Centered banner
+  
   const bh = Math.max(48, height * 0.1);
   const by = height * 0.38;
   ctx.globalAlpha = alpha * 0.92;
@@ -48,7 +49,7 @@ function drawRescueBanner(ctx, gameState, width, height) {
   ctx.shadowColor = "#CC001E";
   ctx.shadowBlur = 14;
   ctx.fillStyle = "#FF2244";
-  ctx.fillText("▲  PENALIDADE — RESGATE  ▲", width * 0.5, by + bh * 0.5);
+  ctx.fillText("!!  PENALIDADE — RESGATE  !!", width * 0.5, by + bh * 0.5);
 
   ctx.restore();
 }
@@ -94,12 +95,20 @@ function drawTouchZoneHints(ctx, gameState, width, height) {
   ctx.globalAlpha = isBraking ? 1.0 : 0.45;
   ctx.fillStyle = "#CC001E";
   ctx.textAlign = "left";
-  ctx.fillText("◀ FREIO", 10, midY);
+  ctx.fillText("< FREIO", 10, midY);
 
   ctx.globalAlpha = isBoosting ? 1.0 : 0.45;
   ctx.fillStyle = "#C87D12";
   ctx.textAlign = "right";
-  ctx.fillText("BOOST ▶", width - 10, midY);
+  ctx.fillText("BOOST >", width - 10, midY);
+
+  
+  const centerSz = Math.max(11, Math.min(14, width * 0.032));
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = "#8899bb";
+  ctx.font = `400 ${centerSz}px ${TOUCH_HINT_FONT}`;
+  ctx.textAlign = "center";
+  ctx.fillText("MODO", width * 0.5, midY);
 
   ctx.globalAlpha = 1;
   ctx.restore();
@@ -118,7 +127,7 @@ class HudRenderer {
     this._windState = createWindState();
   }
 
-  draw(ctx, gameState, width, height) {
+  draw(ctx, gameState, width, height, dt = 1 / 60) {
     const rawSpeed = Math.max(0, gameState.speed || 0);
     const targetSpeedKmh = Math.min(
       SPEEDOMETER_MAX_KMH,
@@ -128,12 +137,13 @@ class HudRenderer {
       (targetSpeedKmh - this.displayedSpeedKmh) * SPEEDOMETER_SMOOTHING;
 
     const isPortrait = height > width;
+    const touchHintH = isPortrait ? Math.max(52, height * 0.08) : 0;
 
     if (isPortrait) {
       drawTouchZoneHints(ctx, gameState, width, height);
     }
 
-    drawWindStreaks(ctx, gameState, width, height, this._windState);
+    drawWindStreaks(ctx, gameState, width, height, this._windState, dt);
     drawCentrifugalSlideEffect(ctx, gameState, width, height);
     this._warningTick = drawGripWarning(
       ctx,
@@ -145,8 +155,15 @@ class HudRenderer {
     drawCurveIndicator(ctx, gameState, width);
     drawLapPanel(ctx, gameState, width, height);
     drawBatteryBar(ctx, gameState, width, height);
-    drawSpeedometer(ctx, this.displayedSpeedKmh, width, height, isPortrait);
-    drawAeroBadge(ctx, gameState, width, height);
+    drawSpeedometer(
+      ctx,
+      this.displayedSpeedKmh,
+      width,
+      height,
+      isPortrait,
+      touchHintH,
+    );
+    drawAeroBadge(ctx, gameState, width, height, touchHintH);
     drawRescueBanner(ctx, gameState, width, height);
   }
 }

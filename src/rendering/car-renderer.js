@@ -14,6 +14,7 @@ import {
   MIN_CAR_ALPHA,
   RENDER_COLORS,
   CAR_HEADING_VISUAL_SCALE,
+  Z_RESOLUTION,
 } from "../constants/index.js";
 
 function computeCarDrawPosition(gameState, width, height) {
@@ -182,11 +183,9 @@ function drawCar(ctx, gameState, track, metrics) {
     ctx.globalAlpha = Math.max(MIN_CAR_ALPHA, 1 - slip * CAR_SLIP_ALPHA_FACTOR);
   }
 
-  const currentCurvature =
-    gameState.currentCurvature ?? carTrackInfo.curve ?? 0;
-  const CAR_CURVE_ROTATION_FACTOR = 0.08;
+  const roadAngle = Math.atan2(carTrackInfo.yaw ?? 0, Z_RESOLUTION);
   ctx.rotate(
-    currentCurvature * CAR_CURVE_ROTATION_FACTOR +
+    roadAngle +
       (gameState.carVisualHeading || 0) * CAR_HEADING_VISUAL_SCALE +
       (gameState.spinRotation || 0),
   );

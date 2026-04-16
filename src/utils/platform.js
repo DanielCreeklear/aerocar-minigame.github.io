@@ -26,11 +26,8 @@ export const requiresOrientationPermission =
   typeof DeviceOrientationEvent !== "undefined" &&
   typeof DeviceOrientationEvent.requestPermission === "function";
 
-// iOS device where DeviceOrientationEvent exists but requestPermission is NOT
-// available. This happens on Chrome (and other non-Safari browsers) on iOS:
-// the browser exposes the API but iOS itself blocks sensor data, so events
-// never fire. Distinguishing this case lets us show a "use Safari" message
-// instead of silently ignoring the missing gyroscope.
+
+
 export const isIOSWithoutPermission =
   isIOS &&
   browserSupportsDeviceOrientation &&

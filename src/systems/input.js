@@ -27,14 +27,13 @@ function normalizeTilt(raw) {
   );
 }
 
-// Milliseconds to wait for a deviceorientation event before giving up.
+
 const ORIENTATION_PROBE_TIMEOUT = 2000;
 
 class InputController {
   constructor(canvas, handlers) {
     this.canvas = canvas;
     this.handlers = handlers;
-    this.lastTouchTimestamp = 0;
     this.isKeyBraking = false;
     this.isKeyBoosting = false;
     this._iosPermissionRequested = false;
@@ -77,35 +76,11 @@ class InputController {
     return x <= this.canvas.width * ratios.left;
   }
 
-  isLikelySyntheticMouse() {
-    return Date.now() - this.lastTouchTimestamp < 700;
-  }
-
-  evaluateTouchStates(touchList) {
-    let hasBrake = false;
-    let hasBoost = false;
-
-    Array.from(touchList).forEach((touch) => {
-      const { x, y } = this.getCanvasCoords(touch.clientX, touch.clientY);
-      if (this.isInModeButton(x, y)) return;
-
-      if (this.isInBoostZone(x)) {
-        hasBoost = true;
-      } else if (this.isInBrakeZone(x)) {
-        hasBrake = true;
-      }
-    });
-
-    this.handlers.onBrakeChange(hasBrake);
-    this.handlers.onBoostChange(hasBoost);
-  }
-
   _bindDeviceOrientationEvent() {
     if (this._orientationBound) return;
     this._orientationBound = true;
 
-    // Probe: if no event fires within ORIENTATION_PROBE_TIMEOUT ms the
-    // gyroscope is either unavailable or blocked — silently disable it.
+
     const probeTimer = setTimeout(() => {
       if (!this._gyroscopeActive) {
         this._orientationBound = false;
@@ -153,84 +128,85 @@ class InputController {
   }
 
   bindEvents() {
+
+    
+    
+    const activePointers = new Map();
+
+    const evaluatePointerStates = () => {
+      let hasBrake = false;
+      let hasBoost = false;
+      for (const { x, y } of activePointers.values()) {
+        if (this.isInModeButton(x, y)) continue;
+        if (this.isInBoostZone(x)) hasBoost = true;
+        else if (this.isInBrakeZone(x)) hasBrake = true;
+      }
+      this.handlers.onBrakeChange(hasBrake);
+      this.handlers.onBoostChange(hasBoost);
+    };
+
     this.canvas.addEventListener(
-      "touchstart",
+      "pointerdown",
       (e) => {
-        this.lastTouchTimestamp = Date.now();
         e.preventDefault();
         this._requestIOSOrientationPermission();
 
-        for (let i = 0; i < e.changedTouches.length; i += 1) {
-          const { x, y } = this.getCanvasCoords(
-            e.changedTouches[i].clientX,
-            e.changedTouches[i].clientY,
-          );
-          if (this.isInModeButton(x, y)) {
-            this.handlers.onModeToggle();
-          } else if (
-            !this.handlers.isRaceActive?.() ||
-            (!this.isInBoostZone(x) && !this.isInBrakeZone(x))
-          ) {
-            this.handlers.onScreenTap(x, y);
-          }
+
+        try {
+          this.canvas.setPointerCapture(e.pointerId);
+        } catch (_) {
+          
         }
 
-        this.evaluateTouchStates(e.touches);
+        const { x, y } = this.getCanvasCoords(e.clientX, e.clientY);
+        activePointers.set(e.pointerId, { x, y });
+
+        if (this.isInModeButton(x, y)) {
+          this.handlers.onModeToggle();
+        } else if (
+          !this.handlers.isRaceActive?.() ||
+          (!this.isInBoostZone(x) && !this.isInBrakeZone(x))
+        ) {
+          
+          this.handlers.onScreenTap(x, y);
+          this.handlers.onPointerDown?.(x, y);
+        }
+
+        evaluatePointerStates();
       },
       { passive: false },
     );
 
     this.canvas.addEventListener(
-      "touchmove",
+      "pointermove",
       (e) => {
-        this.lastTouchTimestamp = Date.now();
+        if (!activePointers.has(e.pointerId)) return;
         e.preventDefault();
-        this.evaluateTouchStates(e.touches);
+        const { x, y } = this.getCanvasCoords(e.clientX, e.clientY);
+        activePointers.set(e.pointerId, { x, y });
+        this.handlers.onPointerMove?.(x, y);
+        evaluatePointerStates();
       },
       { passive: false },
     );
 
     this.canvas.addEventListener(
-      "touchend",
+      "pointerup",
       (e) => {
-        this.lastTouchTimestamp = Date.now();
         e.preventDefault();
-        this.evaluateTouchStates(e.touches);
+        const prev = activePointers.get(e.pointerId);
+        activePointers.delete(e.pointerId);
+        if (prev) this.handlers.onPointerUp?.(prev.x, prev.y);
+        evaluatePointerStates();
       },
       { passive: false },
     );
 
-    this.canvas.addEventListener(
-      "touchcancel",
-      (e) => {
-        this.lastTouchTimestamp = Date.now();
-        e.preventDefault();
-        this.evaluateTouchStates(e.touches);
-      },
-      { passive: false },
-    );
-
-    this.canvas.addEventListener("mousedown", (e) => {
-      if (this.isLikelySyntheticMouse()) return;
-      const { x, y } = this.getCanvasCoords(e.clientX, e.clientY);
-      if (this.isInModeButton(x, y)) {
-        this.handlers.onModeToggle();
-      } else if (!this.handlers.isRaceActive?.()) {
-        this.handlers.onScreenTap(x, y);
-      } else if (this.isInBoostZone(x)) {
-        this.handlers.onBoostChange(true);
-      } else if (this.isInBrakeZone(x)) {
-        this.handlers.onBrakeChange(true);
-      } else {
-        this.handlers.onScreenTap(x, y);
-      }
-    });
-
-    this.canvas.addEventListener("mouseup", (e) => {
-      if (this.isLikelySyntheticMouse()) return;
-      const { x } = this.getCanvasCoords(e.clientX, e.clientY);
-      if (this.isInBoostZone(x)) this.handlers.onBoostChange(false);
-      else if (this.isInBrakeZone(x)) this.handlers.onBrakeChange(false);
+    this.canvas.addEventListener("pointercancel", (e) => {
+      const prev = activePointers.get(e.pointerId);
+      activePointers.delete(e.pointerId);
+      if (prev) this.handlers.onPointerUp?.(prev.x, prev.y);
+      evaluatePointerStates();
     });
 
     this.canvas.addEventListener("contextmenu", (e) => {
@@ -307,11 +283,8 @@ class InputController {
       }
     });
 
-    // Bind gyroscope for browsers that don't require an explicit permission
-    // prompt (Android, desktop Firefox, etc.).
-    // On iOS without requestPermission (Chrome on iOS) the browser exposes
-    // DeviceOrientationEvent but iOS blocks the sensor data entirely — skip
-    // binding and immediately notify the caller so it can surface a warning.
+
+
     if (browserSupportsDeviceOrientation && !requiresOrientationPermission) {
       if (isIOSWithoutPermission) {
         this.handlers.onGyroscopeUnavailable?.();
@@ -320,10 +293,8 @@ class InputController {
       }
     }
 
-    // Intercept the Android hardware Back button so it doesn't close the
-    // page mid-game.  Push a dummy history entry once so the first Back press
-    // only pops that entry; we immediately re-push it so subsequent presses
-    // are also caught.
+
+    
     if (typeof history !== "undefined" && history.pushState) {
       history.pushState({ gameActive: true }, "");
       window.addEventListener("popstate", () => {
@@ -334,4 +305,3 @@ class InputController {
 }
 
 export { InputController };
-

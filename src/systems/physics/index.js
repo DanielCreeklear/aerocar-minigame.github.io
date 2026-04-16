@@ -6,6 +6,8 @@ import { buildPhysicsTelemetry } from "./telemetry.js";
 import {
   SPIN_ANGULAR_VELOCITY,
   VISUAL_HEADING_LERP,
+  MAX_DRIFT_VISUAL_ANGLE,
+  DRIFT_ANGLE_LERP,
 } from "../../constants/index.js";
 
 function resolveTrackState(gameState, currentTrackInfo) {
@@ -82,7 +84,12 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     gameState.spinRotation =
       (gameState.spinRotation || 0) + SPIN_ANGULAR_VELOCITY * dt;
   } else {
-    gameState.spinRotation = (gameState.spinRotation || 0) * Math.pow(0.85, dt);
+    const slip = gameState.currentSlip || 0;
+    const slideDir = Math.sign(gameState.lateralVelocity || 0);
+    const targetAngle = -slip * slideDir * MAX_DRIFT_VISUAL_ANGLE;
+    const current = gameState.spinRotation || 0;
+    gameState.spinRotation =
+      current + (targetAngle - current) * Math.min(1, DRIFT_ANGLE_LERP * dt);
   }
 
   const { lapCompleted } = advanceAlongTrack(gameState, lapLength, dt);

@@ -1,5 +1,7 @@
 import { drawTrack } from "./track-renderer.js";
 import { drawCar } from "./car-renderer.js";
+import { drawRivals } from "./rival-renderer.js";
+import { drawObstacles } from "./obstacle-renderer.js";
 import { HudRenderer } from "./hud-renderer.js";
 import {
   drawStartScreen,
@@ -18,9 +20,12 @@ import {
 } from "../constants/index.js";
 import { isMobile } from "../utils/platform.js";
 
+const PORTRAIT_SCALE_COMPACT = 0.68;
+const PORTRAIT_SCALE_TABLET = 0.8;
+
 const CAMERA_SHAKE_SPEED_KMH_SCALE = 17;
-const CAMERA_SHAKE_SPEED_MIN = 300;
-const CAMERA_SHAKE_SPEED_MAX = 340;
+const CAMERA_SHAKE_SPEED_MIN = 325;
+const CAMERA_SHAKE_SPEED_MAX = 375;
 const CAMERA_SHAKE_MAX_PX = 2.8;
 
 function getCameraShakeOffset(gameState) {
@@ -51,7 +56,8 @@ function buildRenderMetrics(width, height) {
     return {
       width,
       height,
-      isPortrait: profile.isPortrait,
+      scale: 1,
+      isPortrait: false,
       carY: height * CAR_Y_RATIO,
       borderWidth: BORDER_WIDTH,
       carHeight: CAR_HEIGHT,
@@ -61,20 +67,24 @@ function buildRenderMetrics(width, height) {
     };
   }
 
+  const scale = profile.isCompactWidth
+    ? PORTRAIT_SCALE_COMPACT
+    : PORTRAIT_SCALE_TABLET;
+  const logW = width / scale;
+  const logH = height / scale;
+
   return {
-    width,
-    height,
+    width: logW,
+    height: logH,
+    scale,
     isPortrait: true,
-    carY: height * CAR_Y_RATIO,
-    borderWidth: Math.max(12, Math.min(BORDER_WIDTH, width * 0.045)),
-    carHeight: Math.max(78, Math.min(CAR_HEIGHT, height * 0.14)),
-    carWidth: Math.max(38, Math.min(CAR_WIDTH, width * 0.12)),
-    // On compact or generic mobile viewports use a coarser sample step to
-    // reduce the number of draw calls per frame and keep the frame rate
-    // stable on low-end Android devices.
-    roadSampleStep:
-      profile.isCompactWidth || isMobile ? 4 : ROAD_SAMPLE_STEP,
-    trackWidth: Math.min(TRACK_WIDTH, width * 0.86),
+    carY: logH * CAR_Y_RATIO,
+    borderWidth: Math.max(12, Math.min(BORDER_WIDTH, logW * 0.045)),
+    carHeight: Math.max(78, Math.min(CAR_HEIGHT, logH * 0.14)),
+    carWidth: Math.max(38, Math.min(CAR_WIDTH, logW * 0.12)),
+
+    roadSampleStep: profile.isCompactWidth || isMobile ? 4 : ROAD_SAMPLE_STEP,
+    trackWidth: Math.min(TRACK_WIDTH, logW * 0.86),
   };
 }
 
@@ -93,29 +103,42 @@ class Renderer {
     };
   }
 
-  draw(gameState, track, telemetry = null) {
+  draw(gameState, track, telemetry = null, dt = 1 / 60, stateManager = null) {
     const { ctx, canvas } = this;
     const width = canvas.width;
     const height = canvas.height;
 
-    const screenFn = this._screenRenderers[gameState.currentScreen];
-    if (screenFn) {
-      screenFn(ctx, width, height, gameState, track);
+    if (gameState.currentScreen !== SCREENS.RACE) {
+      if (stateManager) {
+        stateManager.render(ctx, width, height);
+      } else {
+        const screenFn = this._screenRenderers[gameState.currentScreen];
+        if (screenFn) screenFn(ctx, width, height, gameState, track);
+      }
       return;
     }
 
     const metrics = buildRenderMetrics(width, height);
+    const { scale } = metrics;
+    const logW = metrics.width;
+    const logH = metrics.height;
     const shake = getCameraShakeOffset(gameState);
     ctx.imageSmoothingEnabled = false;
 
     ctx.save();
+    if (scale !== 1) ctx.scale(scale, scale);
     ctx.translate(shake.x, shake.y);
     drawTrack(ctx, gameState, track, metrics);
+    drawObstacles(ctx, gameState, track, metrics);
+    drawRivals(ctx, gameState, track, metrics);
     drawCar(ctx, gameState, track, metrics);
     ctx.restore();
 
-    this.hud.draw(ctx, gameState, width, height);
-    if (telemetry) telemetry.drawHUD(ctx, width, height, metrics.isPortrait);
+    ctx.save();
+    if (scale !== 1) ctx.scale(scale, scale);
+    this.hud.draw(ctx, gameState, logW, logH);
+    if (telemetry) telemetry.drawHUD(ctx, logW, logH, metrics.isPortrait);
+    ctx.restore();
   }
 
   resetHud() {

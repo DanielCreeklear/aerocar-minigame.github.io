@@ -9,6 +9,7 @@ function drawSpeedometer(
   width,
   height,
   isPortrait = false,
+  touchReserve = 0,
 ) {
   const L = HUD_LAYOUT;
   const panelW = Math.max(
@@ -29,7 +30,7 @@ function drawSpeedometer(
   );
 
   const x = isPortrait ? edgeMargin : width - panelW - edgeMargin;
-  const y = height - panelH - bottomMargin;
+  const y = height - panelH - bottomMargin - touchReserve;
 
   const shownSpeed = Math.round(displayedSpeedKmh);
   const ratio = Math.min(1, displayedSpeedKmh / SPEEDOMETER_MAX_KMH);
