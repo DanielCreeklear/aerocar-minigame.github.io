@@ -19,8 +19,9 @@ export class StartMenuState extends GameState {
     this._ctaBtn.setRect(0, thumbY, w, h - thumbY);
     this._ctaBtn.renderPressOverlay(ctx);
 
-    const btnSzEst = Math.max(18, Math.min(28, w * 0.06));
-    this._settingsBtn.setRect(0, 0, btnSzEst * 6, btnSzEst + 16);
+    // Hit area for the "⚙ CONFIG" label drawn at top-left in screen-renderer
+    // (roughly 8px padding + ~6 chars × max font size 28px wide, height = max 28 + 16 pad)
+    this._settingsBtn.setRect(0, 0, Math.round(w * 0.38), Math.round(h * 0.06));
   }
 
   onPointerDown(x, y) {
