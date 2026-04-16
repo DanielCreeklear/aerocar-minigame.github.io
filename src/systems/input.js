@@ -8,6 +8,11 @@ import {
   STEER_DEADZONE_DEG,
   STEER_MAX_TILT_DEG,
 } from "../constants/index.js";
+import {
+  browserSupportsDeviceOrientation,
+  requiresOrientationPermission,
+  isIOSWithoutPermission,
+} from "../utils/platform.js";
 
 function normalizeTilt(raw) {
   const sign = Math.sign(raw);
@@ -22,6 +27,9 @@ function normalizeTilt(raw) {
   );
 }
 
+// Milliseconds to wait for a deviceorientation event before giving up.
+const ORIENTATION_PROBE_TIMEOUT = 2000;
+
 class InputController {
   constructor(canvas, handlers) {
     this.canvas = canvas;
@@ -30,6 +38,8 @@ class InputController {
     this.isKeyBraking = false;
     this.isKeyBoosting = false;
     this._iosPermissionRequested = false;
+    this._orientationBound = false;
+    this._gyroscopeActive = false;
     this.bindEvents();
   }
 
@@ -91,7 +101,23 @@ class InputController {
   }
 
   _bindDeviceOrientationEvent() {
+    if (this._orientationBound) return;
+    this._orientationBound = true;
+
+    // Probe: if no event fires within ORIENTATION_PROBE_TIMEOUT ms the
+    // gyroscope is either unavailable or blocked — silently disable it.
+    const probeTimer = setTimeout(() => {
+      if (!this._gyroscopeActive) {
+        this._orientationBound = false;
+      }
+    }, ORIENTATION_PROBE_TIMEOUT);
+
     window.addEventListener("deviceorientation", (e) => {
+      if (!this._gyroscopeActive) {
+        clearTimeout(probeTimer);
+        this._gyroscopeActive = true;
+      }
+
       const screenAngle =
         (screen.orientation && screen.orientation.angle) ||
         window.orientation ||
@@ -115,10 +141,7 @@ class InputController {
     if (this._iosPermissionRequested) return;
     this._iosPermissionRequested = true;
 
-    if (
-      typeof DeviceOrientationEvent !== "undefined" &&
-      typeof DeviceOrientationEvent.requestPermission === "function"
-    ) {
+    if (requiresOrientationPermission) {
       DeviceOrientationEvent.requestPermission()
         .then((state) => {
           if (state === "granted") {
@@ -284,13 +307,31 @@ class InputController {
       }
     });
 
-    if (
-      typeof DeviceOrientationEvent !== "undefined" &&
-      typeof DeviceOrientationEvent.requestPermission !== "function"
-    ) {
-      this._bindDeviceOrientationEvent();
+    // Bind gyroscope for browsers that don't require an explicit permission
+    // prompt (Android, desktop Firefox, etc.).
+    // On iOS without requestPermission (Chrome on iOS) the browser exposes
+    // DeviceOrientationEvent but iOS blocks the sensor data entirely — skip
+    // binding and immediately notify the caller so it can surface a warning.
+    if (browserSupportsDeviceOrientation && !requiresOrientationPermission) {
+      if (isIOSWithoutPermission) {
+        this.handlers.onGyroscopeUnavailable?.();
+      } else {
+        this._bindDeviceOrientationEvent();
+      }
+    }
+
+    // Intercept the Android hardware Back button so it doesn't close the
+    // page mid-game.  Push a dummy history entry once so the first Back press
+    // only pops that entry; we immediately re-push it so subsequent presses
+    // are also caught.
+    if (typeof history !== "undefined" && history.pushState) {
+      history.pushState({ gameActive: true }, "");
+      window.addEventListener("popstate", () => {
+        history.pushState({ gameActive: true }, "");
+      });
     }
   }
 }
 
 export { InputController };
+

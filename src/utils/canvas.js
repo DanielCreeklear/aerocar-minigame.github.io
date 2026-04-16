@@ -1,8 +1,13 @@
 import { UI_FONT } from "../constants/index.js";
 
 export function resizeCanvas(canvas) {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  // visualViewport correctly excludes the on-screen keyboard height and
+  // reports the true visible area on iOS Safari even when the address bar
+  // is partially collapsed.  Fall back to window dimensions when the API
+  // is not available (very old browsers / server-side contexts).
+  const vv = typeof window !== "undefined" && window.visualViewport;
+  canvas.width = vv ? Math.round(vv.width) : window.innerWidth;
+  canvas.height = vv ? Math.round(vv.height) : window.innerHeight;
 }
 
 export function drawRoundedRect(ctx, x, y, width, height, radius) {

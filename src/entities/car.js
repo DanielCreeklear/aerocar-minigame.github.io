@@ -28,6 +28,7 @@ function createCarStateFields() {
     spinRotation: 0,
     rescueInProgress: false,
     rescuePenaltySpeed: 0,
+    centrifugalSlideTimer: 0,
   };
 }
 

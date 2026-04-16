@@ -8,6 +8,15 @@ class GameLoop {
     this.lastTimestamp = null;
     this.onTick = null;
     this._tick = this._tick.bind(this);
+
+    // Pause the loop when the page is hidden (app goes to background on
+    // mobile) so we don't burn CPU/battery and don't accumulate a huge dt
+    // when the page becomes visible again.
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        this.lastTimestamp = null;
+      }
+    });
   }
 
   start(onTick) {
@@ -23,6 +32,13 @@ class GameLoop {
 
   _tick(timestamp) {
     if (!this.running) return;
+
+    // Skip the tick entirely while the document is hidden; re-queue for
+    // when it becomes visible again (rAF is still queued so we'll resume).
+    if (document.hidden) {
+      requestAnimationFrame(this._tick);
+      return;
+    }
 
     if (this.lastTimestamp === null) {
       this.lastTimestamp = timestamp;
