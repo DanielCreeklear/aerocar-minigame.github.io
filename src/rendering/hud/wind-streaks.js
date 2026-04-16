@@ -1,8 +1,8 @@
 ﻿import { SPEED_KMH_SCALE } from "../../constants/rendering.js";
 import { Z_RESOLUTION } from "../../constants/track.js";
 
-const EFFECT_SPEED_MIN = 200;
-const EFFECT_SPEED_MAX = 340;
+const EFFECT_SPEED_MIN = 220;
+const EFFECT_SPEED_MAX = 375;
 
 const RAMP_UP_RATE = 0.04;
 const RAMP_DOWN_RATE = 0.17;
@@ -65,7 +65,6 @@ function drawWindStreaks(ctx, gameState, width, height, state, dt = 1 / 60) {
 
   const diag = Math.hypot(width, height);
 
-  
   const tp = gameState.currentTrackPoint;
   const windAngle = Math.atan2(tp?.yaw ?? 0, Z_RESOLUTION);
 
@@ -104,7 +103,6 @@ function drawWindStreaks(ctx, gameState, width, height, state, dt = 1 / 60) {
     _renderVignette(ctx, state.intensity, width, height, diag);
   }
 }
-
 
 function _updateStreakPositions(
   streaks,

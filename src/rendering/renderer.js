@@ -20,13 +20,12 @@ import {
 } from "../constants/index.js";
 import { isMobile } from "../utils/platform.js";
 
-
-const PORTRAIT_SCALE_COMPACT = 0.68; 
-const PORTRAIT_SCALE_TABLET = 0.8; 
+const PORTRAIT_SCALE_COMPACT = 0.68;
+const PORTRAIT_SCALE_TABLET = 0.8;
 
 const CAMERA_SHAKE_SPEED_KMH_SCALE = 17;
-const CAMERA_SHAKE_SPEED_MIN = 300;
-const CAMERA_SHAKE_SPEED_MAX = 340;
+const CAMERA_SHAKE_SPEED_MIN = 325;
+const CAMERA_SHAKE_SPEED_MAX = 375;
 const CAMERA_SHAKE_MAX_PX = 2.8;
 
 function getCameraShakeOffset(gameState) {
@@ -68,8 +67,6 @@ function buildRenderMetrics(width, height) {
     };
   }
 
-
-  
   const scale = profile.isCompactWidth
     ? PORTRAIT_SCALE_COMPACT
     : PORTRAIT_SCALE_TABLET;
@@ -111,12 +108,10 @@ class Renderer {
     const width = canvas.width;
     const height = canvas.height;
 
-
     if (gameState.currentScreen !== SCREENS.RACE) {
       if (stateManager) {
         stateManager.render(ctx, width, height);
       } else {
-        
         const screenFn = this._screenRenderers[gameState.currentScreen];
         if (screenFn) screenFn(ctx, width, height, gameState, track);
       }
@@ -130,7 +125,6 @@ class Renderer {
     const shake = getCameraShakeOffset(gameState);
     ctx.imageSmoothingEnabled = false;
 
-    
     ctx.save();
     if (scale !== 1) ctx.scale(scale, scale);
     ctx.translate(shake.x, shake.y);
@@ -140,7 +134,6 @@ class Renderer {
     drawCar(ctx, gameState, track, metrics);
     ctx.restore();
 
-    
     ctx.save();
     if (scale !== 1) ctx.scale(scale, scale);
     this.hud.draw(ctx, gameState, logW, logH);
