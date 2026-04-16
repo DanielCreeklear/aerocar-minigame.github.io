@@ -33,6 +33,7 @@ import { TrackPreviewState } from "../menu/states/TrackPreviewState.js";
 import { StartMenuState } from "../menu/states/StartMenuState.js";
 import { RaceState } from "../menu/states/RaceState.js";
 import { GameOverState } from "../menu/states/GameOverState.js";
+import { SettingsState } from "../menu/states/SettingsState.js";
 
 
 const ORIENTATION_POLL_INTERVAL = 50;
@@ -204,6 +205,8 @@ class Game {
         focusNameInput: () => this._nameInput.focus(),
         onRaceEnter: () => {},
         onRaceExit: () => {},
+        openSettings: () => this._setScreen(SCREENS.SETTINGS),
+        backToMenu: () => this._setScreen(SCREENS.START),
       },
     };
   }
@@ -220,6 +223,8 @@ class Game {
         return new RaceState(deps);
       case SCREENS.GAME_OVER:
         return new GameOverState(deps);
+      case SCREENS.SETTINGS:
+        return new SettingsState(deps);
       default:
         return null;
     }

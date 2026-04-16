@@ -3,6 +3,7 @@ export const SCREENS = {
   START: "start",
   RACE: "race",
   GAME_OVER: "gameover",
+  SETTINGS: "settings",
 };
 
 export const TRACK_TYPES = {

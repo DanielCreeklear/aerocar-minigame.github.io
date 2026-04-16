@@ -336,6 +336,20 @@ function drawStartScreen(ctx, w, h, gameState, track) {
   scanlines(ctx, w, h);
   diagonalCut(ctx, w, isPortrait ? 50 : 72);
 
+  {
+    const btnSz = csz(w, 0.06, 18, 28);
+    const btnPad = 8;
+    const btnX = btnPad;
+    const btnY = btnPad;
+    ctx.save();
+    ctx.textBaseline = "top";
+    ctx.textAlign = "left";
+    ctx.fillStyle = R.steel;
+    ctx.font = `700 ${btnSz}px ${R.font}`;
+    ctx.fillText("⚙ CONFIG", btnX, btnY);
+    ctx.restore();
+  }
+
   if (isPortrait) {
     const tx = csz(w, 0.06, 18, 36);
     const apexSz = csz(w, 0.2, 48, 80);
@@ -776,4 +790,98 @@ function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
   ctx.restore();
 }
 
-export { drawStartScreen, drawGameOverScreen, drawTrackPreviewScreen };
+function drawSettingsScreen(ctx, w, h, gameState) {
+  const isPortrait = h > w;
+  const age = gameState ? gameState.screenAge || 0 : 0;
+  const fade = Math.min(1, age / 0.5);
+  const blink = Math.sin(age * Math.PI * 1.4) > 0;
+
+  ctx.save();
+  ctx.globalAlpha = fade;
+
+  const _bgGrad = ctx.createLinearGradient(0, 0, w * 0.4, h);
+  _bgGrad.addColorStop(0, R.bgTop);
+  _bgGrad.addColorStop(0.5, R.bgMid);
+  _bgGrad.addColorStop(1, R.bg);
+  ctx.fillStyle = _bgGrad;
+  ctx.fillRect(0, 0, w, h);
+  scanlines(ctx, w, h);
+  diagonalCut(ctx, w, isPortrait ? 50 : 72);
+
+  const tx = csz(w, 0.06, 18, 40);
+
+  ctx.save();
+  ctx.shadowColor = R.crimson;
+  ctx.shadowBlur = 14;
+  ctx.fillStyle = R.text;
+  ctx.font = `700 ${csz(w, 0.1, 28, 52)}px ${R.font}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText("CONFIG", tx, h * 0.18);
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  ctx.save();
+  ctx.fillStyle = R.crimson;
+  ctx.fillRect(tx, h * 0.18 + 6, 80, 2);
+  ctx.restore();
+
+  const secY1 = h * 0.26;
+  const colW = isPortrait ? w - tx * 2 : (w - tx * 3) * 0.5;
+  const col2X = isPortrait ? tx : tx * 2 + colW;
+
+  const ctrlSz = csz(w, 0.032, 12, 17);
+  const labSz = csz(w, 0.024, 10, 14);
+
+  sectionLabel(ctx, tx, secY1, colW, "CONTROLES");
+  ctx.save();
+  ctx.textBaseline = "top";
+  ctx.textAlign = "left";
+  ctx.fillStyle = R.textDim;
+  ctx.font = `400 ${ctrlSz}px ${R.font}`;
+  const ctrlLines = [
+    "←  SEGURAR ESQUERDA  —  FREIO / ERS",
+    "→  SEGURAR DIREITA   —  BOOST",
+  ];
+  ctrlLines.forEach((line, i) => {
+    ctx.fillText(line, tx, secY1 + 18 + i * (ctrlSz + 6));
+  });
+  ctx.fillStyle = R.steelDim;
+  ctx.font = `400 ${labSz}px ${R.font}`;
+  ctx.fillText(
+    "CENTRO-DIREITA / Z ou X  —  ALTERNA MODO AERO",
+    tx,
+    secY1 + 18 + ctrlLines.length * (ctrlSz + 6),
+  );
+  ctx.restore();
+
+  const secY2 = isPortrait ? secY1 + 18 + (ctrlLines.length + 1) * (ctrlSz + 6) + 24 : secY1;
+  sectionLabel(ctx, col2X, secY2, colW, "MODOS AERO");
+  ctx.save();
+  ctx.textBaseline = "top";
+  ctx.textAlign = "left";
+  const modeLines = [
+    ["MODO X", "Alta carga — melhor em curvas"],
+    ["MODO Z", "Baixa carga — melhor em retas"],
+  ];
+  modeLines.forEach(([label, desc], i) => {
+    const ly = secY2 + 18 + i * (ctrlSz + 10);
+    ctx.fillStyle = i === 0 ? R.crimson : R.steel;
+    ctx.font = `700 ${ctrlSz}px ${R.font}`;
+    ctx.fillText(label, col2X, ly);
+    const lw = ctx.measureText(label).width;
+    ctx.fillStyle = R.textDim;
+    ctx.font = `400 ${labSz}px ${R.font}`;
+    ctx.fillText(`  ${desc}`, col2X + lw, ly);
+  });
+  ctx.restore();
+
+  if (gameState && gameState.gyroscopeWarning) {
+    drawGyroscopeWarning(ctx, tx, h * 0.74, w - tx * 2);
+  }
+
+  bottomBar(ctx, w, h, "", "◀  VOLTAR", blink);
+  ctx.restore();
+}
+
+export { drawStartScreen, drawGameOverScreen, drawTrackPreviewScreen, drawSettingsScreen };

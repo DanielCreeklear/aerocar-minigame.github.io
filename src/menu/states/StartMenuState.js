@@ -9,18 +9,27 @@ export class StartMenuState extends GameState {
     super();
     this._deps = deps;
     this._ctaBtn = new Button();
+    this._settingsBtn = new Button();
   }
 
   render(ctx, w, h) {
     drawStartScreen(ctx, w, h, this._deps.getGameState(), this._deps.track);
 
-
     const thumbY = h * 0.65;
     this._ctaBtn.setRect(0, thumbY, w, h - thumbY);
     this._ctaBtn.renderPressOverlay(ctx);
+
+    // Hit area for the "⚙ CONFIG" label drawn at top-left in screen-renderer
+    // (roughly 8px padding + ~6 chars × max font size 28px wide, height = max 28 + 16 pad)
+    this._settingsBtn.setRect(0, 0, Math.round(w * 0.38), Math.round(h * 0.06));
   }
 
   onPointerDown(x, y) {
+    if (this._settingsBtn.isHit(x, y)) {
+      this._settingsBtn.pressed = true;
+      requestAnimationFrame(() => this._deps.callbacks.openSettings());
+      return;
+    }
     if (this._ctaBtn.isHit(x, y)) {
       this._ctaBtn.pressed = true;
       
@@ -30,5 +39,6 @@ export class StartMenuState extends GameState {
 
   onPointerUp(_x, _y) {
     this._ctaBtn.pressed = false;
+    this._settingsBtn.pressed = false;
   }
 }
