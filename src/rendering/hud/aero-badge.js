@@ -12,7 +12,7 @@ const BADGE_BOTTOM_MARGIN_MIN = 8;
 const BADGE_BOTTOM_MARGIN_MAX = 22;
 const BADGE_RADIUS = 8;
 
-function drawAeroBadge(ctx, gameState, width, height) {
+function drawAeroBadge(ctx, gameState, width, height, touchReserve = 0) {
   const isX = gameState.aeroMode === AERO_MODES.X;
 
   const badgeW = Math.max(
@@ -28,9 +28,8 @@ function drawAeroBadge(ctx, gameState, width, height) {
     Math.min(BADGE_BOTTOM_MARGIN_MAX, height * BADGE_BOTTOM_MARGIN_RATIO),
   );
 
-  
   const x = (width - badgeW) / 2;
-  const y = height - badgeH - bottomMargin;
+  const y = height - badgeH - bottomMargin - touchReserve;
 
   const fillColor = isX ? HUD_COLORS.badgeModeX : HUD_COLORS.badgeModeZ;
   const borderColor = isX
@@ -40,7 +39,6 @@ function drawAeroBadge(ctx, gameState, width, height) {
 
   ctx.save();
 
-  
   ctx.beginPath();
   ctx.roundRect(x, y, badgeW, badgeH, BADGE_RADIUS);
 
@@ -53,7 +51,6 @@ function drawAeroBadge(ctx, gameState, width, height) {
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  
   ctx.beginPath();
   ctx.roundRect(x, y, badgeW, 3, [BADGE_RADIUS, BADGE_RADIUS, 0, 0]);
   ctx.fillStyle = borderColor;

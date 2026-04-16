@@ -1,6 +1,8 @@
 export const TRACK_WIDTH = 460;
 export const BORDER_WIDTH = 24;
 
+export const SPEED_KMH_SCALE = 17;
+
 export const LATERAL_RENDER_SCALE = 2.3;
 export const CAR_WIDTH = 50;
 export const CAR_HEIGHT = 100;
@@ -16,7 +18,7 @@ export const MAX_SHAKE = 18;
 export const SHAKE_SLIP_FACTOR = 2.8;
 export const MIN_CAR_ALPHA = 0.55;
 export const CAR_SLIP_ALPHA_FACTOR = 0.06;
-export const CAR_CURVE_ROTATION_FACTOR = 0.08;
+export const CAR_CURVE_ROTATION_FACTOR = 0.12;
 
 export const CAR_SHADOW_WIDTH_FACTOR = 0.72;
 export const CAR_SHADOW_HEIGHT = 12;

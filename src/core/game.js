@@ -24,9 +24,17 @@ import {
 } from "../constants/index.js";
 import { clamp } from "../utils/math.js";
 import { createRankingService } from "../ranking/index.js";
+import { createRivals } from "../entities/rival-car.js";
+import { createObstacles } from "../entities/obstacle.js";
+import { updateRivals } from "../systems/rival-physics.js";
+import { RIVAL_COUNT } from "../constants/index.js";
+import { StateManager } from "../menu/StateManager.js";
+import { TrackPreviewState } from "../menu/states/TrackPreviewState.js";
+import { StartMenuState } from "../menu/states/StartMenuState.js";
+import { RaceState } from "../menu/states/RaceState.js";
+import { GameOverState } from "../menu/states/GameOverState.js";
 
-// How long (ms) to poll after an orientationchange before giving up waiting
-// for the browser to update its dimensions.  iOS Safari can be slow here.
+
 const ORIENTATION_POLL_INTERVAL = 50;
 const ORIENTATION_POLL_MAX_MS = 500;
 
@@ -66,9 +74,7 @@ class Game {
     this._nameInput.enterKeyHint = "done";
     this._nameInput.inputMode = "text";
     this._nameInput.setAttribute("autocapitalize", "characters");
-    // Start as readonly so that accidental focus (e.g. browser autofill or
-    // touch mis-tap) does not open the virtual keyboard until the ranking
-    // name-entry phase is active.  readOnly is removed in _showNameInput().
+
     this._nameInput.readOnly = true;
     Object.assign(this._nameInput.style, {
       position: "fixed",
@@ -137,6 +143,15 @@ class Game {
       onScreenTap: (x, y) => {
         this.handleScreenTap(x, y);
       },
+      onPointerDown: (x, y) => {
+        this.stateManager?.onPointerDown(x, y);
+      },
+      onPointerUp: (x, y) => {
+        this.stateManager?.onPointerUp(x, y);
+      },
+      onPointerMove: (x, y) => {
+        this.stateManager?.onPointerMove(x, y);
+      },
       onSteerChange: (v) => {
         this.gameState.steerTarget = v;
       },
@@ -151,8 +166,7 @@ class Game {
     this._handleViewportResize = this._handleViewportResize.bind(this);
     window.addEventListener("resize", this._handleViewportResize);
     window.addEventListener("orientationchange", () => {
-      // Poll until the browser has settled on its new dimensions (iOS Safari
-      // can take up to ~300 ms after orientationchange fires).
+
       const deadline = Date.now() + ORIENTATION_POLL_MAX_MS;
       const poll = () => {
         this._handleViewportResize();
@@ -163,9 +177,7 @@ class Game {
       setTimeout(poll, ORIENTATION_POLL_INTERVAL);
     });
 
-    // visualViewport resize fires when the on-screen keyboard appears or
-    // disappears on Android Chrome, keeping the canvas in sync without
-    // erroneously resizing while the keyboard is open.
+
     if (typeof window !== "undefined" && window.visualViewport) {
       window.visualViewport.addEventListener(
         "resize",
@@ -176,13 +188,54 @@ class Game {
     this._handleViewportResize();
 
     this.reset(SCREENS.START);
+    this._initStateManager();
+  }
+
+  
+  _makeStateDeps() {
+    return {
+      getGameState: () => this.gameState,
+      canvas: this.canvas,
+      track: this.track,
+      callbacks: {
+        advance: () => this._advanceIntroScreen(),
+        startRace: () => this._startRace(),
+        retry: () => this.reset(SCREENS.START),
+        focusNameInput: () => this._nameInput.focus(),
+        onRaceEnter: () => {},
+        onRaceExit: () => {},
+      },
+    };
+  }
+
+  
+  _createState(screen) {
+    const deps = this._makeStateDeps();
+    switch (screen) {
+      case SCREENS.PREVIEW:
+        return new TrackPreviewState(deps);
+      case SCREENS.START:
+        return new StartMenuState(deps);
+      case SCREENS.RACE:
+        return new RaceState(deps);
+      case SCREENS.GAME_OVER:
+        return new GameOverState(deps);
+      default:
+        return null;
+    }
+  }
+
+  
+  _initStateManager() {
+    this.stateManager = new StateManager();
+    this.stateManager.transition(
+      this._createState(this.gameState.currentScreen),
+    );
   }
 
   _handleViewportResize() {
-    // When the virtual keyboard is visible on Android Chrome, visualViewport
-    // height shrinks significantly.  Avoid resizing the canvas in that state
-    // so the game layout doesn't get squashed while the player types their
-    // name.
+
+    
     const vv = typeof window !== "undefined" && window.visualViewport;
     if (vv && this._nameInput && this._nameInput.style.display !== "none") {
       const keyboardVisible = window.innerHeight - vv.height > 100;
@@ -204,6 +257,7 @@ class Game {
     if (screen !== SCREENS.GAME_OVER) {
       this._hideNameInput();
     }
+    this.stateManager?.transition(this._createState(screen));
   }
 
   reset(initialScreen = SCREENS.START) {
@@ -236,16 +290,16 @@ class Game {
       screenAge: 0,
       pendingName: "",
       gyroscopeWarning: this._gyroscopeWarning,
+      rivals: createRivals(RIVAL_COUNT, this.track),
+      obstacles: createObstacles(this.track),
+      collisionCooldown: 0,
     };
 
     this.energyManager.reset();
     this.telemetry.reset();
     this.gameState.battery = this.energyManager.getCurrentCharge();
 
-    if (initialScreen === SCREENS.GAME_OVER) {
-      this._setScreen(SCREENS.GAME_OVER);
-    }
-
+    this._setScreen(initialScreen);
     this.renderer.resetHud();
   }
 
@@ -264,21 +318,7 @@ class Game {
   }
 
   handleScreenTap(x, y) {
-    const screen = this.gameState.currentScreen;
-    if (screen === SCREENS.PREVIEW) return this._advanceIntroScreen();
-    if (screen === SCREENS.START) return this._startRace();
-    if (screen === SCREENS.GAME_OVER) {
-      if (this.gameState.rankingPhase === "entering") {
-        // Called from a touch/click handler — valid user gesture, so
-        // focus() will show the virtual keyboard on mobile too.
-        this._nameInput.focus();
-        return;
-      }
-      if (this.gameState.rankingPhase === "results") {
-        return this.reset(SCREENS.START);
-      }
-      return;
-    }
+    this.stateManager?.onPointerDown(x, y);
   }
 
   update(dt) {
@@ -346,12 +386,11 @@ class Game {
     );
     this.telemetry.log(this.gameState, physicsTelemetry);
 
-    // Rescue the car when it goes off the visible screen (important on mobile
-    // where the viewport is narrow enough that the car can disappear before the
-    // regular off-track rescue threshold is reached).
+    updateRivals(this.gameState, this.track, dt);
+
+
     if (!this.gameState.rescueInProgress) {
-      const offScreenThreshold =
-        this.canvas.width / 2 / LATERAL_RENDER_SCALE;
+      const offScreenThreshold = this.canvas.width / 2 / LATERAL_RENDER_SCALE;
       if (Math.abs(this.gameState.lateralOffset || 0) >= offScreenThreshold) {
         this.gameState.rescueInProgress = true;
         this.gameState.rescuePenaltySpeed =
@@ -398,12 +437,10 @@ class Game {
       display: "block",
     });
     this._nameInput.value = "";
-    // Remove readonly so the virtual keyboard opens on focus.
+    
     this._nameInput.readOnly = false;
-    // setTimeout allows the display change to apply first.
-    // On desktop this is enough; on mobile, focus() called here
-    // (outside a gesture) won't open the keyboard — the user must
-    // tap the screen, which routes through handleScreenTap → focus().
+
+    
     setTimeout(() => this._nameInput.focus(), 80);
   }
 
@@ -411,8 +448,7 @@ class Game {
     if (this._nameInput) {
       this._nameInput.style.display = "none";
       this._nameInput.blur();
-      // Re-add readonly so accidental focus (e.g. browser autofill) never
-      // triggers the virtual keyboard when the input is not in use.
+
       this._nameInput.readOnly = true;
     }
   }
@@ -420,7 +456,13 @@ class Game {
   start() {
     this.gameLoop.start((dt) => {
       this.update(dt);
-      this.renderer.draw(this.gameState, this.track, this.telemetry);
+      this.renderer.draw(
+        this.gameState,
+        this.track,
+        this.telemetry,
+        dt,
+        this.stateManager,
+      );
     });
   }
 }

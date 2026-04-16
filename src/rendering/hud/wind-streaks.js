@@ -1,4 +1,6 @@
-﻿const SPEED_KMH_SCALE = 17;
+﻿import { SPEED_KMH_SCALE } from "../../constants/rendering.js";
+import { Z_RESOLUTION } from "../../constants/track.js";
+
 const EFFECT_SPEED_MIN = 200;
 const EFFECT_SPEED_MAX = 340;
 
@@ -9,8 +11,6 @@ const STREAK_COUNT = 150;
 const STREAK_MIN_LEN_RATIO = 0.02;
 const STREAK_MAX_LEN_RATIO = 0.09;
 const STREAK_BASE_VEL = 0.022;
-const WIND_HEADING_MAX = 0.22;
-const WIND_SIDE_DRIFT_RATIO = 0.9;
 const WIND_VERTICAL_RATIO = 0.52;
 const WIND_TURBULENCE_RATIO = 0.32;
 
@@ -42,7 +42,7 @@ function createWindState() {
   };
 }
 
-function drawWindStreaks(ctx, gameState, width, height, state) {
+function drawWindStreaks(ctx, gameState, width, height, state, dt = 1 / 60) {
   const rawSpeed = gameState.speed || 0;
   const speedKmh = rawSpeed * SPEED_KMH_SCALE;
 
@@ -56,7 +56,7 @@ function drawWindStreaks(ctx, gameState, width, height, state) {
 
   const rate =
     targetIntensity >= state.intensity ? RAMP_UP_RATE : RAMP_DOWN_RATE;
-  state.intensity += (targetIntensity - state.intensity) * rate;
+  state.intensity += (targetIntensity - state.intensity) * rate * dt * 60;
 
   if (state.intensity < 0.01) {
     state.intensity = 0;
@@ -64,11 +64,10 @@ function drawWindStreaks(ctx, gameState, width, height, state) {
   }
 
   const diag = Math.hypot(width, height);
-  const heading =
-    gameState.carVisualHeading ??
-    gameState.carHeading ??
-    (gameState.steerInput || 0) * WIND_HEADING_MAX;
-  const headingNorm = Math.max(-1, Math.min(1, heading / WIND_HEADING_MAX));
+
+  
+  const tp = gameState.currentTrackPoint;
+  const windAngle = Math.atan2(tp?.yaw ?? 0, Z_RESOLUTION);
 
   if (!state.streaks) {
     state.streaks = Array.from({ length: STREAK_COUNT }, () => {
@@ -80,19 +79,48 @@ function drawWindStreaks(ctx, gameState, width, height, state) {
 
   const vel = STREAK_BASE_VEL * diag * state.intensity;
   const velY = vel * WIND_VERTICAL_RATIO;
-  const velX = -headingNorm * vel * WIND_SIDE_DRIFT_RATIO;
   const spawnPad = diag * 0.22;
-  state.tick += 1;
+  state.tick += dt * 60;
+
+  _updateStreakPositions(
+    state.streaks,
+    vel,
+    velY,
+    spawnPad,
+    width,
+    height,
+    diag,
+    state.tick,
+  );
 
   ctx.save();
-  ctx.lineCap = "round";
+  ctx.translate(width * 0.5, height * 0.5);
+  ctx.rotate(windAngle);
+  ctx.translate(-width * 0.5, -height * 0.5);
+  _renderStreakLines(ctx, state, velY, width, height);
+  ctx.restore();
 
-  const streaks = state.streaks;
+  if (state.intensity > 0.25) {
+    _renderVignette(ctx, state.intensity, width, height, diag);
+  }
+}
+
+
+function _updateStreakPositions(
+  streaks,
+  vel,
+  velY,
+  spawnPad,
+  width,
+  height,
+  diag,
+  tick,
+) {
   for (let i = 0; i < STREAK_COUNT; i++) {
     const sk = streaks[i];
     const step = sk.drift * (0.7 + sk.width * 0.3);
-    const flutter = Math.sin(state.tick * 0.08 + sk.phase) * vel * 0.06;
-    sk.x += (velX + sk.slant * vel * WIND_TURBULENCE_RATIO + flutter) * step;
+    const flutter = Math.sin(tick * 0.08 + sk.phase) * vel * 0.06;
+    sk.x += (sk.slant * vel * WIND_TURBULENCE_RATIO + flutter) * step;
     sk.y += velY * step;
 
     if (
@@ -102,9 +130,19 @@ function drawWindStreaks(ctx, gameState, width, height, state) {
     ) {
       _initStreak(sk, width, height, diag, false);
     }
+  }
+}
 
-    const lineDx = velX + sk.slant * vel * WIND_TURBULENCE_RATIO + flutter;
-    const lineDy = velY * 0.62;
+function _renderStreakLines(ctx, state, velY, width, height) {
+  ctx.save();
+  ctx.lineCap = "round";
+
+  const streaks = state.streaks;
+  for (let i = 0; i < STREAK_COUNT; i++) {
+    const sk = streaks[i];
+
+    const lineDx = sk.slant * velY * WIND_TURBULENCE_RATIO;
+    const lineDy = velY;
     const lineMag = Math.hypot(lineDx, lineDy) || 1;
     const ux = lineDx / lineMag;
     const uy = lineDy / lineMag;
@@ -130,25 +168,25 @@ function drawWindStreaks(ctx, gameState, width, height, state) {
     ctx.stroke();
   }
 
-  if (state.intensity > 0.25) {
-    const vigAlpha = (state.intensity - 0.25) * 0.18;
-    const cx = width * 0.5;
-    const cy = height * 0.5;
-    const grad = ctx.createRadialGradient(
-      cx,
-      cy,
-      diag * 0.25,
-      cx,
-      cy,
-      diag * 0.72,
-    );
-    grad.addColorStop(0, "rgba(0,0,0,0)");
-    grad.addColorStop(1, `rgba(0,5,18,${vigAlpha.toFixed(3)})`);
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, width, height);
-  }
-
   ctx.restore();
+}
+
+function _renderVignette(ctx, intensity, width, height, diag) {
+  const vigAlpha = (intensity - 0.25) * 0.18;
+  const cx = width * 0.5;
+  const cy = height * 0.5;
+  const grad = ctx.createRadialGradient(
+    cx,
+    cy,
+    diag * 0.25,
+    cx,
+    cy,
+    diag * 0.72,
+  );
+  grad.addColorStop(0, "rgba(0,0,0,0)");
+  grad.addColorStop(1, `rgba(0,5,18,${vigAlpha.toFixed(3)})`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, width, height);
 }
 
 export { createWindState, drawWindStreaks };

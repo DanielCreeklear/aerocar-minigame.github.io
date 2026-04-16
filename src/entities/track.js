@@ -266,7 +266,6 @@ class Track {
     return t;
   }
 
-  
 
 
   getTrackPosition(z) {
@@ -301,7 +300,6 @@ class Track {
     };
   }
 
-  
 
 
   getUpcomingFeatures(z, lookAheadDistance) {
@@ -454,7 +452,6 @@ class Track {
     }
   }
 
-  
 
 
   _buildGrid() {
@@ -485,8 +482,7 @@ class Track {
       const row = Math.floor(pt.z / cs);
       if (row >= this.gridRows) continue;
 
-      
-      
+
 
       
       const curbColL = Math.max(0, Math.floor((pt.x - CURB_HALF - gMinX) / cs));
@@ -516,7 +512,6 @@ class Track {
     }
   }
 
-  
 
 
   getSurfaceType(worldX, lapZ) {
@@ -558,7 +553,6 @@ class Track {
     }
   }
 
-  
 
 
   _racingLineCurveProfile(t, sign, offset, edgePortion) {
@@ -585,7 +579,6 @@ class Track {
     }
   }
 
-  
 
 
   getRacingLineTarget(z) {
