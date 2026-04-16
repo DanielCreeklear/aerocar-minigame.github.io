@@ -18,6 +18,7 @@ function createCarStateFields() {
     carVisualHeading: 0,
     lateralOffset: 0,
     lateralVelocity: 0,
+    centrifugalDrift: 0,
     currentCurvature: 0,
     previousCurvature: 0,
     currentTrackPoint: null,

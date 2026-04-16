@@ -23,7 +23,6 @@ function csz(ref, ratio, lo, hi) {
   return Math.max(lo, Math.min(hi, ref * ratio));
 }
 
-
 function scanlines(ctx, w, h) {
   ctx.save();
   ctx.fillStyle = "rgba(0,0,0,0.05)";
@@ -114,7 +113,6 @@ function sectionLabel(ctx, x, y, w, text) {
   ctx.restore();
 }
 
-
 function drawRankList(ctx, x, y, w, rowH, rankings, slotCount) {
   const numW = csz(w, 0.08, 16, 24);
   const nameSz = csz(w, 0.056, 11, 17);
@@ -147,7 +145,6 @@ function drawRankList(ctx, x, y, w, rowH, rankings, slotCount) {
     ctx.restore();
   }
 }
-
 
 function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
   const numW = csz(w, 0.08, 16, 24);
@@ -198,7 +195,6 @@ function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
   }
 }
 
-
 function drawNewEntryRow(ctx, x, y, w, rowH, entryTime, pending, blink) {
   const mid = y + rowH * 0.5;
   const numW = csz(w, 0.08, 16, 24);
@@ -226,7 +222,6 @@ function drawNewEntryRow(ctx, x, y, w, rowH, entryTime, pending, blink) {
   ctx.fillText(formatTime(entryTime), x + w, mid);
   ctx.restore();
 }
-
 
 function calculateTrackBounds(points) {
   let minX = Infinity;
@@ -304,7 +299,6 @@ function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
   ctx.restore();
 }
 
-
 function drawGyroscopeWarning(ctx, x, y, w) {
   const sz = csz(w, 0.028, 10, 13);
   ctx.save();
@@ -313,7 +307,7 @@ function drawGyroscopeWarning(ctx, x, y, w) {
   ctx.fillStyle = R.gold;
   ctx.font = `700 ${sz}px ${R.font}`;
   ctx.fillText(
-    "⚠  CHROME NO iOS NÃO SUPORTA SENSOR DE MOVIMENTO — USE O SAFARI",
+    "[!]  CHROME NO iOS NAO SUPORTA SENSOR DE MOVIMENTO — USE O SAFARI",
     x,
     y,
   );
@@ -489,7 +483,12 @@ function drawStartScreen(ctx, w, h, gameState, track) {
     ctx.restore();
 
     if (gameState && gameState.gyroscopeWarning) {
-      drawGyroscopeWarning(ctx, titleX, ctrlY + 14 + (ctrlSz + 5) * 3 + 4, leftW);
+      drawGyroscopeWarning(
+        ctx,
+        titleX,
+        ctrlY + 14 + (ctrlSz + 5) * 3 + 4,
+        leftW,
+      );
     }
 
     sectionLabel(ctx, rightX, h * 0.12, rightW, "RANKING");
@@ -508,7 +507,6 @@ function drawStartScreen(ctx, w, h, gameState, track) {
   );
   ctx.restore();
 }
-
 
 function drawGameOverScreen(ctx, w, h, gameState) {
   const isPortrait = h > w;
@@ -684,7 +682,6 @@ function drawGameOverScreen(ctx, w, h, gameState) {
   bottomBar(ctx, w, h, ctaLeft, ctaRight, !isEntering || blink);
   ctx.restore();
 }
-
 
 function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
   const isPortrait = h > w;
