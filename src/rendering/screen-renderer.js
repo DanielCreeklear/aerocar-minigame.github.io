@@ -314,6 +314,26 @@ function drawGyroscopeWarning(ctx, x, y, w) {
   ctx.restore();
 }
 
+function drawIOSPermissionButton(ctx, x, y, w, blink) {
+  const sz = csz(w, 0.034, 11, 15);
+  const btnH = sz + 16;
+  const btnW = Math.min(w, w * 0.9);
+  ctx.save();
+  ctx.fillStyle = blink
+    ? "rgba(74, 104, 144, 0.18)"
+    : "rgba(74, 104, 144, 0.10)";
+  ctx.fillRect(x, y, btnW, btnH);
+  ctx.strokeStyle = blink ? R.steel : R.steelDim;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, btnW, btnH);
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
+  ctx.fillStyle = blink ? R.steel : R.steelDim;
+  ctx.font = `700 ${sz}px ${R.font}`;
+  ctx.fillText("▶  ATIVAR SENSOR DE MOVIMENTO", x + 10, y + btnH / 2);
+  ctx.restore();
+}
+
 function drawStartScreen(ctx, w, h, gameState, track) {
   const isPortrait = h > w;
   const age = gameState ? gameState.screenAge || 0 : 0;
@@ -409,7 +429,9 @@ function drawStartScreen(ctx, w, h, gameState, track) {
     );
     ctx.restore();
 
-    if (gameState && gameState.gyroscopeWarning) {
+    if (gameState && gameState.iosPermissionStatus === "prompt") {
+      drawIOSPermissionButton(ctx, tx, h * 0.54, w - tx * 2, blink);
+    } else if (gameState && gameState.gyroscopeWarning) {
       drawGyroscopeWarning(ctx, tx, h * 0.54, w - tx * 2);
     }
 
@@ -496,7 +518,15 @@ function drawStartScreen(ctx, w, h, gameState, track) {
     );
     ctx.restore();
 
-    if (gameState && gameState.gyroscopeWarning) {
+    if (gameState && gameState.iosPermissionStatus === "prompt") {
+      drawIOSPermissionButton(
+        ctx,
+        titleX,
+        ctrlY + 14 + (ctrlSz + 5) * 3 + 4,
+        leftW,
+        blink,
+      );
+    } else if (gameState && gameState.gyroscopeWarning) {
       drawGyroscopeWarning(
         ctx,
         titleX,
