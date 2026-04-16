@@ -23,6 +23,7 @@ import {
   OFF_TRACK_RESCUE_FLASH_DURATION,
 } from "../constants/index.js";
 import { clamp } from "../utils/math.js";
+import { requiresOrientationPermission } from "../utils/platform.js";
 import { createRankingService } from "../ranking/index.js";
 import { createRivals } from "../entities/rival-car.js";
 import { createObstacles } from "../entities/obstacle.js";
@@ -56,6 +57,7 @@ class Game {
 
     this._screenChangeTime = Date.now();
     this._gyroscopeWarning = false;
+    this._iosPermissionStatus = requiresOrientationPermission ? "prompt" : null;
     this.rankingService = createRankingService();
     this.rankings = [];
 
@@ -162,6 +164,10 @@ class Game {
       onGyroscopeUnavailable: () => {
         this._gyroscopeWarning = true;
       },
+      onGyroPermissionChange: (status) => {
+        this._iosPermissionStatus = status;
+        if (this.gameState) this.gameState.iosPermissionStatus = status;
+      },
     });
 
     this._handleViewportResize = this._handleViewportResize.bind(this);
@@ -207,6 +213,7 @@ class Game {
         onRaceExit: () => {},
         openSettings: () => this._setScreen(SCREENS.SETTINGS),
         backToMenu: () => this._setScreen(SCREENS.START),
+        requestGyroPermission: () => this.input.requestOrientationPermission(),
       },
     };
   }
@@ -295,6 +302,7 @@ class Game {
       screenAge: 0,
       pendingName: "",
       gyroscopeWarning: this._gyroscopeWarning,
+      iosPermissionStatus: this._iosPermissionStatus,
       rivals: createRivals(RIVAL_COUNT, this.track),
       obstacles: createObstacles(this.track),
       collisionCooldown: 0,
