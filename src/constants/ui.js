@@ -18,7 +18,6 @@ export const UI_COLORS = {
   white: "#FFFFFF",
   transparentBlack: "rgba(0, 0, 0, 0)",
   vignette: "rgba(0, 0, 0, 0.40)",
-
   panelFill: "rgba(28, 28, 28, 0.96)",
   panelStroke: "#FFFFFF",
   panelAccent: "#FFB800",
@@ -30,7 +29,6 @@ export const UI_COLORS = {
   subtleText: "rgba(255, 255, 255, 0.65)",
   shadow: "rgba(0, 0, 0, 0.70)",
 };
-
 export const UI_LAYOUT = {
   halfRatio: 0.5,
   startPanelWidthRatio: 0.86,
@@ -64,7 +62,6 @@ export const UI_LAYOUT = {
   lineSpacing3: 100,
   launchLabelXOffset: 44,
 };
-
 export const UI_FONT = {
   family: "'Barlow Condensed', 'Press Start 2P', 'Courier New', monospace",
   bold: "bold",
@@ -82,7 +79,6 @@ export const UI_FONT = {
   gameOverTime: { min: 36, max: 64, ratio: 0.085 },
   gameOverHint: { min: 14, max: 22, ratio: 0.028 },
 };
-
 export const UI_SHAPE = {
   panelRadius: 6,
   accentInset: 12,
@@ -99,7 +95,6 @@ export const UI_SHAPE = {
   previewMaxPointsStep: 800,
   mapDrawPadding: 18,
 };
-
 export const UI_TEXT = {
   gameTitle: "APEX TYPE Z",
   startSubtitle: "TIME ATTACK",
@@ -121,14 +116,12 @@ export const UI_TEXT = {
   gameOverTitle: "FIM DE CORRIDA!",
   gameOverHint: "Aperte Espaço para tentar de novo",
 };
-
 export const HUD_COLORS = {
   speedPanel: "rgba(28, 28, 28, 0.95)",
   speedPanelBorder: "#FFFFFF",
   speedPanelGlow: "rgba(255, 255, 255, 0.12)",
   speedValue: "#FFB800",
   speedLabel: "rgba(255, 255, 255, 0.70)",
-
   batteryPanel: "rgba(28, 28, 28, 0.95)",
   batteryBorder: "rgba(255, 255, 255, 0.80)",
   batteryFull: "#FFB800",
@@ -137,7 +130,6 @@ export const HUD_COLORS = {
   batteryRegen: "#FFFFFF",
   batteryLabel: "rgba(255, 255, 255, 0.70)",
   batterySegmentSep: "rgba(0, 0, 0, 0.50)",
-
   badgeModeX: "rgba(28, 28, 28, 0.95)",
   badgeModeXBorder: "#E60000",
   badgeModeXGlow: "rgba(230, 0, 0, 0.25)",
@@ -145,49 +137,37 @@ export const HUD_COLORS = {
   badgeModeZBorder: "#FFFFFF",
   badgeModeZGlow: "rgba(255, 255, 255, 0.12)",
   badgeText: "#FFFFFF",
-
   lapPanel: "rgba(28, 28, 28, 0.95)",
   lapPanelBorder: "#FFFFFF",
   lapTime: "#FFB800",
   lapLabel: "rgba(255, 255, 255, 0.70)",
   lapCount: "#FFB800",
   lapCountLabel: "rgba(255, 255, 255, 0.70)",
-
   warningBorder: "rgba(230, 0, 0, 0.90)",
   warningGlow: "rgba(230, 0, 0, 0.30)",
   offTrackBorder: "rgba(230, 0, 0, 0.75)",
   offTrackGlow: "rgba(230, 0, 0, 0.22)",
-
   curveNormal: "#FFFFFF",
   curveMild: "#FFB800",
   curveHard: "#E60000",
-
   centrifugalSlideBorder: "rgba(255, 184, 0, 0.85)",
   centrifugalSlideGlow: "rgba(255, 184, 0, 0.35)",
   centrifugalSlideText: "#FFB800",
 };
-
 export const HUD_FONTS = {
   family: "'Barlow Condensed', 'Press Start 2P', 'Courier New', monospace",
   bold: "700",
-
   speedValue: { min: 22, max: 36, ratio: 0.036 },
   speedLabel: { min: 10, max: 13, ratio: 0.013 },
-
   batteryLabel: { min: 10, max: 13, ratio: 0.013 },
-
   badgeMode: { min: 13, max: 17, ratio: 0.016 },
-
   lapTime: { min: 14, max: 20, ratio: 0.022 },
   lapLabel: { min: 10, max: 13, ratio: 0.013 },
   lapCount: { min: 13, max: 17, ratio: 0.018 },
-
   curveArrow: { min: 24, max: 42, ratio: 0.042 },
-
   rankLabel: { min: 10, max: 13, ratio: 0.013 },
   rankValue: { min: 14, max: 19, ratio: 0.02 },
 };
-
 export const HUD_LAYOUT = {
   speedRightMarginRatio: 0.022,
   speedBottomMarginRatio: 0.032,
@@ -199,7 +179,6 @@ export const HUD_LAYOUT = {
   speedMaxHeight: 160,
   speedMinMargin: 10,
   speedMaxMargin: 22,
-
   batteryLeftMarginRatio: 0.028,
   batteryTopMarginRatio: 0.022,
   batteryWidthRatio: 0.22,
@@ -211,14 +190,12 @@ export const HUD_LAYOUT = {
   batterySegments: 10,
   batteryMinMargin: 14,
   batteryMaxMargin: 26,
-
   badgeWidthRatio: 0.13,
   badgeHeightRatio: 0.062,
   badgeMinWidth: 68,
   badgeMaxWidth: 120,
   badgeMinHeight: 26,
   badgeMaxHeight: 46,
-
   lapRightMarginRatio: 0.028,
   lapTopMarginRatio: 0.022,
   lapWidthRatio: 0.24,
@@ -229,9 +206,7 @@ export const HUD_LAYOUT = {
   lapMaxHeight: 140,
   lapMinMargin: 14,
   lapMaxMargin: 28,
-
   warningThickness: 6,
   warningPulseSpeed: 0.008,
-
   curveIndicatorY: 46,
-};
+};

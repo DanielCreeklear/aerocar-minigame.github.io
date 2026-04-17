@@ -1,9 +1,7 @@
 import { drawRoundedRect } from "../utils/canvas.js";
-
 const SAMPLE_INTERVAL_MS = 50;
 const MAX_SAMPLES = 600;
 const ACCEL_REF = 5;
-
 class TelemetryManager {
   constructor() {
     this._buf = new Array(MAX_SAMPLES).fill(null);
@@ -12,18 +10,15 @@ class TelemetryManager {
     this._lastSampleMs = -Infinity;
     this._hudVisible = true;
   }
-
   reset() {
     this._head = 0;
     this._count = 0;
     this._lastSampleMs = -Infinity;
   }
-
   log(gameState, physicsTelemetry = null) {
     const now = gameState.currentTime;
     if (now - this._lastSampleMs < SAMPLE_INTERVAL_MS) return;
     this._lastSampleMs = now;
-
     const prev =
       this._count > 0
         ? this._buf[(this._head - 1 + MAX_SAMPLES) % MAX_SAMPLES]
@@ -32,7 +27,6 @@ class TelemetryManager {
       ? Math.max((now - prev.t) / 1000, 0.001)
       : SAMPLE_INTERVAL_MS / 1000;
     const accel = prev ? (gameState.speed - prev.vz) / sampleDt : 0;
-
     this._buf[this._head] = {
       t: now,
       z: gameState.currentZ,
@@ -55,15 +49,12 @@ class TelemetryManager {
       steerTarget: gameState.steerTarget ?? 0,
       heading: gameState.carHeading ?? 0,
     };
-
     this._head = (this._head + 1) % MAX_SAMPLES;
     if (this._count < MAX_SAMPLES) this._count++;
   }
-
   exportJSON() {
     const samples = this._getSamples();
     if (samples.length === 0) return;
-
     const blob = new Blob(
       [
         JSON.stringify(
@@ -99,7 +90,6 @@ class TelemetryManager {
       ],
       { type: "application/json" },
     );
-
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -109,16 +99,13 @@ class TelemetryManager {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
-
   toggleHUD() {
     this._hudVisible = !this._hudVisible;
   }
-
   drawHUD(ctx, width, height, isMobile = false) {
     if (!this._hudVisible || isMobile) return;
     const d = this._getLatest();
     if (!d) return;
-
     const PX = 10;
     const PY = 62;
     const PW = 256;
@@ -126,20 +113,16 @@ class TelemetryManager {
     const COL = PX + 10;
     const LH = 16;
     let cy = PY + 8;
-
     ctx.save();
-
     drawRoundedRect(ctx, PX, PY, PW, PH, 8);
     ctx.fillStyle = "rgba(4, 10, 18, 0.88)";
     ctx.fill();
     ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
     ctx.lineWidth = 1;
     ctx.stroke();
-
     ctx.font = '700 10px Consolas,"Courier New",monospace';
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-
     ctx.fillStyle = "rgba(241, 196, 15, 0.95)";
     ctx.fillText("\u25A0 TELEMETRIA", COL, cy);
     ctx.textAlign = "right";
@@ -147,10 +130,8 @@ class TelemetryManager {
     ctx.fillText("[H] fechar", PX + PW - 8, cy);
     ctx.textAlign = "left";
     cy += LH + 2;
-
     _sep(ctx, PX, PX + PW, cy);
     cy += 5;
-
     ctx.fillStyle = "#ecf0f1";
     ctx.fillText(
       `Vz: ${d.vz.toFixed(1).padStart(5)} m/s   Vx: ${_sign(d.vx)}${d.vx.toFixed(2)}`,
@@ -158,18 +139,15 @@ class TelemetryManager {
       cy,
     );
     cy += LH;
-
     ctx.fillText(
       `\u03BA: ${_sign(d.curvature)}${d.curvature.toFixed(4)}   slip: ${d.slip.toFixed(3)}`,
       COL,
       cy,
     );
     cy += LH + 4;
-
     ctx.fillStyle = "rgba(241, 196, 15, 0.85)";
     ctx.fillText("CENTRIF vs GRIP", COL, cy);
     cy += LH;
-
     const BAR_W = PW - 20;
     const BAR_H = 14;
     const BX = PX + 10;
@@ -182,7 +160,6 @@ class TelemetryManager {
       d.effectiveGrip > 0.001
         ? Math.round((Math.abs(d.centrifugalForce) / d.effectiveGrip) * 100)
         : 0;
-
     ctx.fillStyle = "rgba(20, 45, 20, 0.8)";
     ctx.fillRect(BX, cy, BAR_W, BAR_H);
     const gFill = Math.min(d.effectiveGrip / scale, 1) * BAR_W;
@@ -199,7 +176,6 @@ class TelemetryManager {
     );
     ctx.textBaseline = "top";
     cy += BAR_H + 3;
-
     ctx.fillStyle = "rgba(45, 20, 20, 0.8)";
     ctx.fillRect(BX, cy, BAR_W, BAR_H);
     const cFill = Math.min(Math.abs(d.centrifugalForce) / scale, 1) * BAR_W;
@@ -216,14 +192,11 @@ class TelemetryManager {
     );
     ctx.textBaseline = "top";
     cy += BAR_H + 6;
-
     _sep(ctx, PX, PX + PW, cy);
     cy += 5;
-
     ctx.fillStyle = "rgba(86, 180, 233, 0.9)";
     ctx.fillText("STEER", COL, cy);
     cy += LH;
-
     ctx.fillStyle = "#ecf0f1";
     ctx.fillText(
       `steer: ${_sign(d.steer)}${(d.steer ?? 0).toFixed(3)}`,
@@ -231,10 +204,8 @@ class TelemetryManager {
       cy,
     );
     cy += LH + 4;
-
     _sep(ctx, PX, PX + PW, cy);
     cy += 5;
-
     ctx.fillStyle = d.isOffTrack ? "#e74c3c" : "#b2bec3";
     ctx.fillText(
       `MODO: ${d.aeroMode}   ERS: ${Math.floor(d.battery)}%${d.isOffTrack ? "  [!] OFF-TRACK" : ""}`,
@@ -242,14 +213,11 @@ class TelemetryManager {
       cy,
     );
     cy += LH + 3;
-
     _sep(ctx, PX, PX + PW, cy);
     cy += 5;
-
     ctx.fillStyle = "rgba(86, 180, 233, 0.9)";
     ctx.fillText("INPUTS", COL, cy);
     cy += LH;
-
     {
       const chartData = this._getLastN(80);
       const CX = BX;
@@ -257,11 +225,9 @@ class TelemetryManager {
       const CHART_H1 = 36;
       const CHART_H2 = 24;
       const n = chartData.length;
-
       const midY1 = cy + CHART_H1 * 0.5;
       ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
       ctx.fillRect(CX, cy, CHART_W, CHART_H1);
-
       ctx.strokeStyle = "rgba(255, 255, 255, 0.07)";
       ctx.lineWidth = 0.5;
       [0.25, 0.75].forEach((f) => {
@@ -270,12 +236,10 @@ class TelemetryManager {
         ctx.lineTo(CX + CHART_W, cy + CHART_H1 * f);
         ctx.stroke();
       });
-
       if (n > 1) {
         const mapSy = (s) =>
           midY1 -
           Math.max(-1, Math.min(1, s.accel / ACCEL_REF)) * (CHART_H1 * 0.5 - 2);
-
         ctx.save();
         ctx.beginPath();
         ctx.rect(CX, cy, CHART_W, CHART_H1 * 0.5);
@@ -293,7 +257,6 @@ class TelemetryManager {
         ctx.fillStyle = "rgba(39, 174, 96, 0.30)";
         ctx.fill();
         ctx.restore();
-
         ctx.save();
         ctx.beginPath();
         ctx.rect(CX, midY1, CHART_W, CHART_H1 * 0.5 + 1);
@@ -311,7 +274,6 @@ class TelemetryManager {
         ctx.fillStyle = "rgba(192, 57, 43, 0.30)";
         ctx.fill();
         ctx.restore();
-
         ctx.beginPath();
         ctx.strokeStyle = "#ecf0f1";
         ctx.lineWidth = 1.2;
@@ -324,7 +286,6 @@ class TelemetryManager {
         ctx.stroke();
         ctx.lineWidth = 1;
       }
-
       ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
       ctx.lineWidth = 0.5;
       ctx.beginPath();
@@ -332,18 +293,15 @@ class TelemetryManager {
       ctx.lineTo(CX + CHART_W, midY1);
       ctx.stroke();
       ctx.lineWidth = 1;
-
       ctx.textBaseline = "top";
       ctx.fillStyle = "rgba(39, 174, 96, 0.85)";
       ctx.fillText("ACEL", CX + 3, cy + 2);
       ctx.fillStyle = "rgba(192, 57, 43, 0.85)";
       ctx.fillText("FREIN", CX + 3, cy + CHART_H1 - LH + 2);
       cy += CHART_H1 + 4;
-
       const midY2 = cy + CHART_H2 * 0.5;
       ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
       ctx.fillRect(CX, cy, CHART_W, CHART_H2);
-
       if (n > 1) {
         ctx.beginPath();
         for (let i = 0; i < n; i++) {
@@ -367,7 +325,6 @@ class TelemetryManager {
         ctx.stroke();
         ctx.lineWidth = 1;
       }
-
       ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
       ctx.lineWidth = 0.5;
       ctx.beginPath();
@@ -375,12 +332,10 @@ class TelemetryManager {
       ctx.lineTo(CX + CHART_W, midY2);
       ctx.stroke();
       ctx.lineWidth = 1;
-
       ctx.textBaseline = "top";
       ctx.fillStyle = "rgba(86, 180, 233, 0.85)";
       ctx.fillText("STR", CX + 3, cy + 2);
       cy += CHART_H2 + 4;
-
       const CHART_H3 = 22;
       ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
       ctx.fillRect(CX, cy, CHART_W, CHART_H3);
@@ -411,7 +366,6 @@ class TelemetryManager {
       ctx.fillStyle = "rgba(39, 174, 96, 0.85)";
       ctx.fillText("ERS", CX + 3, cy + 2);
       cy += CHART_H3 + 4;
-
       ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
       ctx.fillRect(CX, cy, CHART_W, CHART_H3);
       if (n > 1) {
@@ -442,18 +396,14 @@ class TelemetryManager {
       ctx.fillText("BRK", CX + 3, cy + 2);
       cy += CHART_H3 + 4;
     }
-
     ctx.fillStyle = "rgba(127, 140, 141, 0.65)";
     ctx.fillText("[T] Export JSON", COL, cy);
-
     ctx.restore();
   }
-
   _getLatest() {
     if (this._count === 0) return null;
     return this._buf[(this._head - 1 + MAX_SAMPLES) % MAX_SAMPLES];
   }
-
   _getLastN(n) {
     if (this._count === 0) return [];
     const count = Math.min(n, this._count);
@@ -464,7 +414,6 @@ class TelemetryManager {
     }
     return out;
   }
-
   _getSamples() {
     if (this._count === 0) return [];
     const oldest = this._count < MAX_SAMPLES ? 0 : this._head;
@@ -475,7 +424,6 @@ class TelemetryManager {
     return out;
   }
 }
-
 function _sep(ctx, x1, x2, y) {
   ctx.save();
   ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
@@ -486,9 +434,7 @@ function _sep(ctx, x1, x2, y) {
   ctx.stroke();
   ctx.restore();
 }
-
 function _sign(v) {
   return v >= 0 ? "+" : "";
 }
-
-export { TelemetryManager };
+export { TelemetryManager };

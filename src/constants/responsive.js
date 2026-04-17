@@ -1,12 +1,10 @@
 export const PORTRAIT_ASPECT_THRESHOLD = 1;
 export const COMPACT_MOBILE_WIDTH = 480;
 export const SHORT_MOBILE_HEIGHT = 740;
-
 export function getViewportProfile(width, height) {
   const safeWidth = Math.max(1, width);
   const aspect = height / safeWidth;
   const isPortrait = aspect >= PORTRAIT_ASPECT_THRESHOLD;
-
   return {
     aspect,
     isPortrait,
@@ -14,12 +12,10 @@ export function getViewportProfile(width, height) {
     isShortHeight: height <= SHORT_MOBILE_HEIGHT,
   };
 }
-
 export function getResponsiveUILayout(baseLayout, profile) {
   if (!profile.isPortrait) {
     return baseLayout;
   }
-
   const portraitLayout = {
     startPanelHeightRatio: 0.64,
     startPanelMaxHeight: 420,
@@ -33,11 +29,9 @@ export function getResponsiveUILayout(baseLayout, profile) {
     startCtaYRatio: 0.88,
     startTipYRatio: 0.94,
   };
-
   if (!profile.isCompactWidth && !profile.isShortHeight) {
     return { ...baseLayout, ...portraitLayout };
   }
-
   return {
     ...baseLayout,
     ...portraitLayout,
@@ -53,4 +47,4 @@ export function getResponsiveUILayout(baseLayout, profile) {
     startCtaYRatio: 0.86,
     startTipYRatio: 0.92,
   };
-}
+}

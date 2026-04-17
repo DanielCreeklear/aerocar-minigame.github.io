@@ -1,5 +1,4 @@
 import { formatTime } from "../utils/math.js";
-
 const R = {
   bg: "#FDB80B",
   bgTop: "#1a1a2e",
@@ -18,11 +17,9 @@ const R = {
   divider: "rgba(0, 0, 0, 0.25)",
   font: "monospace",
 };
-
 function csz(ref, ratio, lo, hi) {
   return Math.max(lo, Math.min(hi, ref * ratio));
 }
-
 function drawButton(ctx, x, y, w, h, label, isSelected) {
   const shadow = 4;
   ctx.fillStyle = R.buttonShadow;
@@ -49,7 +46,6 @@ function drawButton(ctx, x, y, w, h, label, isSelected) {
     ctx.fillRect(cbX + 3, cbY + 3, cbSize - 6, cbSize - 6);
   }
 }
-
 function sectionHeader(ctx, x, y, w, text, color) {
   const sz = Math.max(11, Math.min(15, w * 0.038));
   ctx.save();
@@ -66,7 +62,6 @@ function sectionHeader(ctx, x, y, w, text, color) {
   ctx.stroke();
   ctx.restore();
 }
-
 function bottomBar(ctx, w, h, actions) {
   const bh = 40;
   const by = h - bh;
@@ -92,7 +87,6 @@ function bottomBar(ctx, w, h, actions) {
   }
   ctx.restore();
 }
-
 function topStripe(ctx, w, leftTxt, rightTxt) {
   const sh = 32;
   ctx.save();
@@ -114,12 +108,10 @@ function topStripe(ctx, w, leftTxt, rightTxt) {
   ctx.fillText(rightTxt, w - 20, sh * 0.5);
   ctx.restore();
 }
-
 function drawRankList(ctx, x, y, w, rowH, rankings, slotCount) {
   for (let i = 0; i < slotCount; i++) {
     const ry = y + i * (rowH + 4);
     const entry = (rankings || [])[i];
-    // row background alternating
     ctx.fillStyle = i % 2 === 0 ? "rgba(0,0,0,0.08)" : "transparent";
     ctx.fillRect(x, ry, w, rowH);
     const mid = ry + rowH * 0.5;
@@ -143,7 +135,6 @@ function drawRankList(ctx, x, y, w, rowH, rankings, slotCount) {
     ctx.restore();
   }
 }
-
 function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
   for (let i = 0; i < slotCount; i++) {
     const ry = y + i * (rowH + 4);
@@ -179,11 +170,9 @@ function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
     ctx.restore();
   }
 }
-
 function drawNewEntryRow(ctx, x, y, w, rowH, entryTime, pending, blink) {
   const mid = y + rowH * 0.5;
   const sz = Math.max(11, Math.min(16, rowH * 0.45));
-  // shadow + body
   ctx.fillStyle = R.buttonShadow;
   ctx.fillRect(x + 4, y + 4, w, rowH);
   ctx.fillStyle = R.buttonBody;
@@ -202,7 +191,6 @@ function drawNewEntryRow(ctx, x, y, w, rowH, entryTime, pending, blink) {
   ctx.fillText(formatTime(entryTime), x + w - 6, mid);
   ctx.restore();
 }
-
 function calculateTrackBounds(points) {
   let minX = Infinity;
   let maxX = -Infinity;
@@ -212,7 +200,6 @@ function calculateTrackBounds(points) {
   }
   return { minX, xRange: Math.max(1, maxX - minX) };
 }
-
 function projectTrackPoint(points, index, bounds, map) {
   const t = points.length > 1 ? index / (points.length - 1) : 0;
   const nx = (points[index].x - bounds.minX) / bounds.xRange;
@@ -221,7 +208,6 @@ function projectTrackPoint(points, index, bounds, map) {
     y: map.mapY + map.drawPad + t * map.usableH,
   };
 }
-
 function sampleTrackPointIndexes(pointsLength) {
   const step = Math.max(1, Math.floor(pointsLength / 800));
   const out = [];
@@ -229,7 +215,6 @@ function sampleTrackPointIndexes(pointsLength) {
   if (out[out.length - 1] !== pointsLength - 1) out.push(pointsLength - 1);
   return out;
 }
-
 function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
   ctx.fillStyle = R.buttonBody;
   ctx.fillRect(mapX, mapY, mapW, mapH);
@@ -273,7 +258,6 @@ function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
   ctx.fillText("START", path[0].x + 8, path[0].y);
   ctx.restore();
 }
-
 function drawIOSPermissionButton(ctx, x, y, w, blink) {
   const btnH = 44;
   drawButton(
@@ -286,7 +270,6 @@ function drawIOSPermissionButton(ctx, x, y, w, blink) {
     blink,
   );
 }
-
 function drawGyroscopeWarning(ctx, x, y, w) {
   const sz = Math.max(10, Math.min(13, w * 0.028));
   ctx.save();
@@ -297,28 +280,21 @@ function drawGyroscopeWarning(ctx, x, y, w) {
   ctx.fillText("[!] USE SAFARI NO iOS PARA GIROSCOPIO", x, y);
   ctx.restore();
 }
-
 function drawStartScreen(ctx, w, h, gameState, track) {
   const isPortrait = h > w;
   const age = gameState ? gameState.screenAge || 0 : 0;
   const fade = Math.min(1, age / 0.5);
   const blink = Math.sin(age * Math.PI * 1.4) > 0;
   const rankings = (gameState && gameState.rankings) || [];
-
   ctx.save();
   ctx.globalAlpha = fade;
-
-  // Yellow background
   ctx.fillStyle = R.bg;
   ctx.fillRect(0, 0, w, h);
-
   const pad = Math.max(20, w * 0.05);
   const btnW = Math.min(w - pad * 2, 380);
   const btnH = Math.max(44, Math.round(h * 0.075));
   const btnGap = Math.max(10, Math.round(h * 0.018));
-
   if (isPortrait) {
-    // Title
     const titleSz = csz(w, 0.16, 40, 72);
     ctx.fillStyle = R.textHeader;
     ctx.font = `700 ${titleSz}px ${R.font}`;
@@ -326,25 +302,18 @@ function drawStartScreen(ctx, w, h, gameState, track) {
     ctx.textBaseline = "alphabetic";
     ctx.fillText("APEX", pad, h * 0.14);
     ctx.fillText("TYPE Z", pad, h * 0.14 + titleSz * 1.1);
-
-    // Subtitle
     const subSz = csz(w, 0.03, 11, 14);
     ctx.font = `700 ${subSz}px ${R.font}`;
     ctx.fillStyle = R.textHeader;
     ctx.fillText("TIME ATTACK", pad, h * 0.14 + titleSz * 2.4);
-
-    // Separator
     ctx.strokeStyle = R.textHeader;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(pad, h * 0.14 + titleSz * 2.7);
     ctx.lineTo(w - pad, h * 0.14 + titleSz * 2.7);
     ctx.stroke();
-
-    // Buttons
     const btnStartY = h * 0.44;
     drawButton(ctx, pad, btnStartY, btnW, btnH, "INICIAR CORRIDA", blink);
-
     if (gameState && gameState.iosPermissionStatus === "prompt") {
       drawIOSPermissionButton(
         ctx,
@@ -356,29 +325,22 @@ function drawStartScreen(ctx, w, h, gameState, track) {
     } else if (gameState && gameState.gyroscopeWarning) {
       drawGyroscopeWarning(ctx, pad, btnStartY + btnH + btnGap + 4, btnW);
     }
-
-    // Ranking
     const rkY = h * 0.63;
     sectionHeader(ctx, pad, rkY, w - pad * 2, "RANKING");
     const rkAvail = h - 40 - (rkY + 14) - 8;
     const rowH = Math.max(24, Math.min(34, rkAvail / 5 - 4));
     drawRankList(ctx, pad, rkY + 14, w - pad * 2, rowH, rankings, 5);
   } else {
-    // Landscape: left = title + buttons, right = ranking
     const divX = Math.round(w * 0.5);
     const leftW = divX - pad - 16;
     const rightX = divX + 20;
     const rightW = w - rightX - pad;
-
-    // Vertical divider
     ctx.strokeStyle = R.textHeader;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(divX, pad);
     ctx.lineTo(divX, h - 48);
     ctx.stroke();
-
-    // Title
     const titleSz = csz(leftW, 0.22, 36, 80);
     ctx.fillStyle = R.textHeader;
     ctx.font = `700 ${titleSz}px ${R.font}`;
@@ -386,12 +348,9 @@ function drawStartScreen(ctx, w, h, gameState, track) {
     ctx.textBaseline = "alphabetic";
     ctx.fillText("APEX", pad, h * 0.28);
     ctx.fillText("TYPE Z", pad, h * 0.28 + titleSz * 1.1);
-
     const subSz = csz(w, 0.02, 10, 13);
     ctx.font = `700 ${subSz}px ${R.font}`;
     ctx.fillText("TIME ATTACK", pad, h * 0.28 + titleSz * 2.35);
-
-    // Buttons
     const btnStartY = h * 0.62;
     drawButton(
       ctx,
@@ -402,7 +361,6 @@ function drawStartScreen(ctx, w, h, gameState, track) {
       "INICIAR CORRIDA",
       blink,
     );
-
     if (gameState && gameState.iosPermissionStatus === "prompt") {
       drawIOSPermissionButton(
         ctx,
@@ -414,21 +372,17 @@ function drawStartScreen(ctx, w, h, gameState, track) {
     } else if (gameState && gameState.gyroscopeWarning) {
       drawGyroscopeWarning(ctx, pad, btnStartY + btnH + btnGap, leftW);
     }
-
-    // Ranking (right column)
     sectionHeader(ctx, rightX, pad + 8, rightW, "RANKING");
     const rkAvail = h - 40 - (pad + 22) - 8;
     const rowH = Math.max(24, Math.min(42, rkAvail / 5 - 4));
     drawRankList(ctx, rightX, pad + 22, rightW, rowH, rankings, 5);
   }
-
   bottomBar(ctx, w, h, [
     { icon: "○", label: "INICIAR" },
     { icon: "△", label: "CONFIG" },
   ]);
   ctx.restore();
 }
-
 function drawGameOverScreen(ctx, w, h, gameState) {
   const isPortrait = h > w;
   const age = gameState ? gameState.screenAge || 0 : 0;
@@ -444,24 +398,18 @@ function drawGameOverScreen(ctx, w, h, gameState) {
     : -1;
   const pending = (gameState && gameState.pendingName) || "";
   const isEntering = phase === "entering";
-
   ctx.save();
   ctx.globalAlpha = fade;
-
   ctx.fillStyle = R.bg;
   ctx.fillRect(0, 0, w, h);
-
   const pad = Math.max(20, w * 0.05);
-
   if (isPortrait) {
-    // Title
     const headSz = csz(w, 0.09, 24, 44);
     ctx.fillStyle = R.textHeader;
     ctx.font = `700 ${headSz}px ${R.font}`;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     ctx.fillText("RESULT", pad, h * 0.1);
-
     sectionHeader(ctx, pad, h * 0.13, w - pad * 2, "TEMPO TOTAL");
     const timeSz = csz(w, 0.11, 36, 64);
     ctx.fillStyle = R.buttonBody;
@@ -469,7 +417,6 @@ function drawGameOverScreen(ctx, w, h, gameState) {
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     ctx.fillText(formatTime(finalTime), pad, h * 0.13 + 14 + timeSz);
-
     const rkY = h * 0.36;
     sectionHeader(ctx, pad, rkY, w - pad * 2, "RANKING");
     const rkAvail = h - 40 - (rkY + 14) - 8;
@@ -495,14 +442,12 @@ function drawGameOverScreen(ctx, w, h, gameState) {
     const leftW = divX - pad - 16;
     const rightX = divX + 20;
     const rightW = w - rightX - pad;
-
     ctx.strokeStyle = R.textHeader;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(divX, pad);
     ctx.lineTo(divX, h - 48);
     ctx.stroke();
-
     const headSz = csz(leftW, 0.18, 24, 52);
     ctx.fillStyle = R.textHeader;
     ctx.font = `700 ${headSz}px ${R.font}`;
@@ -510,7 +455,6 @@ function drawGameOverScreen(ctx, w, h, gameState) {
     ctx.textBaseline = "alphabetic";
     ctx.fillText("RACE", pad, h * 0.22);
     ctx.fillText("RESULT", pad, h * 0.22 + headSz * 1.1);
-
     sectionHeader(ctx, pad, h * 0.56, leftW, "TEMPO TOTAL");
     const timeSz = csz(leftW, 0.14, 32, 60);
     ctx.fillStyle = R.buttonBody;
@@ -518,7 +462,6 @@ function drawGameOverScreen(ctx, w, h, gameState) {
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     ctx.fillText(formatTime(finalTime), pad, h * 0.56 + 14 + timeSz);
-
     sectionHeader(ctx, rightX, pad + 8, rightW, "RANKING");
     const rkAvail = h - 40 - (pad + 22) - 8;
     const rowH = Math.max(24, Math.min(42, rkAvail / 5 - 4));
@@ -539,7 +482,6 @@ function drawGameOverScreen(ctx, w, h, gameState) {
       drawResultRows(ctx, rightX, rkStart, rightW, rowH, rankings, 5, hlIdx);
     }
   }
-
   if (isEntering) {
     bottomBar(ctx, w, h, [{ icon: "↵", label: "SALVAR NOME" }]);
   } else {
@@ -547,7 +489,6 @@ function drawGameOverScreen(ctx, w, h, gameState) {
   }
   ctx.restore();
 }
-
 function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
   const isPortrait = h > w;
   const age = gameState ? gameState.screenAge || 0 : 0;
@@ -555,14 +496,11 @@ function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
   const blink = Math.sin(age * Math.PI * 1.4) > 0;
   const km = ((track.lapLength || 0) / 1000).toFixed(2);
   const segs = track.segments ? track.segments.length : "?";
-
   ctx.save();
   ctx.globalAlpha = fade;
-
   ctx.fillStyle = R.bg;
   ctx.fillRect(0, 0, w, h);
   topStripe(ctx, w, "CIRCUIT SELECT", "CIRCUIT 01");
-
   const stripeH = 32;
   const barH = 40;
   const pad = Math.max(12, w * 0.03);
@@ -572,11 +510,9 @@ function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
     ["VOLTA", `${km} km`],
     ["VOLTAS", "3"],
   ];
-
   if (isPortrait) {
     const mapH = Math.round((h - stripeH - barH) * 0.48);
     drawMinimap(ctx, pad, stripeH + 6, w - pad * 2, mapH, track);
-
     const infoX = pad;
     const infoW = w - pad * 2;
     const infoY = stripeH + 6 + mapH + 18;
@@ -598,14 +534,12 @@ function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
     const mapW = Math.round(w * 0.52);
     const mapH = Math.round((h - stripeH - barH) * 0.9);
     drawMinimap(ctx, pad, stripeH + 6, mapW - pad - 4, mapH, track);
-
     ctx.strokeStyle = R.textHeader;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(mapW + 8, stripeH + 14);
     ctx.lineTo(mapW + 8, h - barH - 10);
     ctx.stroke();
-
     const infoX = mapW + 20;
     const infoW = w - infoX - pad;
     const infoY = stripeH + 20;
@@ -624,28 +558,21 @@ function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
     });
     ctx.restore();
   }
-
   bottomBar(ctx, w, h, [{ icon: "○", label: "CONTINUAR" }]);
   ctx.restore();
 }
-
 function drawSettingsScreen(ctx, w, h, gameState) {
   const age = gameState ? gameState.screenAge || 0 : 0;
   const fade = Math.min(1, age / 0.5);
   const isPortrait = h > w;
-
   ctx.save();
   ctx.globalAlpha = fade;
-
   ctx.fillStyle = R.bg;
   ctx.fillRect(0, 0, w, h);
-
   const pad = Math.max(20, w * 0.05);
   const btnW = Math.min(w - pad * 2, 380);
   const btnH = Math.max(44, Math.round(h * 0.075));
   const btnGap = Math.max(10, Math.round(h * 0.018));
-
-  // Title
   const titleSz = csz(w, 0.055, 18, 30);
   ctx.fillStyle = R.textHeader;
   ctx.font = `700 ${titleSz}px ${R.font}`;
@@ -661,10 +588,7 @@ function drawSettingsScreen(ctx, w, h, gameState) {
     pad + titleSz + 5,
   );
   ctx.stroke();
-
   let curY = pad + titleSz + 24;
-
-  // Controls section
   sectionHeader(ctx, pad, curY, btnW, "CONTROLES");
   curY += 16;
   const ctrlLines = [
@@ -681,8 +605,6 @@ function drawSettingsScreen(ctx, w, h, gameState) {
     ctx.fillText(line, pad, curY + (lineSz + 7) * i + lineSz);
   });
   curY += ctrlLines.length * (lineSz + 7) + 20;
-
-  // Aero section
   sectionHeader(ctx, pad, curY, btnW, "MODO AERO");
   curY += 18;
   const aeroItems = [
@@ -693,18 +615,15 @@ function drawSettingsScreen(ctx, w, h, gameState) {
     drawButton(ctx, pad, curY, btnW, btnH, item.label, item.isSelected);
     curY += btnH + btnGap;
   });
-
   if (gameState && gameState.gyroscopeWarning) {
     drawGyroscopeWarning(ctx, pad, curY + 8, btnW);
   }
-
   bottomBar(ctx, w, h, [{ icon: "✕", label: "VOLTAR" }]);
   ctx.restore();
 }
-
 export {
   drawStartScreen,
   drawGameOverScreen,
   drawTrackPreviewScreen,
   drawSettingsScreen,
-};
+};

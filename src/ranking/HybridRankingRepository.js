@@ -3,7 +3,6 @@ export class HybridRankingRepository {
     this._local = localRepo;
     this._firebase = firebaseRepo;
   }
-
   async fetchAll() {
     if (this._firebase.isConfigured()) {
       const remote = await this._firebase.fetchAll();
@@ -14,11 +13,10 @@ export class HybridRankingRepository {
     }
     return this._local.fetchAll();
   }
-
   async saveAll(entries) {
     await this._local.saveAll(entries);
     this._firebase.saveAll(entries).catch((err) => {
       console.warn("[RankingService] Firebase background sync failed:", err.message);
     });
   }
-}
+}

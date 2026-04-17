@@ -1,130 +1,124 @@
-import { drawRoundedRect } from "../../utils/canvas.js";
-import { responsiveSize } from "../../utils/canvas.js";
+// Neo-Retro R4 — Telemetry Block (top-right)
 import { formatTime } from "../../utils/math.js";
-import { HUD_COLORS, HUD_FONTS, HUD_LAYOUT } from "../../constants/index.js";
+
+const R4_ACCENT = "#FDB80B";
+const R4_BG = "rgba(26,26,26,0.80)";
+const R4_SHADOW = "rgba(0,0,0,0.50)";
+const R4_FONT =
+  "'Archivo Narrow','Barlow Condensed','Roboto Condensed',sans-serif";
+const R4_MONO = "'Courier New',monospace";
 
 function drawLapPanel(ctx, gameState, width, height) {
-  const L = HUD_LAYOUT;
-
-  const panelW = Math.max(
-    L.lapMinWidth,
-    Math.min(L.lapMaxWidth, width * L.lapWidthRatio),
-  );
-  const panelH = Math.max(
-    L.lapMinHeight,
-    Math.min(L.lapMaxHeight, height * L.lapHeightRatio),
-  );
-  const marginX = Math.max(
-    L.lapMinMargin,
-    Math.min(L.lapMaxMargin, width * L.lapRightMarginRatio),
-  );
-  const marginY = Math.max(
-    L.lapMinMargin,
-    Math.min(L.lapMaxMargin, height * L.lapTopMarginRatio),
-  );
-  const x = width - panelW - marginX;
-  const y = marginY;
+  const margin = Math.max(8, Math.min(14, width * 0.022));
+  const panelW = Math.max(130, Math.min(200, width * 0.32));
+  const panelH = Math.max(76, Math.min(110, height * 0.17));
+  const x = width - panelW - margin;
+  const y = margin;
 
   ctx.save();
 
-  ctx.shadowColor = HUD_COLORS.lapPanelBorder;
-  ctx.shadowBlur = 10;
-  drawRoundedRect(ctx, x, y, panelW, panelH, 0);
-  ctx.fillStyle = HUD_COLORS.lapPanel;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = HUD_COLORS.lapPanelBorder;
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
+  // 1. Solid shadow
+  ctx.fillStyle = R4_SHADOW;
+  ctx.fillRect(x + 4, y + 4, panelW, panelH);
 
-  ctx.fillStyle = "#FFB800";
-  ctx.fillRect(x, y, 4, panelH);
+  // 2. Card body
+  ctx.fillStyle = R4_BG;
+  ctx.fillRect(x, y, panelW, panelH);
 
-  const pad = 10;
-  const col1 = x + pad;
-  const col2 = x + panelW - pad;
+  // 3. Left accent stripe
+  ctx.fillStyle = R4_ACCENT;
+  ctx.fillRect(x, y, 3, panelH);
 
-  const labelSize = responsiveSize(width, HUD_FONTS.lapLabel);
-  const timeSize = responsiveSize(width, HUD_FONTS.lapTime);
-  const lapCountSize = responsiveSize(width, HUD_FONTS.lapCount);
+  const padX = x + 10;
+  const right = x + panelW - 8;
 
-  ctx.font = `${HUD_FONTS.bold} ${labelSize}px ${HUD_FONTS.family}`;
-  ctx.fillStyle = HUD_COLORS.lapLabel;
+  // 4. LAP label + count
+  const lapLabelSz = Math.max(8, Math.min(11, width * 0.018));
+  ctx.font = `italic bold ${lapLabelSz}px ${R4_FONT}`;
+  ctx.fillStyle = R4_ACCENT;
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
-  ctx.fillText("LAP", col1, y + 8);
+  ctx.fillText("LAP", padX, y + 6);
 
+  const lapCountSz = Math.max(14, Math.min(20, width * 0.033));
+  ctx.font = `italic bold ${lapCountSz}px ${R4_FONT}`;
+  ctx.fillStyle = "#FFFFFF";
   ctx.textAlign = "right";
-  ctx.fillStyle = HUD_COLORS.lapCountLabel;
-  ctx.fillText("LAPS", col2, y + 8);
+  ctx.fillText(
+    `${gameState.lapCount + 1}/${gameState.targetLaps}`,
+    right,
+    y + 5,
+  );
 
-  const row2Y = y + 8 + labelSize + 3;
-
-  ctx.font = `${HUD_FONTS.bold} ${timeSize}px ${HUD_FONTS.family}`;
-  ctx.shadowColor = HUD_COLORS.lapTime;
-  ctx.shadowBlur = 8;
-  ctx.fillStyle = HUD_COLORS.lapTime;
-  ctx.textAlign = "left";
-  ctx.fillText(formatTime(gameState.currentTime), col1, row2Y);
-
-  ctx.shadowBlur = 0;
+  // 5. Current time (monospace)
+  const timeSz = Math.max(18, Math.min(28, panelH * 0.32));
+  ctx.font = `italic bold ${timeSz}px ${R4_MONO}`;
+  ctx.fillStyle = "#FFFFFF";
   ctx.textAlign = "right";
-  ctx.font = `${HUD_FONTS.bold} ${lapCountSize}px ${HUD_FONTS.family}`;
-  ctx.fillStyle = HUD_COLORS.lapCount;
-  const lapStr = `${gameState.lapCount + 1}/${gameState.targetLaps}`;
-  ctx.fillText(lapStr, col2, row2Y);
+  ctx.textBaseline = "top";
+  ctx.fillText(
+    formatTime(gameState.currentTime),
+    right,
+    y + 6 + lapLabelSz + 4,
+  );
 
-  const divY = row2Y + timeSize + 6;
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+  // Separator line
+  const divY = y + 6 + lapLabelSz + 4 + timeSz + 4;
+  ctx.strokeStyle = "rgba(253,184,11,0.25)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(x + 6, divY);
   ctx.lineTo(x + panelW - 6, divY);
   ctx.stroke();
 
-  const row3Y = divY + 5;
-  const bestLabelSz = Math.max(8, labelSize - 1);
-  const bestTimeSz = Math.max(10, timeSize * 0.72);
+  // 6. RECORD row
+  const recLabelSz = Math.max(7, Math.min(9, width * 0.015));
+  const recTimeSz = Math.max(10, Math.min(14, panelH * 0.15));
+  const recY = divY + 3;
 
-  ctx.font = `${HUD_FONTS.bold} ${bestLabelSz}px ${HUD_FONTS.family}`;
-  ctx.fillStyle = HUD_COLORS.lapLabel;
+  ctx.font = `italic bold ${recLabelSz}px ${R4_FONT}`;
+  ctx.fillStyle = "rgba(180,180,180,0.70)";
   ctx.textAlign = "left";
-  ctx.fillText("RECORD", col1, row3Y);
+  ctx.textBaseline = "top";
+  ctx.fillText("RECORD", padX, recY);
 
   const bestTxt =
     gameState.bestLapTime < Infinity
       ? formatTime(gameState.bestLapTime)
       : "--:--.---";
-
-  ctx.font = `${HUD_FONTS.bold} ${bestTimeSz}px ${HUD_FONTS.family}`;
+  ctx.font = `italic bold ${recTimeSz}px ${R4_MONO}`;
   ctx.fillStyle =
     gameState.bestLapTime < Infinity
-      ? HUD_COLORS.lapTime
+      ? "rgba(253,184,11,0.85)"
       : "rgba(255,255,255,0.30)";
   ctx.textAlign = "right";
-  ctx.fillText(bestTxt, col2, row3Y);
+  ctx.fillText(bestTxt, right, recY);
 
+  // 7. Last lap flash
   if (gameState.lastLapFlashTimer > 0 && gameState.lastLapTime != null) {
     const alpha = Math.min(1, gameState.lastLapFlashTimer / 2.0);
     const flashH = 20;
     const flashY = y + panelH + 4;
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = "rgba(28, 28, 28, 0.95)";
+    ctx.fillStyle = R4_SHADOW;
+    ctx.fillRect(x + 4, flashY + 4, panelW, flashH);
+    ctx.fillStyle = R4_BG;
     ctx.fillRect(x, flashY, panelW, flashH);
-    ctx.fillStyle = "#FFD700";
-    ctx.font = `${HUD_FONTS.bold} ${Math.max(9, bestLabelSz)}px ${HUD_FONTS.family}`;
+    ctx.fillStyle = R4_ACCENT;
+    ctx.fillRect(x, flashY, 3, flashH);
+    ctx.font = `italic bold ${Math.max(9, recLabelSz)}px ${R4_FONT}`;
+    ctx.fillStyle = R4_ACCENT;
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillText(
       `VOLTA ${gameState.lapCount}:  ${formatTime(gameState.lastLapTime)}`,
-      x + 8,
+      x + 10,
       flashY + flashH * 0.5,
     );
     ctx.restore();
   }
 
-  ctx.textAlign = "left";
   ctx.restore();
 }
 

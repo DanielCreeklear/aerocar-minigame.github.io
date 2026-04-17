@@ -17,7 +17,6 @@ import {
   requiresMotionPermission,
   isIOSWithoutPermission,
 } from "../utils/platform.js";
-
 function normalizeTilt(raw) {
   const sign = Math.sign(raw);
   const abs = Math.abs(raw);
@@ -30,7 +29,6 @@ function normalizeTilt(raw) {
     )
   );
 }
-
 function normalizeTiltMs2(raw) {
   const sign = Math.sign(raw);
   const abs = Math.abs(raw);
@@ -43,22 +41,20 @@ function normalizeTiltMs2(raw) {
     )
   );
 }
-
 const ORIENTATION_PROBE_TIMEOUT = 2000;
-
 class InputController {
   constructor(canvas, handlers) {
     this.canvas = canvas;
     this.handlers = handlers;
     this.isKeyBraking = false;
     this.isKeyBoosting = false;
+    this._activePointers = new Map();
     this._iosPermissionRequested = false;
     this._orientationBound = false;
     this._motionBound = false;
     this._gyroscopeActive = false;
     this.bindEvents();
   }
-
   getCanvasCoords(clientX, clientY) {
     const rect = this.canvas.getBoundingClientRect();
     const scaleX = rect.width ? this.canvas.width / rect.width : 1;
@@ -74,7 +70,6 @@ class InputController {
       ),
     };
   }
-
   isInModeButton(x, y) {
     return (
       x >= this.canvas.width * MODE_BUTTON_X_MIN_RATIO &&
@@ -82,38 +77,31 @@ class InputController {
       y >= this.canvas.height * MODE_BUTTON_Y_MIN_RATIO
     );
   }
-
   isInBoostZone(x) {
     const ratios = getInputRatios(this.canvas.width, this.canvas.height);
     return x >= this.canvas.width * ratios.right;
   }
-
   isInBrakeZone(x) {
     const ratios = getInputRatios(this.canvas.width, this.canvas.height);
     return x <= this.canvas.width * ratios.left;
   }
-
   _bindDeviceOrientationEvent() {
     if (this._orientationBound) return;
     this._orientationBound = true;
-
     const probeTimer = setTimeout(() => {
       if (!this._gyroscopeActive) {
         this._orientationBound = false;
       }
     }, ORIENTATION_PROBE_TIMEOUT);
-
     window.addEventListener("deviceorientation", (e) => {
       if (!this._gyroscopeActive) {
         clearTimeout(probeTimer);
         this._gyroscopeActive = true;
       }
-
       const screenAngle =
         (screen.orientation && screen.orientation.angle) ||
         window.orientation ||
         0;
-
       let raw;
       if (screenAngle === 90) {
         raw = -e.beta;
@@ -122,39 +110,29 @@ class InputController {
       } else {
         raw = e.gamma;
       }
-
       if (raw === null || raw === undefined) return;
       this.handlers.onSteerChange(normalizeTilt(raw));
     });
   }
-
   _bindDeviceMotionEvent() {
     if (this._motionBound) return;
     this._motionBound = true;
-
     const probeTimer = setTimeout(() => {
       if (!this._gyroscopeActive) {
         this._motionBound = false;
       }
     }, ORIENTATION_PROBE_TIMEOUT);
-
     window.addEventListener("devicemotion", (e) => {
       if (!this._gyroscopeActive) {
         clearTimeout(probeTimer);
         this._gyroscopeActive = true;
       }
-
       const ag = e.accelerationIncludingGravity;
       if (!ag) return;
-
       const screenAngle =
         (screen.orientation && screen.orientation.angle) ||
         window.orientation ||
         0;
-
-      // In portrait, x-axis = left/right tilt.
-      // In landscape-right (90°) gravity shifts to y-axis (inverted).
-      // In landscape-left (270°/-90°) gravity shifts to y-axis.
       let raw;
       if (screenAngle === 90) {
         raw = ag.y != null ? -ag.y : 0;
@@ -163,18 +141,12 @@ class InputController {
       } else {
         raw = ag.x != null ? ag.x : 0;
       }
-
       this.handlers.onSteerChange(normalizeTiltMs2(raw));
     });
   }
-
   _requestIOSOrientationPermission() {
     if (this._iosPermissionRequested) return;
     this._iosPermissionRequested = true;
-
-    // iOS 13+: DeviceMotionEvent requires explicit permission granted within
-    // a user-gesture handler. Fall back to DeviceOrientationEvent if motion
-    // is not available.
     if (requiresMotionPermission) {
       DeviceMotionEvent.requestPermission()
         .then((state) => {
@@ -203,14 +175,19 @@ class InputController {
         });
     }
   }
-
   requestOrientationPermission() {
     this._requestIOSOrientationPermission();
   }
-
+  resetInputState() {
+    this._activePointers.clear();
+    this.isKeyBraking = false;
+    this.isKeyBoosting = false;
+    this.handlers.onBrakeChange(false);
+    this.handlers.onBoostChange(false);
+    this.handlers.onSteerChange(0);
+  }
   bindEvents() {
-    const activePointers = new Map();
-
+    const activePointers = this._activePointers;
     const evaluatePointerStates = () => {
       let hasBrake = false;
       let hasBoost = false;
@@ -222,20 +199,16 @@ class InputController {
       this.handlers.onBrakeChange(hasBrake);
       this.handlers.onBoostChange(hasBoost);
     };
-
     this.canvas.addEventListener(
       "pointerdown",
       (e) => {
         e.preventDefault();
         this._requestIOSOrientationPermission();
-
         try {
           this.canvas.setPointerCapture(e.pointerId);
         } catch (_) {}
-
         const { x, y } = this.getCanvasCoords(e.clientX, e.clientY);
         activePointers.set(e.pointerId, { x, y });
-
         if (this.isInModeButton(x, y)) {
           this.handlers.onModeToggle();
         } else if (
@@ -245,12 +218,10 @@ class InputController {
           this.handlers.onScreenTap(x, y);
           this.handlers.onPointerDown?.(x, y);
         }
-
         evaluatePointerStates();
       },
       { passive: false },
     );
-
     this.canvas.addEventListener(
       "pointermove",
       (e) => {
@@ -263,7 +234,6 @@ class InputController {
       },
       { passive: false },
     );
-
     this.canvas.addEventListener(
       "pointerup",
       (e) => {
@@ -275,21 +245,17 @@ class InputController {
       },
       { passive: false },
     );
-
     this.canvas.addEventListener("pointercancel", (e) => {
       const prev = activePointers.get(e.pointerId);
       activePointers.delete(e.pointerId);
       if (prev) this.handlers.onPointerUp?.(prev.x, prev.y);
       evaluatePointerStates();
     });
-
     this.canvas.addEventListener("contextmenu", (e) => {
       e.preventDefault();
     });
-
     window.addEventListener("keydown", (e) => {
       if (PREVENT_DEFAULT_KEYS.includes(e.code)) e.preventDefault();
-
       if (e.code === ACTION_KEYS.SPACE || e.code === ACTION_KEYS.ENTER) {
         if (!this.isKeyBoosting) {
           this.isKeyBoosting = true;
@@ -301,7 +267,6 @@ class InputController {
         }
         return;
       }
-
       if (
         (e.code === ACTION_KEYS.KEY_Z || e.code === ACTION_KEYS.KEY_X) &&
         !e.repeat
@@ -309,7 +274,6 @@ class InputController {
         this.handlers.onModeToggle();
         return;
       }
-
       if (e.code === ACTION_KEYS.ARROW_DOWN || e.code === ACTION_KEYS.KEY_S) {
         if (!this.isKeyBraking) {
           this.isKeyBraking = true;
@@ -317,36 +281,29 @@ class InputController {
         }
         return;
       }
-
       if (e.code === ACTION_KEYS.ARROW_LEFT || e.code === ACTION_KEYS.KEY_A) {
         this.handlers.onSteerChange(-1);
         return;
       }
-
       if (e.code === ACTION_KEYS.ARROW_RIGHT || e.code === ACTION_KEYS.KEY_D) {
         this.handlers.onSteerChange(1);
       }
-
       if (e.code === ACTION_KEYS.KEY_T && !e.repeat) {
         this.handlers.onTelemetryExport?.();
       }
-
       if (e.code === ACTION_KEYS.KEY_H && !e.repeat) {
         this.handlers.onTelemetryHudToggle?.();
       }
     });
-
     window.addEventListener("keyup", (e) => {
       if (e.code === ACTION_KEYS.ARROW_DOWN || e.code === ACTION_KEYS.KEY_S) {
         this.isKeyBraking = false;
         this.handlers.onBrakeChange(false);
       }
-
       if (e.code === ACTION_KEYS.SPACE) {
         this.isKeyBoosting = false;
         this.handlers.onBoostChange(false);
       }
-
       if (
         e.code === ACTION_KEYS.ARROW_LEFT ||
         e.code === ACTION_KEYS.KEY_A ||
@@ -356,10 +313,6 @@ class InputController {
         this.handlers.onSteerChange(0);
       }
     });
-
-    // Android and non-permission browsers: bind directly without a prompt.
-    // iOS 13+ (requiresMotionPermission / requiresOrientationPermission) waits
-    // for the first pointerdown to call _requestIOSOrientationPermission().
     if (!requiresMotionPermission && !requiresOrientationPermission) {
       if (isIOSWithoutPermission) {
         this.handlers.onGyroscopeUnavailable?.();
@@ -369,7 +322,6 @@ class InputController {
         this._bindDeviceOrientationEvent();
       }
     }
-
     if (typeof history !== "undefined" && history.pushState) {
       history.pushState({ gameActive: true }, "");
       window.addEventListener("popstate", () => {
@@ -378,5 +330,4 @@ class InputController {
     }
   }
 }
-
 export { InputController };

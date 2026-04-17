@@ -38,31 +38,25 @@ import { StartMenuState } from "../menu/states/StartMenuState.js";
 import { RaceState } from "../menu/states/RaceState.js";
 import { GameOverState } from "../menu/states/GameOverState.js";
 import { SettingsState } from "../menu/states/SettingsState.js";
-
 const ORIENTATION_POLL_INTERVAL = 50;
 const ORIENTATION_POLL_MAX_MS = 500;
-
 class Game {
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
-
     this.track = new Track();
     this.renderer = new Renderer(this.canvas, this.ctx);
     this.energyManager = new EnergyManager();
     this.gameLoop = new GameLoop();
     this.telemetry = new TelemetryManager();
-
     this.trackSeed = TRACK_SEED;
     this.totalSegments = TOTAL_SEGMENTS;
     this.track.init(this.totalSegments, this.trackSeed);
-
     this._screenChangeTime = Date.now();
     this._gyroscopeWarning = false;
     this._iosPermissionStatus = requiresOrientationPermission ? "prompt" : null;
     this.rankingService = createRankingService();
     this.rankings = [];
-
     this.rankingService
       .load()
       .then((entries) => {
@@ -70,7 +64,6 @@ class Game {
         if (this.gameState) this.gameState.rankings = entries;
       })
       .catch(() => {});
-
     this._nameInput = document.createElement("input");
     this._nameInput.type = "text";
     this._nameInput.maxLength = 8;
@@ -79,7 +72,6 @@ class Game {
     this._nameInput.enterKeyHint = "done";
     this._nameInput.inputMode = "text";
     this._nameInput.setAttribute("autocapitalize", "characters");
-
     this._nameInput.readOnly = true;
     Object.assign(this._nameInput.style, {
       position: "fixed",
@@ -124,7 +116,6 @@ class Game {
         .toUpperCase()
         .replace(/[^A-Z0-9]/g, "");
     });
-
     this.input = new InputController(canvas, {
       onBrakeChange: (active) => {
         if (this.gameState.currentScreen === SCREENS.RACE) {
@@ -172,10 +163,6 @@ class Game {
         this._updateIosTapOverlay();
       },
     });
-
-    // iOS permission overlay: a real HTML <button> covering the canvas so that
-    // Safari treats the click as a genuine user gesture, allowing
-    // DeviceMotionEvent.requestPermission() to succeed.
     this._iosTapOverlay = document.createElement("button");
     this._iosTapOverlay.type = "button";
     this._iosTapOverlay.setAttribute("aria-hidden", "true");
@@ -199,7 +186,6 @@ class Game {
     this._iosTapOverlay.addEventListener("click", (e) =>
       this._handleIosTapOverlayClick(e),
     );
-
     this._handleViewportResize = this._handleViewportResize.bind(this);
     window.addEventListener("resize", this._handleViewportResize);
     window.addEventListener("orientationchange", () => {
@@ -212,20 +198,16 @@ class Game {
       };
       setTimeout(poll, ORIENTATION_POLL_INTERVAL);
     });
-
     if (typeof window !== "undefined" && window.visualViewport) {
       window.visualViewport.addEventListener(
         "resize",
         this._handleViewportResize,
       );
     }
-
     this._handleViewportResize();
-
     this.reset(SCREENS.START);
     this._initStateManager();
   }
-
   _makeStateDeps() {
     return {
       getGameState: () => this.gameState,
@@ -244,7 +226,6 @@ class Game {
       },
     };
   }
-
   _createState(screen) {
     const deps = this._makeStateDeps();
     switch (screen) {
@@ -262,27 +243,23 @@ class Game {
         return null;
     }
   }
-
   _initStateManager() {
     this.stateManager = new StateManager();
     this.stateManager.transition(
       this._createState(this.gameState.currentScreen),
     );
   }
-
   _handleViewportResize() {
     const vv = typeof window !== "undefined" && window.visualViewport;
     if (vv && this._nameInput && this._nameInput.style.display !== "none") {
       const keyboardVisible = window.innerHeight - vv.height > 100;
       if (keyboardVisible) return;
     }
-
     resizeCanvas(this.canvas);
     if (this._nameInput && this._nameInput.style.display !== "none") {
       this._showNameInput();
     }
   }
-
   _setScreen(screen) {
     this.gameState.currentScreen = screen;
     this.gameState.isWaitingToStart = screen === SCREENS.START;
@@ -292,10 +269,10 @@ class Game {
     if (screen !== SCREENS.GAME_OVER) {
       this._hideNameInput();
     }
+    this.input?.resetInputState();
     this.stateManager?.transition(this._createState(screen));
     this._updateIosTapOverlay();
   }
-
   _updateIosTapOverlay() {
     if (!this._iosTapOverlay) return;
     const show =
@@ -303,10 +280,8 @@ class Game {
       this.gameState?.currentScreen === SCREENS.START;
     this._iosTapOverlay.style.display = show ? "block" : "none";
   }
-
   _handleIosTapOverlayClick(e) {
     this._iosTapOverlay.style.display = "none";
-
     const rect = this.canvas.getBoundingClientRect();
     const scaleX = rect.width ? this.canvas.width / rect.width : 1;
     const scaleY = rect.height ? this.canvas.height / rect.height : 1;
@@ -318,12 +293,10 @@ class Game {
       0,
       Math.min(this.canvas.height, (e.clientY - rect.top) * scaleY),
     );
-
     const forwardClick = () => {
       this.stateManager?.onPointerDown(cx, cy);
       requestAnimationFrame(() => this.stateManager?.onPointerUp(cx, cy));
     };
-
     if (requiresMotionPermission) {
       DeviceMotionEvent.requestPermission()
         .then((state) => {
@@ -356,12 +329,10 @@ class Game {
       forwardClick();
     }
   }
-
   reset(initialScreen = SCREENS.START) {
     this._screenChangeTime = Date.now();
     this._hideNameInput();
     const carState = createCarStateFields();
-
     this.gameState = {
       currentScreen: initialScreen,
       isWaitingToStart: initialScreen === SCREENS.START,
@@ -392,21 +363,17 @@ class Game {
       obstacles: createObstacles(this.track),
       collisionCooldown: 0,
     };
-
     this.energyManager.reset();
     this.telemetry.reset();
     this.gameState.battery = this.energyManager.getCurrentCharge();
-
     this._setScreen(initialScreen);
     this.renderer.resetHud();
   }
-
   _advanceIntroScreen() {
     if (this.gameState.currentScreen === SCREENS.PREVIEW) {
       this._setScreen(SCREENS.START);
     }
   }
-
   _startRace() {
     if (this.gameState.currentScreen === SCREENS.START) {
       this._setScreen(SCREENS.RACE);
@@ -414,37 +381,29 @@ class Game {
       this.gameState.lapStartTime = Date.now();
     }
   }
-
   handleScreenTap(x, y) {
     this.stateManager?.onPointerDown(x, y);
   }
-
   update(dt) {
     this.gameState.screenAge = (Date.now() - this._screenChangeTime) / 1000;
     this.gameState.pendingName = this._nameInput
       ? this._nameInput.value.toUpperCase()
       : "";
-
     if (this.gameState.currentScreen !== SCREENS.RACE) return;
-
     if (this.gameState.lastLapFlashTimer > 0) {
       this.gameState.lastLapFlashTimer -= dt;
     }
     if (this.gameState.rescueFlashTimer > 0) {
       this.gameState.rescueFlashTimer -= dt;
     }
-
     this.gameState.currentTime = Date.now() - this.gameState.startTime;
-
     this.energyManager.update(this.gameState, dt);
     this.gameState.battery = this.energyManager.getCurrentCharge();
-
     const currentTrackPoint = this.track.getTrackPoint(this.gameState.currentZ);
     this.gameState.currentTrackPoint = currentTrackPoint;
     this.gameState.currentCurvature =
       currentTrackPoint.rawCurve ?? currentTrackPoint.curve ?? 0;
     this.gameState.isInModeXZone = currentTrackPoint.isModeXZone || false;
-
     const CURVE_LOOKAHEAD = 400;
     const upcomingFeatures = this.track.getUpcomingFeatures(
       this.gameState.currentZ,
@@ -460,13 +419,11 @@ class Game {
       this.gameState.currentZ + 300,
     );
     this.gameState.upcomingIsModeXZone = lookaheadPoint.isModeXZone || false;
-
     {
       const target = this.gameState.steerTarget || 0;
       const current = this.gameState.steerInput || 0;
       const dir = Math.sign(target - current);
       this.gameState.steerInput = clamp(current + dir * STEER_RATE * dt, -1, 1);
-
       if (
         target === 0 &&
         Math.sign(this.gameState.steerInput) !== Math.sign(current) &&
@@ -475,7 +432,6 @@ class Game {
         this.gameState.steerInput = 0;
       }
     }
-
     const { lapCompleted, physicsTelemetry } = updateCarPhysics(
       this.gameState,
       this.track,
@@ -483,9 +439,7 @@ class Game {
       currentTrackPoint,
     );
     this.telemetry.log(this.gameState, physicsTelemetry);
-
     updateRivals(this.gameState, this.track, dt);
-
     if (!this.gameState.rescueInProgress) {
       const offScreenThreshold = this.canvas.width / 2 / LATERAL_RENDER_SCALE;
       if (Math.abs(this.gameState.lateralOffset || 0) >= offScreenThreshold) {
@@ -496,7 +450,6 @@ class Game {
         this.gameState.rescueFlashTimer = OFF_TRACK_RESCUE_FLASH_DURATION;
       }
     }
-
     if (lapCompleted) {
       const now = Date.now();
       const lapTime = now - this.gameState.lapStartTime;
@@ -506,7 +459,6 @@ class Game {
       }
       this.gameState.lastLapTime = lapTime;
       this.gameState.lastLapFlashTimer = 3.0;
-
       this.gameState.lapCount += 1;
       if (this.gameState.lapCount >= this.gameState.targetLaps) {
         this._setScreen(SCREENS.GAME_OVER);
@@ -517,38 +469,53 @@ class Game {
       }
     }
   }
-
   _showNameInput() {
     const cw = this.canvas.width;
     const ch = this.canvas.height;
     const isPortrait = ch > cw;
-    const x = isPortrait ? Math.round(cw * 0.22) : Math.round(cw * 0.565);
-    const y = isPortrait ? Math.round(ch * 0.832) : Math.round(ch * 0.838);
-    const w = isPortrait ? Math.round(cw * 0.52) : Math.round(cw * 0.2);
-    const fs = Math.max(14, Math.min(22, cw * 0.022));
+    const pad = Math.max(20, cw * 0.05);
+    let entryX, entryY, entryW, rowH;
+    if (isPortrait) {
+      const rkY = ch * 0.36;
+      const rkAvail = ch - 40 - (rkY + 14) - 8;
+      rowH = Math.max(24, Math.min(34, rkAvail / 5 - 4));
+      const rkStart = rkY + 14;
+      entryX = pad + 34;
+      entryY = rkStart + 4 * (rowH + 4);
+      entryW = cw - pad * 2 - 34;
+    } else {
+      const divX = Math.round(cw * 0.5);
+      const rightX = divX + 20;
+      const rightW = cw - rightX - pad;
+      const rkAvail = ch - 40 - (pad + 22) - 8;
+      rowH = Math.max(24, Math.min(42, rkAvail / 5 - 4));
+      const rkStart = pad + 22;
+      entryX = rightX + 34;
+      entryY = rkStart + 4 * (rowH + 4);
+      entryW = rightW - 34;
+    }
+    // font-size >= 16px prevents iOS Safari from zooming on focus
+    const fs = Math.max(16, Math.min(22, cw * 0.022));
     Object.assign(this._nameInput.style, {
-      left: `${x}px`,
-      top: `${y}px`,
-      width: `${w}px`,
+      left: `${Math.round(entryX)}px`,
+      top: `${Math.round(entryY)}px`,
+      width: `${Math.round(entryW)}px`,
+      height: `${Math.round(rowH)}px`,
+      lineHeight: `${Math.round(rowH)}px`,
       fontSize: `${fs}px`,
       display: "block",
     });
     this._nameInput.value = "";
-
     this._nameInput.readOnly = false;
-
     setTimeout(() => this._nameInput.focus(), 80);
   }
-
   _hideNameInput() {
     if (this._nameInput) {
       this._nameInput.style.display = "none";
       this._nameInput.blur();
-
       this._nameInput.readOnly = true;
     }
   }
-
   start() {
     this.gameLoop.start((dt) => {
       this.update(dt);
@@ -562,5 +529,4 @@ class Game {
     });
   }
 }
-
 export { Game };
