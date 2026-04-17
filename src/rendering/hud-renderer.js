@@ -14,9 +14,11 @@ const SPEEDOMETER_SMOOTHING = 0.18;
 
 const TOUCH_BRAKE_RATIO = 0.35;
 const TOUCH_BOOST_RATIO = 0.65;
-const TOUCH_HINT_FONT = "'Barlow Condensed', 'Segoe UI', Arial, sans-serif";
+const TOUCH_HINT_FONT =
+  "'Barlow Condensed', 'Press Start 2P', 'Courier New', monospace";
 
-const RESCUE_FONT = "'Barlow Condensed', 'Segoe UI', Arial, sans-serif";
+const RESCUE_FONT =
+  "'Barlow Condensed', 'Press Start 2P', 'Courier New', monospace";
 
 function drawRescueBanner(ctx, gameState, width, height) {
   const timer = gameState.rescueFlashTimer || 0;
@@ -27,17 +29,16 @@ function drawRescueBanner(ctx, gameState, width, height) {
   ctx.save();
   if (timer > 10.85) {
     ctx.globalAlpha = 0.35 * Math.min(1, (timer - 10.85) / 0.1);
-    ctx.fillStyle = "#CC001E";
+    ctx.fillStyle = "#E60000";
     ctx.fillRect(0, 0, width, height);
   }
 
-  
   const bh = Math.max(48, height * 0.1);
   const by = height * 0.38;
   ctx.globalAlpha = alpha * 0.92;
-  ctx.fillStyle = "#0a0008";
+  ctx.fillStyle = "#1C1C1C";
   ctx.fillRect(0, by, width, bh);
-  ctx.strokeStyle = "#CC001E";
+  ctx.strokeStyle = "#E60000";
   ctx.lineWidth = 2;
   ctx.strokeRect(0, by, width, bh);
 
@@ -46,8 +47,8 @@ function drawRescueBanner(ctx, gameState, width, height) {
   ctx.font = `700 ${sz}px ${RESCUE_FONT}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.shadowColor = "#CC001E";
-  ctx.shadowBlur = 14;
+  ctx.shadowColor = "#E60000";
+  ctx.shadowBlur = 12;
   ctx.fillStyle = "#FF2244";
   ctx.fillText("!!  PENALIDADE — RESGATE  !!", width * 0.5, by + bh * 0.5);
 
@@ -66,7 +67,7 @@ function drawTouchZoneHints(ctx, gameState, width, height) {
   ctx.globalAlpha = isBraking ? 0.22 : 0.07;
   ctx.fillRect(0, hintY, width * TOUCH_BRAKE_RATIO, hintH);
 
-  ctx.fillStyle = "#C87D12";
+  ctx.fillStyle = "#FFB800";
   ctx.globalAlpha = isBoosting ? 0.22 : 0.07;
   ctx.fillRect(
     width * TOUCH_BOOST_RATIO,
@@ -76,13 +77,13 @@ function drawTouchZoneHints(ctx, gameState, width, height) {
   );
 
   ctx.globalAlpha = 0.18;
-  ctx.strokeStyle = "#CC001E";
+  ctx.strokeStyle = "#E60000";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(width * TOUCH_BRAKE_RATIO, hintY);
   ctx.lineTo(width * TOUCH_BRAKE_RATIO, height);
   ctx.stroke();
-  ctx.strokeStyle = "#C87D12";
+  ctx.strokeStyle = "#FFB800";
   ctx.beginPath();
   ctx.moveTo(width * TOUCH_BOOST_RATIO, hintY);
   ctx.lineTo(width * TOUCH_BOOST_RATIO, height);
@@ -93,19 +94,18 @@ function drawTouchZoneHints(ctx, gameState, width, height) {
   const midY = hintY + hintH * 0.5;
 
   ctx.globalAlpha = isBraking ? 1.0 : 0.45;
-  ctx.fillStyle = "#CC001E";
+  ctx.fillStyle = "#E60000";
   ctx.textAlign = "left";
   ctx.fillText("< FREIO", 10, midY);
 
   ctx.globalAlpha = isBoosting ? 1.0 : 0.45;
-  ctx.fillStyle = "#C87D12";
+  ctx.fillStyle = "#FFB800";
   ctx.textAlign = "right";
   ctx.fillText("BOOST >", width - 10, midY);
 
-  
   const centerSz = Math.max(11, Math.min(14, width * 0.032));
   ctx.globalAlpha = 0.28;
-  ctx.fillStyle = "#8899bb";
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
   ctx.font = `400 ${centerSz}px ${TOUCH_HINT_FONT}`;
   ctx.textAlign = "center";
   ctx.fillText("MODO", width * 0.5, midY);

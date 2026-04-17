@@ -1,22 +1,22 @@
 import { formatTime } from "../utils/math.js";
 
 const R = {
-  bg: "#060c18",
-  bgMid: "#0c1420",
-  bgTop: "#0f1c2e",
-  crimson: "#CC001E",
-  crimsonDim: "rgba(204, 0, 30, 0.50)",
-  crimsonFill: "rgba(204, 0, 30, 0.13)",
-  crimsonHigh: "rgba(204, 0, 30, 0.26)",
-  gold: "#C87D12",
-  steel: "#4A6890",
-  steelDim: "rgba(74, 104, 144, 0.75)",
-  text: "#F2EDE4",
-  textDim: "rgba(242, 237, 228, 0.60)",
-  textFaint: "rgba(242, 237, 228, 0.28)",
-  barBg: "#030a14",
-  divider: "rgba(204, 0, 30, 0.35)",
-  font: "'Barlow Condensed', 'Segoe UI', Arial, sans-serif",
+  bg: "#CC4400",
+  bgMid: "#D94C00",
+  bgTop: "#E85500",
+  crimson: "#E60000",
+  crimsonDim: "rgba(230, 0, 0, 0.50)",
+  crimsonFill: "rgba(230, 0, 0, 0.15)",
+  crimsonHigh: "rgba(230, 0, 0, 0.25)",
+  gold: "#FFB800",
+  steel: "#FFFFFF",
+  steelDim: "rgba(255, 255, 255, 0.70)",
+  text: "#FFFFFF",
+  textDim: "rgba(255, 255, 255, 0.80)",
+  textFaint: "rgba(255, 255, 255, 0.35)",
+  barBg: "#1C1C1C",
+  divider: "rgba(255, 255, 255, 0.45)",
+  font: "'Barlow Condensed', 'Press Start 2P', 'Courier New', monospace",
 };
 
 function csz(ref, ratio, lo, hi) {
@@ -65,7 +65,7 @@ function bottomBar(ctx, w, h, leftTxt, rightTxt, blink) {
 function topStripe(ctx, w, leftTxt, rightTxt) {
   const sh = 32;
   ctx.save();
-  ctx.fillStyle = "#0a1220";
+  ctx.fillStyle = R.barBg;
   ctx.fillRect(0, 0, w, sh);
   ctx.strokeStyle = R.divider;
   ctx.lineWidth = 1;
@@ -253,9 +253,9 @@ function sampleTrackPointIndexes(pointsLength) {
 }
 
 function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
-  ctx.fillStyle = "rgba(4,10,20,0.97)";
+  ctx.fillStyle = "rgba(28, 28, 28, 0.97)";
   ctx.fillRect(mapX, mapY, mapW, mapH);
-  ctx.strokeStyle = "rgba(58,80,112,0.35)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.60)";
   ctx.lineWidth = 1;
   ctx.strokeRect(mapX, mapY, mapW, mapH);
   const points = track.trackData;
@@ -275,9 +275,9 @@ function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
   ctx.beginPath();
   ctx.moveTo(path[0].x, path[0].y);
   for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
-  ctx.shadowColor = R.steel;
-  ctx.shadowBlur = 6;
-  ctx.strokeStyle = R.steel;
+  ctx.shadowColor = R.gold;
+  ctx.shadowBlur = 4;
+  ctx.strokeStyle = R.gold;
   ctx.lineWidth = 2;
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
@@ -291,7 +291,7 @@ function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
   ctx.beginPath();
   ctx.arc(path[path.length - 1].x, path[path.length - 1].y, 4, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = R.textDim;
+  ctx.fillStyle = R.steel;
   ctx.font = `700 10px ${R.font}`;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
@@ -320,8 +320,8 @@ function drawIOSPermissionButton(ctx, x, y, w, blink) {
   const btnW = Math.min(w, w * 0.9);
   ctx.save();
   ctx.fillStyle = blink
-    ? "rgba(74, 104, 144, 0.18)"
-    : "rgba(74, 104, 144, 0.10)";
+    ? "rgba(255, 255, 255, 0.15)"
+    : "rgba(255, 255, 255, 0.07)";
   ctx.fillRect(x, y, btnW, btnH);
   ctx.strokeStyle = blink ? R.steel : R.steelDim;
   ctx.lineWidth = 1;
@@ -357,16 +357,21 @@ function drawStartScreen(ctx, w, h, gameState, track) {
   diagonalCut(ctx, w, isPortrait ? 50 : 72);
 
   {
-    const btnSz = csz(w, 0.06, 18, 28);
-    const btnPad = 8;
-    const btnX = btnPad;
-    const btnY = btnPad;
+    const btnSz = csz(w, 0.045, 13, 22);
+    const btnPad = 10;
+    const btnH = Math.max(28, btnSz + 12);
+    const btnW = Math.max(100, csz(w, 0.22, 90, 160));
     ctx.save();
-    ctx.textBaseline = "top";
-    ctx.textAlign = "left";
+    ctx.fillStyle = R.barBg;
+    ctx.fillRect(btnPad, btnPad, btnW, btnH);
+    ctx.strokeStyle = "rgba(255,255,255,0.55)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(btnPad, btnPad, btnW, btnH);
     ctx.fillStyle = R.steel;
     ctx.font = `700 ${btnSz}px ${R.font}`;
-    ctx.fillText("⚙ CONFIG", btnX, btnY);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("CONFIG", btnPad + btnW * 0.5, btnPad + btnH * 0.5);
     ctx.restore();
   }
 
@@ -581,7 +586,7 @@ function drawGameOverScreen(ctx, w, h, gameState) {
 
   const grad = ctx.createLinearGradient(0, 0, 0, h);
   grad.addColorStop(0, R.crimson);
-  grad.addColorStop(1, "rgba(204,0,30,0)");
+  grad.addColorStop(1, "rgba(230,0,0,0)");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 3, h);
 
@@ -820,6 +825,75 @@ function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
   ctx.restore();
 }
 
+function r4Panel(ctx, x, y, panelW, title, items, fontSize, lineH) {
+  const titleH = Math.max(26, fontSize + 10);
+  // Title bar
+  ctx.save();
+  ctx.fillStyle = R.barBg;
+  ctx.fillRect(x, y, panelW, titleH);
+  ctx.strokeStyle = "rgba(255,255,255,0.55)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, panelW, titleH);
+  ctx.fillStyle = R.steel;
+  ctx.font = `700 ${fontSize}px ${R.font}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(title.toUpperCase(), x + 10, y + titleH * 0.5);
+  ctx.restore();
+  // Items
+  const listY = y + titleH;
+  const totalH = items.length * lineH;
+  ctx.save();
+  ctx.fillStyle = "rgba(28,28,28,0.82)";
+  ctx.fillRect(x, listY, panelW, totalH);
+  ctx.strokeStyle = "rgba(255,255,255,0.30)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, listY, panelW, totalH);
+  items.forEach((item, i) => {
+    const iy = listY + i * lineH;
+    // row divider
+    if (i > 0) {
+      ctx.strokeStyle = "rgba(255,255,255,0.12)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x + 1, iy);
+      ctx.lineTo(x + panelW - 1, iy);
+      ctx.stroke();
+    }
+    // checkbox
+    const cbSize = Math.max(10, fontSize * 0.75);
+    const cbX = x + 10;
+    const cbY = iy + (lineH - cbSize) * 0.5;
+    ctx.strokeStyle = R.steel;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(cbX, cbY, cbSize, cbSize);
+    if (item.checked) {
+      ctx.strokeStyle = R.gold;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cbX + 2, cbY + cbSize * 0.5);
+      ctx.lineTo(cbX + cbSize * 0.38, cbY + cbSize - 2);
+      ctx.lineTo(cbX + cbSize - 2, cbY + 2);
+      ctx.stroke();
+    }
+    // label
+    ctx.fillStyle = item.checked ? R.gold : R.textDim;
+    ctx.font = `700 ${fontSize}px ${R.font}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(item.label.toUpperCase(), cbX + cbSize + 10, iy + lineH * 0.5);
+    // right value
+    if (item.value) {
+      ctx.fillStyle = "rgba(255,255,255,0.50)";
+      ctx.font = `400 ${Math.max(9, fontSize - 2)}px ${R.font}`;
+      ctx.textAlign = "right";
+      ctx.fillText(item.value, x + panelW - 10, iy + lineH * 0.5);
+    }
+  });
+  ctx.restore();
+  return titleH + totalH;
+}
+
 function drawSettingsScreen(ctx, w, h, gameState) {
   const isPortrait = h > w;
   const age = gameState ? gameState.screenAge || 0 : 0;
@@ -836,82 +910,76 @@ function drawSettingsScreen(ctx, w, h, gameState) {
   ctx.fillStyle = _bgGrad;
   ctx.fillRect(0, 0, w, h);
   scanlines(ctx, w, h);
-  diagonalCut(ctx, w, isPortrait ? 50 : 72);
 
-  const tx = csz(w, 0.06, 18, 40);
+  const tx = csz(w, 0.06, 16, 36);
+  const panelW = isPortrait ? w - tx * 2 : Math.min(520, w * 0.55);
+  const fontSize = csz(w, 0.028, 12, 17);
+  const lineH = Math.max(34, fontSize + 18);
 
+  // Title
   ctx.save();
-  ctx.shadowColor = R.crimson;
-  ctx.shadowBlur = 14;
-  ctx.fillStyle = R.text;
-  ctx.font = `700 ${csz(w, 0.1, 28, 52)}px ${R.font}`;
+  ctx.fillStyle = R.barBg;
+  ctx.fillRect(0, 0, w, Math.max(40, fontSize * 2.2));
+  ctx.strokeStyle = "rgba(255,255,255,0.40)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, Math.max(40, fontSize * 2.2));
+  ctx.lineTo(w, Math.max(40, fontSize * 2.2));
+  ctx.stroke();
+  ctx.fillStyle = R.steel;
+  ctx.font = `700 ${csz(w, 0.05, 18, 32)}px ${R.font}`;
   ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
-  ctx.fillText("CONFIG", tx, h * 0.18);
-  ctx.shadowBlur = 0;
+  ctx.textBaseline = "middle";
+  ctx.fillText("CONFIG", tx, Math.max(40, fontSize * 2.2) * 0.5);
   ctx.restore();
 
-  ctx.save();
-  ctx.fillStyle = R.crimson;
-  ctx.fillRect(tx, h * 0.18 + 6, 80, 2);
-  ctx.restore();
+  const startY = Math.max(40, fontSize * 2.2) + 18;
 
-  const secY1 = h * 0.26;
-  const colW = isPortrait ? w - tx * 2 : (w - tx * 3) * 0.5;
-  const col2X = isPortrait ? tx : tx * 2 + colW;
-
-  const ctrlSz = csz(w, 0.032, 12, 17);
-  const labSz = csz(w, 0.024, 10, 14);
-
-  sectionLabel(ctx, tx, secY1, colW, "CONTROLES");
-  ctx.save();
-  ctx.textBaseline = "top";
-  ctx.textAlign = "left";
-  ctx.fillStyle = R.textDim;
-  ctx.font = `400 ${ctrlSz}px ${R.font}`;
-  const ctrlLines = [
-    "←  SEGURAR ESQUERDA  —  FREIO / ERS",
-    "→  SEGURAR DIREITA   —  BOOST",
+  // Controls panel
+  let y = startY;
+  const ctrlItems = [
+    { label: "Segurar esquerda  —  Freio / ERS", checked: true },
+    { label: "Segurar direita  —  Boost", checked: true },
+    { label: "Z ou X  —  Alterna modo aero", checked: true },
   ];
-  ctrlLines.forEach((line, i) => {
-    ctx.fillText(line, tx, secY1 + 18 + i * (ctrlSz + 6));
-  });
-  ctx.fillStyle = R.steelDim;
-  ctx.font = `400 ${labSz}px ${R.font}`;
-  ctx.fillText(
-    "CENTRO-DIREITA / Z ou X  —  ALTERNA MODO AERO",
-    tx,
-    secY1 + 18 + ctrlLines.length * (ctrlSz + 6),
-  );
-  ctx.restore();
+  y +=
+    r4Panel(
+      ctx,
+      tx,
+      y,
+      panelW,
+      "Mode : Controles",
+      ctrlItems,
+      fontSize,
+      lineH,
+    ) + 16;
 
-  const secY2 = isPortrait ? secY1 + 18 + (ctrlLines.length + 1) * (ctrlSz + 6) + 24 : secY1;
-  sectionLabel(ctx, col2X, secY2, colW, "MODOS AERO");
-  ctx.save();
-  ctx.textBaseline = "top";
-  ctx.textAlign = "left";
-  const modeLines = [
-    ["MODO X", "Alta carga — melhor em curvas"],
-    ["MODO Z", "Baixa carga — melhor em retas"],
+  // Aero modes panel
+  const aeroItems = [
+    {
+      label: "Modo X  —  Alta carga aerodinamica",
+      value: "CURVAS",
+      checked: false,
+    },
+    {
+      label: "Modo Z  —  Baixa carga aerodinamica",
+      value: "RETAS",
+      checked: true,
+    },
   ];
-  modeLines.forEach(([label, desc], i) => {
-    const ly = secY2 + 18 + i * (ctrlSz + 10);
-    ctx.fillStyle = i === 0 ? R.crimson : R.steel;
-    ctx.font = `700 ${ctrlSz}px ${R.font}`;
-    ctx.fillText(label, col2X, ly);
-    const lw = ctx.measureText(label).width;
-    ctx.fillStyle = R.textDim;
-    ctx.font = `400 ${labSz}px ${R.font}`;
-    ctx.fillText(`  ${desc}`, col2X + lw, ly);
-  });
-  ctx.restore();
+  r4Panel(ctx, tx, y, panelW, "Mode : Aero", aeroItems, fontSize, lineH);
 
   if (gameState && gameState.gyroscopeWarning) {
-    drawGyroscopeWarning(ctx, tx, h * 0.74, w - tx * 2);
+    drawGyroscopeWarning(ctx, tx, h * 0.82, w - tx * 2);
   }
 
-  bottomBar(ctx, w, h, "", "◀  VOLTAR", blink);
+  bottomBar(ctx, w, h, "", "VOLTAR", blink);
   ctx.restore();
 }
 
-export { drawStartScreen, drawGameOverScreen, drawTrackPreviewScreen, drawSettingsScreen };
+export {
+  drawStartScreen,
+  drawGameOverScreen,
+  drawTrackPreviewScreen,
+  drawSettingsScreen,
+};

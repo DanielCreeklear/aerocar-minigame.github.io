@@ -37,8 +37,8 @@ function drawLapPanel(ctx, gameState, width, height) {
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  ctx.fillStyle = HUD_COLORS.lapPanelBorder;
-  ctx.fillRect(x, y, 3, panelH);
+  ctx.fillStyle = "#FFB800";
+  ctx.fillRect(x, y, 4, panelH);
 
   const pad = 10;
   const col1 = x + pad;
@@ -48,7 +48,6 @@ function drawLapPanel(ctx, gameState, width, height) {
   const timeSize = responsiveSize(width, HUD_FONTS.lapTime);
   const lapCountSize = responsiveSize(width, HUD_FONTS.lapCount);
 
-  
   ctx.font = `${HUD_FONTS.bold} ${labelSize}px ${HUD_FONTS.family}`;
   ctx.fillStyle = HUD_COLORS.lapLabel;
   ctx.textAlign = "left";
@@ -59,7 +58,6 @@ function drawLapPanel(ctx, gameState, width, height) {
   ctx.fillStyle = HUD_COLORS.lapCountLabel;
   ctx.fillText("LAPS", col2, y + 8);
 
-  
   const row2Y = y + 8 + labelSize + 3;
 
   ctx.font = `${HUD_FONTS.bold} ${timeSize}px ${HUD_FONTS.family}`;
@@ -76,9 +74,8 @@ function drawLapPanel(ctx, gameState, width, height) {
   const lapStr = `${gameState.lapCount + 1}/${gameState.targetLaps}`;
   ctx.fillText(lapStr, col2, row2Y);
 
-  
   const divY = row2Y + timeSize + 6;
-  ctx.strokeStyle = "rgba(200, 150, 10, 0.25)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(x + 6, divY);
@@ -107,14 +104,13 @@ function drawLapPanel(ctx, gameState, width, height) {
   ctx.textAlign = "right";
   ctx.fillText(bestTxt, col2, row3Y);
 
-  
   if (gameState.lastLapFlashTimer > 0 && gameState.lastLapTime != null) {
     const alpha = Math.min(1, gameState.lastLapFlashTimer / 2.0);
     const flashH = 20;
     const flashY = y + panelH + 4;
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = "rgba(230, 0, 0, 0.88)";
+    ctx.fillStyle = "rgba(28, 28, 28, 0.95)";
     ctx.fillRect(x, flashY, panelW, flashH);
     ctx.fillStyle = "#FFD700";
     ctx.font = `${HUD_FONTS.bold} ${Math.max(9, bestLabelSz)}px ${HUD_FONTS.family}`;

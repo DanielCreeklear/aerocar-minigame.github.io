@@ -25,7 +25,6 @@ function drawBatteryBar(ctx, gameState, width, height) {
   const x = marginX;
   const y = marginY;
 
-  
   ctx.save();
   const rankLabelSz = responsiveSize(width, HUD_FONTS.rankLabel);
   const rankValSz = responsiveSize(width, HUD_FONTS.rankValue);
@@ -85,7 +84,7 @@ function drawBatteryBar(ctx, gameState, width, height) {
       ctx.fillStyle = fillColor;
     } else {
       ctx.globalAlpha = 1;
-      ctx.fillStyle = "rgba(7, 5, 26, 0.9)";
+      ctx.fillStyle = "rgba(28, 28, 28, 0.90)";
     }
     ctx.fillRect(sx, y, segW, barH);
 
