@@ -7,9 +7,9 @@ export const VZ_DRAG_MODE_Z = 0.993;
 export const VZ_MAX_MODE_X = 23;
 export const VZ_MAX_MODE_Z = 19;
 
-export const MANUAL_BRAKE_DECEL = 0.82;
+export const MANUAL_BRAKE_DECEL = 0.88;
 export const MANUAL_BRAKE_DECEL_SOFT = 0.97;
-export const BRAKE_RAMP_RATE = 0.45;
+export const BRAKE_RAMP_RATE = 0.25;
 
 export const BOOST_BASE_GAIN = 16;
 
