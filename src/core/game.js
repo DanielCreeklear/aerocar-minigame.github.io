@@ -269,6 +269,7 @@ class Game {
     if (screen !== SCREENS.GAME_OVER) {
       this._hideNameInput();
     }
+    this.input?.resetInputState();
     this.stateManager?.transition(this._createState(screen));
     this._updateIosTapOverlay();
   }

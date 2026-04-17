@@ -41,7 +41,7 @@ export const PREVENT_DEFAULT_KEYS = [
   ACTION_KEYS.ARROW_RIGHT,
 ];
 export const STEER_DEADZONE_DEG = 3;
-export const STEER_MAX_TILT_DEG = 22;
+export const STEER_MAX_TILT_DEG = 17;
 export const STEER_DEADZONE_MS2 = 0.5;
-export const STEER_MAX_TILT_MS2 = 5.5;
-export const STEER_RATE = 0.12;
+export const STEER_MAX_TILT_MS2 = 4.2;
+export const STEER_RATE = 0.18;

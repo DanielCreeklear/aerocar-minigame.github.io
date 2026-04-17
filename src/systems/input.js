@@ -48,6 +48,7 @@ class InputController {
     this.handlers = handlers;
     this.isKeyBraking = false;
     this.isKeyBoosting = false;
+    this._activePointers = new Map();
     this._iosPermissionRequested = false;
     this._orientationBound = false;
     this._motionBound = false;
@@ -177,8 +178,16 @@ class InputController {
   requestOrientationPermission() {
     this._requestIOSOrientationPermission();
   }
+  resetInputState() {
+    this._activePointers.clear();
+    this.isKeyBraking = false;
+    this.isKeyBoosting = false;
+    this.handlers.onBrakeChange(false);
+    this.handlers.onBoostChange(false);
+    this.handlers.onSteerChange(0);
+  }
   bindEvents() {
-    const activePointers = new Map();
+    const activePointers = this._activePointers;
     const evaluatePointerStates = () => {
       let hasBrake = false;
       let hasBoost = false;
@@ -321,4 +330,4 @@ class InputController {
     }
   }
 }
-export { InputController };
+export { InputController };
