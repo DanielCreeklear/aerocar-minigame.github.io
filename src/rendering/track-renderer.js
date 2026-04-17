@@ -94,17 +94,16 @@ function drawTrack(ctx, gameState, track, metrics) {
     const bw = metrics.borderWidth;
     const step = metrics.roadSampleStep;
 
-    // Barrier positions at 85% parallax speed
-    const barrierCameraX = cameraX * 0.85;
-    const barrierInfo = track.getTrackPoint(sliceZ);
-    const barrierCenterX =
-      width * HALF_RATIO + (barrierInfo.x - barrierCameraX);
-    const barrierLeft = Math.round(barrierCenterX - halfRoad);
-    const barrierRight = Math.round(barrierCenterX + halfRoad);
+    // ── Alternating grass strips (outside barriers) ───────────────────────────
+    const grassBeat = Math.floor(sliceZ / 150) % 2 === 0;
+    if (!grassBeat) {
+      ctx.fillStyle = RENDER_COLORS.grassDark;
+      ctx.fillRect(0, y, width, step);
+    }
 
-    // ── R4 Concrete barriers (parallax at 85%) ───────────────────────────────
-    const leftCurbOuter = barrierLeft - bw;
-    const rightCurbOuter = barrierRight + bw;
+    // ── R4 Concrete barriers (anchored to track — no fake horizontal parallax)
+    const leftCurbOuter = left - bw;
+    const rightCurbOuter = right + bw;
     _drawBarrierSlice(ctx, leftCurbOuter - runoffW, -1, sliceZ, y, step);
     _drawBarrierSlice(ctx, rightCurbOuter + runoffW, +1, sliceZ, y, step);
 
