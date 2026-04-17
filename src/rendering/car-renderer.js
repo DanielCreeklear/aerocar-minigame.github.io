@@ -188,13 +188,35 @@ function drawCarBody(ctx, gameState, metrics) {
 function drawBoostFlame(ctx, gameState, metrics) {
   if (!gameState.isBoosting || gameState.battery <= 0) return;
   const { carWidth, carHeight } = metrics;
-  ctx.fillStyle = RENDER_COLORS.boost;
-  const flameHeight =
-    (BOOST_FLAME_HEIGHT_MIN + Math.random() * BOOST_FLAME_HEIGHT_RANDOM) *
-    (carHeight / CAR_HEIGHT);
-  const flameWidth = BOOST_FLAME_WIDTH * (carWidth / CAR_WIDTH);
-  const flameX = BOOST_FLAME_X_OFFSET * (carWidth / CAR_WIDTH);
-  ctx.fillRect(flameX, carHeight / 2, flameWidth, flameHeight);
+  const bodyW = carWidth * 0.72;
+  const bodyH = carHeight * 0.88;
+
+  const glowRadius = bodyW * 0.62 + Math.random() * bodyW * 0.1;
+  const grad = ctx.createRadialGradient(0, 0, bodyW * 0.1, 0, 0, glowRadius);
+  grad.addColorStop(0, `rgba(0,220,255,${0.18 + Math.random() * 0.08})`);
+  grad.addColorStop(0.5, `rgba(0,140,255,${0.1 + Math.random() * 0.05})`);
+  grad.addColorStop(1, `rgba(0,80,200,0)`);
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, glowRadius, bodyH * 0.6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const arcCount = 3 + Math.floor(Math.random() * 3);
+  const rearY = bodyH / 2;
+  for (let i = 0; i < arcCount; i++) {
+    const sx = (Math.random() - 0.5) * bodyW * 0.7;
+    const len = 6 + Math.random() * 10;
+    ctx.strokeStyle = `rgba(${100 + Math.floor(Math.random() * 155)},230,255,${0.55 + Math.random() * 0.45})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(sx, rearY);
+    ctx.lineTo(sx + (Math.random() - 0.5) * 8, rearY + len * 0.5);
+    ctx.lineTo(sx + (Math.random() - 0.5) * 6, rearY + len);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 function drawCar(ctx, gameState, track, metrics) {
   const { width, height, carWidth, carHeight } = metrics;
@@ -209,7 +231,6 @@ function drawCar(ctx, gameState, track, metrics) {
     (gameState.carVisualHeading || 0) * CAR_HEADING_VISUAL_SCALE +
     (gameState.spinRotation || 0);
 
-  // Motion trail (>250 km/h)
   if (speed >= TRAIL_SPEED_THRESHOLD) {
     _pushTrail(drawX, drawY, totalAngle);
     _drawMotionTrail(ctx, carWidth, carHeight);
@@ -219,7 +240,6 @@ function drawCar(ctx, gameState, track, metrics) {
 
   drawDustCloud(ctx, gameState, drawX, drawY, carWidth, carHeight);
 
-  // Water spray (>100 km/h)
   if (speed >= SPRAY_SPEED_THRESHOLD) {
     _drawSpray(ctx, drawX, drawY, carWidth, carHeight);
   }

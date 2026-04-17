@@ -256,7 +256,11 @@ class InputController {
     });
     window.addEventListener("keydown", (e) => {
       if (PREVENT_DEFAULT_KEYS.includes(e.code)) e.preventDefault();
-      if (e.code === ACTION_KEYS.SPACE || e.code === ACTION_KEYS.ENTER) {
+      if (
+        e.code === ACTION_KEYS.SPACE ||
+        e.code === ACTION_KEYS.ENTER ||
+        e.code === ACTION_KEYS.ARROW_UP
+      ) {
         if (!this.isKeyBoosting) {
           this.isKeyBoosting = true;
           this.handlers.onBoostChange(true);
@@ -300,7 +304,7 @@ class InputController {
         this.isKeyBraking = false;
         this.handlers.onBrakeChange(false);
       }
-      if (e.code === ACTION_KEYS.SPACE) {
+      if (e.code === ACTION_KEYS.SPACE || e.code === ACTION_KEYS.ARROW_UP) {
         this.isKeyBoosting = false;
         this.handlers.onBoostChange(false);
       }

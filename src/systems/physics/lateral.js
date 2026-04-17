@@ -127,7 +127,7 @@ function integrateLateralState(
     offTrack ? 0 : strategy.aeroGripFactor,
     offTrack ? 0 : strategy.understeerFactor,
   );
-  const { nextVz, isOffTrack } = applyOffTrackPenalties(
+  const { nextVz: vzAfterOffTrack, isOffTrack } = applyOffTrackPenalties(
     gameState,
     rawX,
     vz,
@@ -135,6 +135,11 @@ function integrateLateralState(
     dt,
     curvature,
   );
+
+  const overDrive = gameState.overDriveFactor || 0;
+  const nextVz = !offTrack && overDrive > 0
+    ? vzAfterOffTrack * Math.pow(1 - clamp(overDrive * 0.008, 0, 0.008), dt)
+    : vzAfterOffTrack;
   const wall = CURB_HALF + OFF_TRACK_MAX_OFFSET_MARGIN;
   let x = rawX;
   if (x > wall) {
@@ -178,4 +183,4 @@ export {
   updateHeadingAndLateral,
   applyOffTrackPenalties,
   integrateLateralState,
-};
+};

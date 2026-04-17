@@ -22,18 +22,11 @@ function updateRivals(gameState, track, dt) {
   if (gameState.collisionCooldown > 0) {
     gameState.collisionCooldown -= dt;
   }
+  const playerLapZNow = gameState.currentZ % lapLength;
   for (const rival of rivals) {
     rival.currentZ = (rival.currentZ + rival.speed * dt) % lapLength;
     rival.lateralOffset =
       Math.sin(rival.currentZ * 0.0015 + rival.id * 1.3) * RIVAL_LATERAL_SWAY;
-  }
-  const playerLapZNow = gameState.currentZ % lapLength;
-  for (const rival of rivals) {
-    const dZ = wrapDelta(playerLapZNow, rival.currentZ, lapLength);
-    if (dZ < -(lapLength * 0.6)) {
-      const spawnAhead = 250 + Math.random() * 600;
-      rival.currentZ = (playerLapZNow + spawnAhead) % lapLength;
-    }
   }
   for (const obs of obstacles) {
     if (obs.hitTimer > 0) {
@@ -53,7 +46,7 @@ function updateRivals(gameState, track, dt) {
     if (lateralOverlap <= 0) continue;
     const zOverlap = 1 - absZ / COLLISION_RIVAL_Z;
     const combinedOverlap = lateralOverlap * zOverlap;
-    if (combinedOverlap > 0.15) {
+    if (combinedOverlap > 0.05) {
       const penaltyStrength =
         combinedOverlap * (1 - COLLISION_RIVAL_SPEED_FACTOR);
       gameState.speed = (gameState.speed || 0) * (1 - penaltyStrength);
@@ -83,4 +76,4 @@ function updateRivals(gameState, track, dt) {
     }
   }
 }
-export { updateRivals, wrapDelta };
+export { updateRivals, wrapDelta };

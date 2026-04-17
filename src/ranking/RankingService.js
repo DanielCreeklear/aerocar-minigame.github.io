@@ -36,4 +36,4 @@ export class RankingService {
     );
     return { rankings: next, newEntryIndex };
   }
-}
+}

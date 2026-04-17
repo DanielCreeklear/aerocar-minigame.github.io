@@ -26,10 +26,11 @@ function createRivals(count = RIVAL_COUNT, track) {
       rank,
       currentZ: startZ,
       speed,
+      speedPersonality: (Math.random() - 0.5) * 8,
       lateralOffset: 0,
       livery: RIVAL_LIVERIES[i % RIVAL_LIVERIES.length],
     });
   }
   return rivals;
 }
-export { createRivals };
+export { createRivals };
