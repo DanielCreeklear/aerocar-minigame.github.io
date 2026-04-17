@@ -1,16 +1,12 @@
 import { clamp } from "../../utils/math.js";
 import { responsiveSize } from "../../utils/canvas.js";
 import { HUD_COLORS, HUD_FONTS, HUD_LAYOUT } from "../../constants/index.js";
-
-
 function drawCurveIndicator(ctx, gameState, width) {
   const curve = gameState.upcomingCurvature || 0;
   const absCurve = Math.abs(curve);
   if (absCurve < 0.0005) return;
-
   const intensity = clamp(absCurve / 0.003, 0, 1);
   const arrow = curve > 0 ? ">>" : "<<";
-
   let color;
   if (intensity > 0.6) {
     color = HUD_COLORS.curveHard;
@@ -19,9 +15,7 @@ function drawCurveIndicator(ctx, gameState, width) {
   } else {
     color = HUD_COLORS.curveNormal;
   }
-
   const fontSize = responsiveSize(width, HUD_FONTS.curveArrow);
-
   ctx.save();
   ctx.shadowColor = color;
   ctx.shadowBlur = intensity > 0.5 ? 12 : 6;
@@ -33,5 +27,4 @@ function drawCurveIndicator(ctx, gameState, width) {
   ctx.fillText(arrow, width * 0.5, HUD_LAYOUT.curveIndicatorY);
   ctx.restore();
 }
-
-export { drawCurveIndicator };
+export { drawCurveIndicator };

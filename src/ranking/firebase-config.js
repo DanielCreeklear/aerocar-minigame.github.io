@@ -7,7 +7,5 @@ export const firebaseConfig = {
   messagingSenderId: "",
   appId: "",
 };
-
 export const RANKINGS_DB_PATH = "rankings";
-
-export const MAX_RANKINGS = 10;
+export const MAX_RANKINGS = 10;

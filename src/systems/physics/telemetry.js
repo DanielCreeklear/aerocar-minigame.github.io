@@ -4,5 +4,4 @@ function buildPhysicsTelemetry(data) {
     effectiveGrip: data.effectiveGrip,
   };
 }
-
-export { buildPhysicsTelemetry };
+export { buildPhysicsTelemetry };

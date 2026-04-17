@@ -9,7 +9,6 @@ import {
   VZ_MAX_MODE_X,
   VZ_MAX_MODE_Z,
 } from "../constants/index.js";
-
 const LowDragMode = {
   name: AERO_MODES.X,
   accel: VZ_ACCEL_MODE_X,
@@ -19,7 +18,6 @@ const LowDragMode = {
   aeroGripFactor: 0.002,
   understeerFactor: 0.55,
 };
-
 const HighDownforceMode = {
   name: AERO_MODES.Z,
   accel: VZ_ACCEL_MODE_Z,
@@ -29,9 +27,7 @@ const HighDownforceMode = {
   aeroGripFactor: 0.048,
   understeerFactor: 0.08,
 };
-
 function getAeroStrategy(aeroMode) {
   return aeroMode === AERO_MODES.X ? LowDragMode : HighDownforceMode;
 }
-
-export { LowDragMode, HighDownforceMode, getAeroStrategy };
+export { LowDragMode, HighDownforceMode, getAeroStrategy };

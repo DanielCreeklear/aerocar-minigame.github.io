@@ -1,5 +1,4 @@
 import { AERO_MODES, TRACK_TYPES } from "../constants/index.js";
-
 function createCarStateFields() {
   return {
     aeroMode: AERO_MODES.X,
@@ -32,26 +31,20 @@ function createCarStateFields() {
     centrifugalSlideTimer: 0,
   };
 }
-
 const MODE_TOGGLE_COOLDOWN_MS = 220;
-
 function toggleCarMode(gameState) {
   const now = Date.now();
   const elapsed = now - (gameState.lastModeToggleAt || 0);
-
   if (elapsed >= MODE_TOGGLE_COOLDOWN_MS) {
     gameState.aeroMode =
       gameState.aeroMode === AERO_MODES.Z ? AERO_MODES.X : AERO_MODES.Z;
     gameState.lastModeToggleAt = now;
   }
 }
-
 function setCarBoost(gameState, isBoosting) {
   gameState.isBoosting = isBoosting;
 }
-
 function setCarBrake(gameState, isBraking) {
   gameState.isBraking = isBraking;
 }
-
-export { createCarStateFields, toggleCarMode, setCarBoost, setCarBrake };
+export { createCarStateFields, toggleCarMode, setCarBoost, setCarBrake };

@@ -1,7 +1,6 @@
 import { GameState } from "../GameState.js";
 import { Button } from "../Button.js";
 import { drawStartScreen } from "../../rendering/screen-renderer.js";
-
 export class StartMenuState extends GameState {
   constructor(deps) {
     super();
@@ -10,19 +9,13 @@ export class StartMenuState extends GameState {
     this._settingsBtn = new Button();
     this._gyroBtn = new Button();
   }
-
   render(ctx, w, h) {
     drawStartScreen(ctx, w, h, this._deps.getGameState(), this._deps.track);
-
-    // Full lower area is the CTA (start race)
     const thumbY = h * 0.65;
     this._ctaBtn.setRect(0, thumbY, w, h - thumbY - 40);
     this._ctaBtn.renderPressOverlay(ctx);
-
-    // Footer △ area → settings (top-right quarter of footer bar)
     const footerH = 40;
     this._settingsBtn.setRect(w * 0.5, h - footerH, w * 0.5, footerH);
-
     const gs = this._deps.getGameState();
     if (gs && gs.iosPermissionStatus === "prompt") {
       const isPortrait = h > w;
@@ -60,7 +53,6 @@ export class StartMenuState extends GameState {
       this._gyroBtn.setRect(0, 0, 0, 0);
     }
   }
-
   onPointerDown(x, y) {
     if (this._settingsBtn.isHit(x, y)) {
       this._settingsBtn.pressed = true;
@@ -79,14 +71,12 @@ export class StartMenuState extends GameState {
     }
     if (this._ctaBtn.isHit(x, y)) {
       this._ctaBtn.pressed = true;
-
       requestAnimationFrame(() => this._deps.callbacks.startRace());
     }
   }
-
   onPointerUp(_x, _y) {
     this._ctaBtn.pressed = false;
     this._settingsBtn.pressed = false;
     this._gyroBtn.pressed = false;
   }
-}
+}

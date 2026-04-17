@@ -1,4 +1,3 @@
-
 export class Button {
   constructor() {
     this.x = 0;
@@ -7,16 +6,12 @@ export class Button {
     this.h = 0;
     this.pressed = false;
   }
-
-  
   setRect(x, y, w, h) {
     this.x = x;
     this.y = y;
     this.w = w;
     this.h = h;
   }
-
-  
   isHit(px, py) {
     const ex = this.w * 0.1; 
     const ey = this.h * 0.1; 
@@ -27,8 +22,6 @@ export class Button {
       py <= this.y + this.h + ey
     );
   }
-
-  
   renderPressOverlay(ctx) {
     if (!this.pressed) return;
     ctx.save();
@@ -37,4 +30,4 @@ export class Button {
     ctx.fillRect(this.x, this.y, this.w, this.h);
     ctx.restore();
   }
-}
+}

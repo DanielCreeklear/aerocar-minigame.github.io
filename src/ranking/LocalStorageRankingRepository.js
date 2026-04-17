@@ -1,5 +1,4 @@
 const STORAGE_KEY = "apexz_rankings";
-
 export class LocalStorageRankingRepository {
   fetchAll() {
     try {
@@ -16,13 +15,11 @@ export class LocalStorageRankingRepository {
       return Promise.resolve([]);
     }
   }
-
   saveAll(entries) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
     } catch {
-      
     }
     return Promise.resolve();
   }
-}
+}

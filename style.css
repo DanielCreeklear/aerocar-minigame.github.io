@@ -3,7 +3,6 @@
   padding: 0;
   box-sizing: border-box;
 }
-
 body,
 html {
   width: 100%;
@@ -13,14 +12,11 @@ html {
   touch-action: none;
   user-select: none;
   font-family: "Barlow Condensed", "Courier New", Consolas, monospace;
-  /* Prevent iOS rubber-band / Android pull-to-refresh */
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
-  /* Respect device safe-area insets (notch / home indicator) */
   padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
     env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
-
 #gameCanvas {
   display: block;
   width: 100%;
@@ -28,6 +24,5 @@ html {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
-  /* Disable double-tap zoom without breaking other gestures */
   touch-action: manipulation;
-}
+}

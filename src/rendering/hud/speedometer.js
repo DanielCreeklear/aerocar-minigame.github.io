@@ -1,8 +1,10 @@
-import { responsiveSize } from "../../utils/canvas.js";
-import { HUD_COLORS, HUD_FONTS, HUD_LAYOUT } from "../../constants/index.js";
-
 const SPEEDOMETER_MAX_KMH = 399;
-
+const R4_ACCENT = "#FDB80B";
+const R4_BG = "rgba(26,26,26,0.80)";
+const R4_SHADOW = "rgba(0,0,0,0.50)";
+const R4_FONT =
+  "'Archivo Narrow','Barlow Condensed','Roboto Condensed',sans-serif";
+const R4_MONO = "'Courier New',monospace";
 function drawSpeedometer(
   ctx,
   displayedSpeedKmh,
@@ -11,85 +13,38 @@ function drawSpeedometer(
   isPortrait = false,
   touchReserve = 0,
 ) {
-  const L = HUD_LAYOUT;
-  const panelW = Math.max(
-    isPortrait ? 100 : L.speedMinWidth,
-    Math.min(isPortrait ? 150 : L.speedMaxWidth, width * L.speedWidthRatio),
-  );
-  const panelH = Math.max(
-    isPortrait ? 90 : L.speedMinHeight,
-    Math.min(isPortrait ? 130 : L.speedMaxHeight, height * L.speedHeightRatio),
-  );
-  const edgeMargin = Math.max(
-    L.speedMinMargin,
-    Math.min(L.speedMaxMargin, width * L.speedRightMarginRatio),
-  );
-  const bottomMargin = Math.max(
-    L.speedMinMargin,
-    Math.min(L.speedMaxMargin, height * L.speedBottomMarginRatio),
-  );
-
-  const x = isPortrait ? edgeMargin : width - panelW - edgeMargin;
-  const y = height - panelH - bottomMargin - touchReserve;
-
   const shownSpeed = Math.round(displayedSpeedKmh);
   const ratio = Math.min(1, displayedSpeedKmh / SPEEDOMETER_MAX_KMH);
-
+  const panelW = Math.max(110, Math.min(170, width * 0.28));
+  const panelH = Math.max(80, Math.min(110, height * 0.17));
+  const margin = Math.max(8, Math.min(16, width * 0.025));
+  const x = width - panelW - margin;
+  const y = height - panelH - margin - touchReserve;
   ctx.save();
-
-  const r = Math.min(panelW * 0.4, panelH * 0.58);
-  const cx = x + panelW / 2;
-  const cy = y + panelH - 6;
-
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, Math.PI, Math.PI * 2, false);
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, Math.PI * 1.8, Math.PI * 2, false);
-  ctx.strokeStyle = "rgba(230, 0, 0, 0.35)";
-  ctx.lineWidth = 4;
-  ctx.stroke();
-
-  const needleAngle = Math.PI + ratio * Math.PI;
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, Math.PI, needleAngle, false);
-  ctx.strokeStyle = HUD_COLORS.speedValue;
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  const nx = cx + Math.cos(needleAngle) * r;
-  const ny = cy + Math.sin(needleAngle) * r;
-  ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.lineTo(nx, ny);
-  ctx.strokeStyle = HUD_COLORS.speedPanelBorder;
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.arc(cx, cy, 3, 0, Math.PI * 2);
-  ctx.fillStyle = HUD_COLORS.speedPanelBorder;
-  ctx.fill();
-
-  const gaugeCenter = cy - r * 0.42;
-  const speedFontSize = responsiveSize(width, HUD_FONTS.speedValue);
-  ctx.fillStyle = HUD_COLORS.speedValue;
-  ctx.font = `${HUD_FONTS.bold} ${speedFontSize}px ${HUD_FONTS.family}`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "bottom";
-  ctx.fillText(`${shownSpeed}`, cx, gaugeCenter);
-
-  const labelFontSize = responsiveSize(width, HUD_FONTS.speedLabel);
-  ctx.fillStyle = HUD_COLORS.speedLabel;
-  ctx.font = `${HUD_FONTS.bold} ${labelFontSize}px ${HUD_FONTS.family}`;
-  ctx.textAlign = "center";
+  ctx.fillStyle = R4_SHADOW;
+  ctx.fillRect(x + 4, y + 4, panelW, panelH);
+  ctx.fillStyle = R4_BG;
+  ctx.fillRect(x, y, panelW, panelH);
+  ctx.fillStyle = R4_ACCENT;
+  ctx.fillRect(x, y, 3, panelH);
+  const speedSz = Math.max(36, Math.min(52, panelH * 0.58));
+  ctx.font = `italic bold ${speedSz}px ${R4_MONO}`;
+  ctx.fillStyle = "#FFFFFF";
+  ctx.textAlign = "right";
   ctx.textBaseline = "top";
-  ctx.fillText("KM/H", cx, gaugeCenter + 2);
-
+  ctx.fillText(`${shownSpeed}`, x + panelW - 8, y + 6);
+  const unitSz = Math.max(10, Math.min(13, panelH * 0.14));
+  ctx.font = `italic bold ${unitSz}px ${R4_FONT}`;
+  ctx.fillStyle = R4_ACCENT;
+  ctx.textAlign = "right";
+  ctx.textBaseline = "top";
+  ctx.fillText("KM/H", x + panelW - 8, y + 8 + speedSz);
+  const barY = y + panelH - 6;
+  const barInnerW = panelW - 6;
+  ctx.fillStyle = "rgba(255,255,255,0.10)";
+  ctx.fillRect(x + 3, barY, barInnerW, 4);
+  ctx.fillStyle = R4_ACCENT;
+  ctx.fillRect(x + 3, barY, barInnerW * ratio, 4);
   ctx.restore();
 }
-
-export { drawSpeedometer };
+export { drawSpeedometer };

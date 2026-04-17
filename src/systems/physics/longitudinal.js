@@ -10,9 +10,7 @@ import {
   OFF_TRACK_ACCEL_FACTOR,
   OVERSPEED_DRAG,
 } from "../../constants/index.js";
-
 let _brakeRamp = 0;
-
 function computeForwardVelocity(gameState, dt, strategy) {
   let vz = gameState.speed || 0;
   if (!gameState.isSpinning) {
@@ -22,7 +20,6 @@ function computeForwardVelocity(gameState, dt, strategy) {
     vz = Math.max(0, vz + strategy.accel * accelFactor * accelTaper * dt);
   }
   vz *= Math.pow(strategy.drag, dt);
-
   const battery = gameState.battery || 0;
   if (gameState.isBoosting && battery > 0) {
     const slip = Math.max(0, gameState.currentSlip || 0);
@@ -39,10 +36,8 @@ function computeForwardVelocity(gameState, dt, strategy) {
       vz = Math.min(maxBoostVz, vz + boostAccel * boostTaper * dt);
     }
   }
-
   if (gameState.isBraking && vz > 0) {
     _brakeRamp = Math.min(1, _brakeRamp + dt * BRAKE_RAMP_RATE);
-    
     const expRamp = _brakeRamp * _brakeRamp;
     const effectiveDecel =
       MANUAL_BRAKE_DECEL_SOFT +
@@ -51,12 +46,9 @@ function computeForwardVelocity(gameState, dt, strategy) {
   } else {
     _brakeRamp = 0;
   }
-
   if (vz > strategy.maxVz) {
     vz = strategy.maxVz + (vz - strategy.maxVz) * Math.pow(OVERSPEED_DRAG, dt);
   }
-
   return Math.max(0, vz);
 }
-
-export { computeForwardVelocity };
+export { computeForwardVelocity };

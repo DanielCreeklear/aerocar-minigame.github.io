@@ -1,11 +1,9 @@
 export const SCREEN_HALF_RATIO = 0.5;
 export const LEFT_INPUT_RATIO = 0.25;
 export const RIGHT_INPUT_RATIO = 0.75;
-
 export const MODE_BUTTON_X_MIN_RATIO = 0.33;
 export const MODE_BUTTON_X_MAX_RATIO = 0.67;
 export const MODE_BUTTON_Y_MIN_RATIO = 0.82;
-
 export function getInputRatios(width, height) {
   if (height <= width) {
     return {
@@ -14,14 +12,12 @@ export function getInputRatios(width, height) {
       right: RIGHT_INPUT_RATIO,
     };
   }
-
   return {
     screenHalf: SCREEN_HALF_RATIO,
     left: 0.35,
     right: 0.65,
   };
 }
-
 export const ACTION_KEYS = {
   SPACE: "Space",
   ENTER: "Enter",
@@ -37,7 +33,6 @@ export const ACTION_KEYS = {
   KEY_T: "KeyT",
   KEY_H: "KeyH",
 };
-
 export const PREVENT_DEFAULT_KEYS = [
   ACTION_KEYS.SPACE,
   ACTION_KEYS.ARROW_UP,
@@ -45,10 +40,8 @@ export const PREVENT_DEFAULT_KEYS = [
   ACTION_KEYS.ARROW_LEFT,
   ACTION_KEYS.ARROW_RIGHT,
 ];
-
 export const STEER_DEADZONE_DEG = 3;
 export const STEER_MAX_TILT_DEG = 22;
-// DeviceMotionEvent uses accelerationIncludingGravity (m/s²); gravity ≈ ±9.81
 export const STEER_DEADZONE_MS2 = 0.5;
 export const STEER_MAX_TILT_MS2 = 5.5;
-export const STEER_RATE = 0.12;
+export const STEER_RATE = 0.12;

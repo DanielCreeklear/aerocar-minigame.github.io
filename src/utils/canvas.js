@@ -1,13 +1,9 @@
 import { UI_FONT } from "../constants/index.js";
-
 export function resizeCanvas(canvas) {
-
-  
   const vv = typeof window !== "undefined" && window.visualViewport;
   canvas.width = vv ? Math.round(vv.width) : window.innerWidth;
   canvas.height = vv ? Math.round(vv.height) : window.innerHeight;
 }
-
 export function drawRoundedRect(ctx, x, y, width, height, radius) {
   const r = Math.max(0, Math.min(radius, width / 2, height / 2));
   ctx.beginPath();
@@ -22,12 +18,10 @@ export function drawRoundedRect(ctx, x, y, width, height, radius) {
   ctx.quadraticCurveTo(x, y, x + r, y);
   ctx.closePath();
 }
-
 export function responsiveSize(width, spec) {
   return Math.max(spec.min, Math.min(spec.max, width * spec.ratio));
 }
-
 export function responsiveFont(width, spec, weight = "") {
   const weightPrefix = weight ? `${weight} ` : "";
   return `${weightPrefix}${responsiveSize(width, spec)}px ${UI_FONT.family}`;
-}
+}
