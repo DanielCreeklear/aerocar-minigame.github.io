@@ -48,4 +48,7 @@ export const PREVENT_DEFAULT_KEYS = [
 
 export const STEER_DEADZONE_DEG = 3;
 export const STEER_MAX_TILT_DEG = 22;
+// DeviceMotionEvent uses accelerationIncludingGravity (m/s²); gravity ≈ ±9.81
+export const STEER_DEADZONE_MS2 = 0.5;
+export const STEER_MAX_TILT_MS2 = 5.5;
 export const STEER_RATE = 0.12;

@@ -7,10 +7,14 @@ import {
   PREVENT_DEFAULT_KEYS,
   STEER_DEADZONE_DEG,
   STEER_MAX_TILT_DEG,
+  STEER_DEADZONE_MS2,
+  STEER_MAX_TILT_MS2,
 } from "../constants/index.js";
 import {
   browserSupportsDeviceOrientation,
+  browserSupportsDeviceMotion,
   requiresOrientationPermission,
+  requiresMotionPermission,
   isIOSWithoutPermission,
 } from "../utils/platform.js";
 
@@ -27,6 +31,18 @@ function normalizeTilt(raw) {
   );
 }
 
+function normalizeTiltMs2(raw) {
+  const sign = Math.sign(raw);
+  const abs = Math.abs(raw);
+  if (abs < STEER_DEADZONE_MS2) return 0;
+  return (
+    sign *
+    Math.min(
+      1,
+      (abs - STEER_DEADZONE_MS2) / (STEER_MAX_TILT_MS2 - STEER_DEADZONE_MS2),
+    )
+  );
+}
 
 const ORIENTATION_PROBE_TIMEOUT = 2000;
 
@@ -38,6 +54,7 @@ class InputController {
     this.isKeyBoosting = false;
     this._iosPermissionRequested = false;
     this._orientationBound = false;
+    this._motionBound = false;
     this._gyroscopeActive = false;
     this.bindEvents();
   }
@@ -80,7 +97,6 @@ class InputController {
     if (this._orientationBound) return;
     this._orientationBound = true;
 
-
     const probeTimer = setTimeout(() => {
       if (!this._gyroscopeActive) {
         this._orientationBound = false;
@@ -112,11 +128,67 @@ class InputController {
     });
   }
 
+  _bindDeviceMotionEvent() {
+    if (this._motionBound) return;
+    this._motionBound = true;
+
+    const probeTimer = setTimeout(() => {
+      if (!this._gyroscopeActive) {
+        this._motionBound = false;
+      }
+    }, ORIENTATION_PROBE_TIMEOUT);
+
+    window.addEventListener("devicemotion", (e) => {
+      if (!this._gyroscopeActive) {
+        clearTimeout(probeTimer);
+        this._gyroscopeActive = true;
+      }
+
+      const ag = e.accelerationIncludingGravity;
+      if (!ag) return;
+
+      const screenAngle =
+        (screen.orientation && screen.orientation.angle) ||
+        window.orientation ||
+        0;
+
+      // In portrait, x-axis = left/right tilt.
+      // In landscape-right (90°) gravity shifts to y-axis (inverted).
+      // In landscape-left (270°/-90°) gravity shifts to y-axis.
+      let raw;
+      if (screenAngle === 90) {
+        raw = ag.y != null ? -ag.y : 0;
+      } else if (screenAngle === -90 || screenAngle === 270) {
+        raw = ag.y != null ? ag.y : 0;
+      } else {
+        raw = ag.x != null ? ag.x : 0;
+      }
+
+      this.handlers.onSteerChange(normalizeTiltMs2(raw));
+    });
+  }
+
   _requestIOSOrientationPermission() {
     if (this._iosPermissionRequested) return;
     this._iosPermissionRequested = true;
 
-    if (requiresOrientationPermission) {
+    // iOS 13+: DeviceMotionEvent requires explicit permission granted within
+    // a user-gesture handler. Fall back to DeviceOrientationEvent if motion
+    // is not available.
+    if (requiresMotionPermission) {
+      DeviceMotionEvent.requestPermission()
+        .then((state) => {
+          if (state === "granted") {
+            this._bindDeviceMotionEvent();
+            this.handlers.onGyroPermissionChange?.("granted");
+          } else {
+            this.handlers.onGyroPermissionChange?.("denied");
+          }
+        })
+        .catch(() => {
+          this.handlers.onGyroPermissionChange?.("denied");
+        });
+    } else if (requiresOrientationPermission) {
       DeviceOrientationEvent.requestPermission()
         .then((state) => {
           if (state === "granted") {
@@ -137,9 +209,6 @@ class InputController {
   }
 
   bindEvents() {
-
-    
-    
     const activePointers = new Map();
 
     const evaluatePointerStates = () => {
@@ -160,12 +229,9 @@ class InputController {
         e.preventDefault();
         this._requestIOSOrientationPermission();
 
-
         try {
           this.canvas.setPointerCapture(e.pointerId);
-        } catch (_) {
-          
-        }
+        } catch (_) {}
 
         const { x, y } = this.getCanvasCoords(e.clientX, e.clientY);
         activePointers.set(e.pointerId, { x, y });
@@ -176,7 +242,6 @@ class InputController {
           !this.handlers.isRaceActive?.() ||
           (!this.isInBoostZone(x) && !this.isInBrakeZone(x))
         ) {
-          
           this.handlers.onScreenTap(x, y);
           this.handlers.onPointerDown?.(x, y);
         }
@@ -292,18 +357,19 @@ class InputController {
       }
     });
 
-
-
-    if (browserSupportsDeviceOrientation && !requiresOrientationPermission) {
+    // Android and non-permission browsers: bind directly without a prompt.
+    // iOS 13+ (requiresMotionPermission / requiresOrientationPermission) waits
+    // for the first pointerdown to call _requestIOSOrientationPermission().
+    if (!requiresMotionPermission && !requiresOrientationPermission) {
       if (isIOSWithoutPermission) {
         this.handlers.onGyroscopeUnavailable?.();
-      } else {
+      } else if (browserSupportsDeviceMotion) {
+        this._bindDeviceMotionEvent();
+      } else if (browserSupportsDeviceOrientation) {
         this._bindDeviceOrientationEvent();
       }
     }
 
-
-    
     if (typeof history !== "undefined" && history.pushState) {
       history.pushState({ gameActive: true }, "");
       window.addEventListener("popstate", () => {

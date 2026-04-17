@@ -4,7 +4,9 @@ const platform =
 
 export const isIOS =
   /iP(hone|od|ad)/.test(ua) ||
-  (platform === "MacIntel" && typeof navigator.maxTouchPoints === "number" && navigator.maxTouchPoints > 1);
+  (platform === "MacIntel" &&
+    typeof navigator.maxTouchPoints === "number" &&
+    navigator.maxTouchPoints > 1);
 
 export const isAndroid = /Android/.test(ua);
 
@@ -21,12 +23,18 @@ export const isStandalone =
 export const browserSupportsDeviceOrientation =
   typeof window !== "undefined" && "DeviceOrientationEvent" in window;
 
+export const browserSupportsDeviceMotion =
+  typeof window !== "undefined" && "DeviceMotionEvent" in window;
+
 export const requiresOrientationPermission =
   browserSupportsDeviceOrientation &&
   typeof DeviceOrientationEvent !== "undefined" &&
   typeof DeviceOrientationEvent.requestPermission === "function";
 
-
+export const requiresMotionPermission =
+  browserSupportsDeviceMotion &&
+  typeof DeviceMotionEvent !== "undefined" &&
+  typeof DeviceMotionEvent.requestPermission === "function";
 
 export const isIOSWithoutPermission =
   isIOS &&
