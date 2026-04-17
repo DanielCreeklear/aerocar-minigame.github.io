@@ -121,10 +121,19 @@ class InputController {
         .then((state) => {
           if (state === "granted") {
             this._bindDeviceOrientationEvent();
+            this.handlers.onGyroPermissionChange?.("granted");
+          } else {
+            this.handlers.onGyroPermissionChange?.("denied");
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          this.handlers.onGyroPermissionChange?.("denied");
+        });
     }
+  }
+
+  requestOrientationPermission() {
+    this._requestIOSOrientationPermission();
   }
 
   bindEvents() {
