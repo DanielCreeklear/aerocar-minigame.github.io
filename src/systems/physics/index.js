@@ -8,6 +8,7 @@ import {
   VISUAL_HEADING_LERP,
   MAX_DRIFT_VISUAL_ANGLE,
   DRIFT_ANGLE_LERP,
+  UNDERSTEER_FACTOR,
 } from "../../constants/index.js";
 function resolveTrackState(gameState, currentTrackInfo) {
   gameState.trackType = currentTrackInfo.type;
@@ -56,9 +57,17 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     strategy,
     surfaceType,
   );
+  const _overDrive = gameState.overDriveFactor || 0;
+  const _prevVisualOD = gameState.visualOverDrive || 0;
+  const _buildRate = _overDrive > _prevVisualOD ? 1.2 : 4.0;
+  gameState.visualOverDrive =
+    _prevVisualOD + (_overDrive - _prevVisualOD) * Math.min(1, _buildRate * dt);
+  const _visualOD = gameState.visualOverDrive;
+  const _steerEff = clamp(1 - _visualOD * UNDERSTEER_FACTOR, 0, 1);
+  const _targetVisualHeading = (gameState.carHeading || 0) * _steerEff;
   gameState.carVisualHeading =
     (gameState.carVisualHeading || 0) +
-    ((gameState.carHeading || 0) - (gameState.carVisualHeading || 0)) *
+    (_targetVisualHeading - (gameState.carVisualHeading || 0)) *
       Math.min(1, VISUAL_HEADING_LERP * dt);
   const physicsTelemetry = buildPhysicsTelemetry({
     centrifugalForce: forces.centrifugalForce,
@@ -70,9 +79,15 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     gameState.spinRotation =
       (gameState.spinRotation || 0) + SPIN_ANGULAR_VELOCITY * dt;
   } else {
+    const _visualOD = gameState.visualOverDrive || 0;
     const slip = gameState.currentSlip || 0;
+    const curvatureSign = Math.sign(
+      gameState.previousCurvature || gameState.centrifugalDrift || 0,
+    );
+    const understeerAngle = -curvatureSign * clamp(_visualOD, 0, 1) * 0.15;
     const slideDir = Math.sign(gameState.lateralVelocity || 0);
-    const targetAngle = -slip * slideDir * MAX_DRIFT_VISUAL_ANGLE;
+    const driftAngle = -slip * slideDir * MAX_DRIFT_VISUAL_ANGLE * (1 - clamp(_visualOD, 0, 1));
+    const targetAngle = understeerAngle + driftAngle;
     const current = gameState.spinRotation || 0;
     gameState.spinRotation =
       current + (targetAngle - current) * Math.min(1, DRIFT_ANGLE_LERP * dt);
@@ -80,4 +95,4 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
   const { lapCompleted } = advanceAlongTrack(gameState, lapLength, dt);
   return { lapCompleted, physicsTelemetry };
 }
-export { updateCarPhysics };
+export { updateCarPhysics };

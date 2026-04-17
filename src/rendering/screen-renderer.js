@@ -112,60 +112,71 @@ function drawRankList(ctx, x, y, w, rowH, rankings, slotCount) {
   for (let i = 0; i < slotCount; i++) {
     const ry = y + i * (rowH + 4);
     const entry = (rankings || [])[i];
-    ctx.fillStyle = i % 2 === 0 ? "rgba(0,0,0,0.08)" : "transparent";
+    ctx.fillStyle = i % 2 === 0 ? "rgba(0,0,0,0.12)" : "rgba(0,0,0,0.04)";
     ctx.fillRect(x, ry, w, rowH);
     const mid = ry + rowH * 0.5;
     const sz = Math.max(11, Math.min(16, rowH * 0.45));
     ctx.save();
-    ctx.textBaseline = "middle";
     ctx.font = `700 ${sz}px ${R.font}`;
-    ctx.fillStyle = R.textHeader;
     ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = R.textHeader;
     ctx.fillText(`${(i + 1).toString().padStart(2, "0")}`, x + 6, mid);
     if (entry) {
       ctx.fillText(entry.name.substring(0, 8), x + 34, mid);
+      ctx.font = `700 ${sz}px monospace`;
       ctx.textAlign = "right";
-      ctx.fillText(formatTime(entry.time), x + w - 6, mid);
+      ctx.fillText(formatTime(entry.time), x + w - 10, mid);
     } else {
       ctx.fillStyle = "rgba(0,0,0,0.35)";
       ctx.fillText("---", x + 34, mid);
+      ctx.font = `700 ${sz}px monospace`;
       ctx.textAlign = "right";
-      ctx.fillText("--:--.---", x + w - 6, mid);
+      ctx.fillText("--:--.---", x + w - 10, mid);
     }
     ctx.restore();
   }
 }
 function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
+  const accentW = 4;
   for (let i = 0; i < slotCount; i++) {
     const ry = y + i * (rowH + 4);
     const isHL = i === hlIdx;
     const entry = rankings && rankings[i];
+    // Always draw opaque background to prevent ghost frames bleeding through
     if (isHL) {
       ctx.fillStyle = R.buttonBody;
       ctx.fillRect(x, ry, w, rowH);
+      // Yellow left accent strip for player highlight
+      ctx.fillStyle = R.gold;
+      ctx.fillRect(x, ry, accentW, rowH);
     } else {
-      ctx.fillStyle = i % 2 === 0 ? "rgba(0,0,0,0.08)" : "transparent";
+      ctx.fillStyle = i % 2 === 0 ? "rgba(0,0,0,0.12)" : "rgba(0,0,0,0.04)";
       ctx.fillRect(x, ry, w, rowH);
     }
     const mid = ry + rowH * 0.5;
     const sz = Math.max(11, Math.min(16, rowH * 0.45));
+    // Reset font and alignment before drawing to prevent HUD state inheritance
     ctx.save();
-    ctx.textBaseline = "middle";
     ctx.font = `700 ${sz}px ${R.font}`;
-    ctx.fillStyle = isHL ? R.gold : R.textHeader;
     ctx.textAlign = "left";
-    ctx.fillText(`${(i + 1).toString().padStart(2, "0")}`, x + 6, mid);
+    ctx.textBaseline = "middle";
+    const textX = x + (isHL ? accentW + 6 : 6);
+    ctx.fillStyle = isHL ? R.gold : R.textHeader;
+    ctx.fillText(`${(i + 1).toString().padStart(2, "0")}`, textX, mid);
     if (entry) {
       ctx.fillStyle = isHL ? R.steel : R.textHeader;
-      ctx.fillText(entry.name.substring(0, 8), x + 34, mid);
+      ctx.fillText(entry.name.substring(0, 8), textX + 28, mid);
+      ctx.font = `700 ${sz}px monospace`;
       ctx.fillStyle = isHL ? R.gold : R.textHeader;
       ctx.textAlign = "right";
-      ctx.fillText(formatTime(entry.time), x + w - 6, mid);
+      ctx.fillText(formatTime(entry.time), x + w - 10, mid);
     } else {
       ctx.fillStyle = "rgba(0,0,0,0.35)";
-      ctx.fillText("---", x + 34, mid);
+      ctx.fillText("---", textX + 28, mid);
+      ctx.font = `700 ${sz}px monospace`;
       ctx.textAlign = "right";
-      ctx.fillText("--:--.---", x + w - 6, mid);
+      ctx.fillText("--:--.---", x + w - 10, mid);
     }
     ctx.restore();
   }
@@ -173,22 +184,27 @@ function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
 function drawNewEntryRow(ctx, x, y, w, rowH, entryTime, pending, blink) {
   const mid = y + rowH * 0.5;
   const sz = Math.max(11, Math.min(16, rowH * 0.45));
+  ctx.fillStyle = R.bg;
+  ctx.fillRect(x, y, w + 4, rowH + 4);
   ctx.fillStyle = R.buttonShadow;
   ctx.fillRect(x + 4, y + 4, w, rowH);
   ctx.fillStyle = R.buttonBody;
   ctx.fillRect(x, y, w, rowH);
-  ctx.save();
-  ctx.textBaseline = "middle";
-  ctx.font = `700 ${sz}px ${R.font}`;
   ctx.fillStyle = R.gold;
+  ctx.fillRect(x, y, 4, rowH);
+  ctx.save();
+  ctx.font = `700 ${sz}px ${R.font}`;
   ctx.textAlign = "left";
-  ctx.fillText("—", x + 6, mid);
-  const cursor = blink ? "▮" : "▯";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = R.gold;
+  ctx.fillText(">", x + 6, mid);
+  const cursor = blink ? "\u25AE" : "\u25AF";
   const display = (pending + cursor).substring(0, 9);
   ctx.fillStyle = R.steel;
-  ctx.fillText(display, x + 34, mid);
+  ctx.fillText(display, x + 4 + 28, mid);
+  ctx.font = `700 ${sz}px monospace`;
   ctx.textAlign = "right";
-  ctx.fillText(formatTime(entryTime), x + w - 6, mid);
+  ctx.fillText(formatTime(entryTime), x + w - 10, mid);
   ctx.restore();
 }
 function calculateTrackBounds(points) {
@@ -398,6 +414,7 @@ function drawGameOverScreen(ctx, w, h, gameState) {
     : -1;
   const pending = (gameState && gameState.pendingName) || "";
   const isEntering = phase === "entering";
+  ctx.clearRect(0, 0, w, h);
   ctx.save();
   ctx.globalAlpha = fade;
   ctx.fillStyle = R.bg;
@@ -626,4 +643,4 @@ export {
   drawGameOverScreen,
   drawTrackPreviewScreen,
   drawSettingsScreen,
-};
+};

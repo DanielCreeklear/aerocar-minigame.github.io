@@ -209,7 +209,6 @@ function drawCar(ctx, gameState, track, metrics) {
     (gameState.carVisualHeading || 0) * CAR_HEADING_VISUAL_SCALE +
     (gameState.spinRotation || 0);
 
-  // Motion trail (>250 km/h)
   if (speed >= TRAIL_SPEED_THRESHOLD) {
     _pushTrail(drawX, drawY, totalAngle);
     _drawMotionTrail(ctx, carWidth, carHeight);
@@ -219,7 +218,6 @@ function drawCar(ctx, gameState, track, metrics) {
 
   drawDustCloud(ctx, gameState, drawX, drawY, carWidth, carHeight);
 
-  // Water spray (>100 km/h)
   if (speed >= SPRAY_SPEED_THRESHOLD) {
     _drawSpray(ctx, drawX, drawY, carWidth, carHeight);
   }
