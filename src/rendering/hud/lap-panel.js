@@ -4,7 +4,8 @@ import { formatTime } from "../../utils/math.js";
 const R4_ACCENT = "#FDB80B";
 const R4_BG = "rgba(26,26,26,0.80)";
 const R4_SHADOW = "rgba(0,0,0,0.50)";
-const R4_FONT = "'Archivo Narrow','Barlow Condensed','Roboto Condensed',sans-serif";
+const R4_FONT =
+  "'Archivo Narrow','Barlow Condensed','Roboto Condensed',sans-serif";
 const R4_MONO = "'Courier New',monospace";
 
 function drawLapPanel(ctx, gameState, width, height) {
@@ -43,7 +44,11 @@ function drawLapPanel(ctx, gameState, width, height) {
   ctx.font = `italic bold ${lapCountSz}px ${R4_FONT}`;
   ctx.fillStyle = "#FFFFFF";
   ctx.textAlign = "right";
-  ctx.fillText(`${gameState.lapCount + 1}/${gameState.targetLaps}`, right, y + 5);
+  ctx.fillText(
+    `${gameState.lapCount + 1}/${gameState.targetLaps}`,
+    right,
+    y + 5,
+  );
 
   // 5. Current time (monospace)
   const timeSz = Math.max(18, Math.min(28, panelH * 0.32));
@@ -51,7 +56,11 @@ function drawLapPanel(ctx, gameState, width, height) {
   ctx.fillStyle = "#FFFFFF";
   ctx.textAlign = "right";
   ctx.textBaseline = "top";
-  ctx.fillText(formatTime(gameState.currentTime), right, y + 6 + lapLabelSz + 4);
+  ctx.fillText(
+    formatTime(gameState.currentTime),
+    right,
+    y + 6 + lapLabelSz + 4,
+  );
 
   // Separator line
   const divY = y + 6 + lapLabelSz + 4 + timeSz + 4;
@@ -78,7 +87,10 @@ function drawLapPanel(ctx, gameState, width, height) {
       ? formatTime(gameState.bestLapTime)
       : "--:--.---";
   ctx.font = `italic bold ${recTimeSz}px ${R4_MONO}`;
-  ctx.fillStyle = gameState.bestLapTime < Infinity ? "rgba(253,184,11,0.85)" : "rgba(255,255,255,0.30)";
+  ctx.fillStyle =
+    gameState.bestLapTime < Infinity
+      ? "rgba(253,184,11,0.85)"
+      : "rgba(255,255,255,0.30)";
   ctx.textAlign = "right";
   ctx.fillText(bestTxt, right, recY);
 

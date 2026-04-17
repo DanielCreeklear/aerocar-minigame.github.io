@@ -1,7 +1,8 @@
 const R4_ACCENT = "#FDB80B";
 const R4_BG = "rgba(26,26,26,0.80)";
 const R4_SHADOW = "rgba(0,0,0,0.50)";
-const R4_FONT = "'Archivo Narrow','Barlow Condensed','Roboto Condensed',sans-serif";
+const R4_FONT =
+  "'Archivo Narrow','Barlow Condensed','Roboto Condensed',sans-serif";
 const ERS_SEGMENTS = 10;
 function drawBatteryBar(ctx, gameState, width, height) {
   const battery = Math.max(0, Math.min(100, gameState.battery || 0));
@@ -40,7 +41,7 @@ function drawBatteryBar(ctx, gameState, width, height) {
   ctx.fillRect(ersX, ersY, 3, ersBarH);
   let fillColor;
   if (isBraking && !isBoosting) {
-    fillColor = "#00E5FF"; 
+    fillColor = "#00E5FF";
   } else if (battery < 25) {
     fillColor = "#FF3300";
   } else {
@@ -70,8 +71,13 @@ function drawBatteryBar(ctx, gameState, width, height) {
   ctx.fillStyle = "rgba(253,184,11,0.70)";
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
-  const tag = isBraking && !isBoosting ? "ERS  REGEN" : isBoosting ? "ERS  BOOST" : `ERS  ${Math.floor(battery)}%`;
+  const tag =
+    isBraking && !isBoosting
+      ? "ERS  REGEN"
+      : isBoosting
+        ? "ERS  BOOST"
+        : `ERS  ${Math.floor(battery)}%`;
   ctx.fillText(tag, ersX + 4, ersY + ersBarH + 3);
   ctx.restore();
 }
-export { drawBatteryBar };
+export { drawBatteryBar };

@@ -12,7 +12,8 @@ const SPEEDOMETER_MAX_KMH = 399;
 const SPEEDOMETER_SMOOTHING = 0.18;
 const TOUCH_BRAKE_RATIO = 0.35;
 const TOUCH_BOOST_RATIO = 0.65;
-const R4_FONT = "'Archivo Narrow','Barlow Condensed','Roboto Condensed',sans-serif";
+const R4_FONT =
+  "'Archivo Narrow','Barlow Condensed','Roboto Condensed',sans-serif";
 
 // --- R4 Scanline overlay (CRT effect) ---
 function drawScanlines(ctx, width, height) {
@@ -150,14 +151,7 @@ class HudRenderer {
     drawCurveIndicator(ctx, gameState, width);
     drawLapPanel(ctx, gameState, width, height);
     drawBatteryBar(ctx, gameState, width, height);
-    drawSpeedometer(
-      ctx,
-      this.displayedSpeedKmh,
-      width,
-      height,
-      isPortrait,
-      0,
-    );
+    drawSpeedometer(ctx, this.displayedSpeedKmh, width, height, isPortrait, 0);
     drawAeroBadge(ctx, gameState, width, height, 0);
     drawRescueBanner(ctx, gameState, width, height);
     drawScanlines(ctx, width, height);
