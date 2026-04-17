@@ -6,8 +6,8 @@ import {
 import { wrapDelta } from "../systems/rival-physics.js";
 const SCALE_MIN = 0.12;
 const SCALE_MAX = 1.0;
-const RIVAL_VISIBLE_DZ = 500;
-const RIVAL_VISIBLE_DZ_BEHIND = 120;
+const RIVAL_VISIBLE_DZ = 380;
+const RIVAL_VISIBLE_DZ_BEHIND = 300;
 const RIVAL_FADE_RANGE_PX = 70;
 function drawRivals(ctx, gameState, track, metrics) {
   const rivals = gameState.rivals;
@@ -114,4 +114,4 @@ function _drawRivalCar(
   }
   ctx.restore();
 }
-export { drawRivals };
+export { drawRivals };
