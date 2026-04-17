@@ -14,18 +14,14 @@ export class StartMenuState extends GameState {
   render(ctx, w, h) {
     drawStartScreen(ctx, w, h, this._deps.getGameState(), this._deps.track);
 
+    // Full lower area is the CTA (start race)
     const thumbY = h * 0.65;
-    this._ctaBtn.setRect(0, thumbY, w, h - thumbY);
+    this._ctaBtn.setRect(0, thumbY, w, h - thumbY - 40);
     this._ctaBtn.renderPressOverlay(ctx);
 
-    // Hit area for the "CONFIG" bar button drawn at top-left in screen-renderer
-    // matches: btnPad=10, btnW=max(100, w*0.22 clamped 90-160), btnH=max(28, fontSize+12)
-    const cfgW = Math.max(100, Math.min(160, Math.round(w * 0.22)));
-    const cfgH = Math.max(
-      28,
-      Math.round(Math.max(13, Math.min(22, w * 0.045)) + 12),
-    );
-    this._settingsBtn.setRect(10, 10, cfgW, cfgH);
+    // Footer △ area → settings (top-right quarter of footer bar)
+    const footerH = 40;
+    this._settingsBtn.setRect(w * 0.5, h - footerH, w * 0.5, footerH);
 
     const gs = this._deps.getGameState();
     if (gs && gs.iosPermissionStatus === "prompt") {
