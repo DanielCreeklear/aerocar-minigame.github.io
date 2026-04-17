@@ -2,9 +2,7 @@ import { GameState } from "../GameState.js";
 import { Button } from "../Button.js";
 import { drawStartScreen } from "../../rendering/screen-renderer.js";
 
-
 export class StartMenuState extends GameState {
-  
   constructor(deps) {
     super();
     this._deps = deps;
@@ -16,13 +14,14 @@ export class StartMenuState extends GameState {
   render(ctx, w, h) {
     drawStartScreen(ctx, w, h, this._deps.getGameState(), this._deps.track);
 
+    // Full lower area is the CTA (start race)
     const thumbY = h * 0.65;
-    this._ctaBtn.setRect(0, thumbY, w, h - thumbY);
+    this._ctaBtn.setRect(0, thumbY, w, h - thumbY - 40);
     this._ctaBtn.renderPressOverlay(ctx);
 
-    // Hit area for the "⚙ CONFIG" label drawn at top-left in screen-renderer
-    // (roughly 8px padding + ~6 chars × max font size 28px wide, height = max 28 + 16 pad)
-    this._settingsBtn.setRect(0, 0, Math.round(w * 0.38), Math.round(h * 0.06));
+    // Footer △ area → settings (top-right quarter of footer bar)
+    const footerH = 40;
+    this._settingsBtn.setRect(w * 0.5, h - footerH, w * 0.5, footerH);
 
     const gs = this._deps.getGameState();
     if (gs && gs.iosPermissionStatus === "prompt") {
@@ -33,7 +32,12 @@ export class StartMenuState extends GameState {
         const sz = Math.max(11, Math.min(15, availW * 0.034));
         const btnH = sz + 16;
         const btnW = availW * 0.9;
-        this._gyroBtn.setRect(tx, Math.round(h * 0.54), Math.round(btnW), Math.round(btnH));
+        this._gyroBtn.setRect(
+          tx,
+          Math.round(h * 0.54),
+          Math.round(btnW),
+          Math.round(btnH),
+        );
       } else {
         const titleX = Math.max(18, Math.min(40, w * 0.04));
         const divX = Math.round(w * 0.6);
@@ -45,7 +49,12 @@ export class StartMenuState extends GameState {
         const sz = Math.max(11, Math.min(15, leftW * 0.034));
         const btnH = sz + 16;
         const btnW = leftW * 0.9;
-        this._gyroBtn.setRect(titleX, Math.round(btnY), Math.round(btnW), Math.round(btnH));
+        this._gyroBtn.setRect(
+          titleX,
+          Math.round(btnY),
+          Math.round(btnW),
+          Math.round(btnH),
+        );
       }
     } else {
       this._gyroBtn.setRect(0, 0, 0, 0);
@@ -59,14 +68,18 @@ export class StartMenuState extends GameState {
       return;
     }
     const gs = this._deps.getGameState();
-    if (gs && gs.iosPermissionStatus === "prompt" && this._gyroBtn.isHit(x, y)) {
+    if (
+      gs &&
+      gs.iosPermissionStatus === "prompt" &&
+      this._gyroBtn.isHit(x, y)
+    ) {
       this._gyroBtn.pressed = true;
       this._deps.callbacks.requestGyroPermission();
       return;
     }
     if (this._ctaBtn.isHit(x, y)) {
       this._ctaBtn.pressed = true;
-      
+
       requestAnimationFrame(() => this._deps.callbacks.startRace());
     }
   }

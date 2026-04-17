@@ -49,7 +49,7 @@ function drawSpeedometer(
 
   ctx.beginPath();
   ctx.arc(cx, cy, r, Math.PI * 1.8, Math.PI * 2, false);
-  ctx.strokeStyle = "rgba(204, 0, 30, 0.35)";
+  ctx.strokeStyle = "rgba(230, 0, 0, 0.35)";
   ctx.lineWidth = 4;
   ctx.stroke();
 

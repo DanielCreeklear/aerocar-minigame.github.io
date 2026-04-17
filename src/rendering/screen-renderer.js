@@ -1,73 +1,104 @@
 import { formatTime } from "../utils/math.js";
 
 const R = {
-  bg: "#060c18",
-  bgMid: "#0c1420",
-  bgTop: "#0f1c2e",
-  crimson: "#CC001E",
-  crimsonDim: "rgba(204, 0, 30, 0.50)",
-  crimsonFill: "rgba(204, 0, 30, 0.13)",
-  crimsonHigh: "rgba(204, 0, 30, 0.26)",
-  gold: "#C87D12",
-  steel: "#4A6890",
-  steelDim: "rgba(74, 104, 144, 0.75)",
-  text: "#F2EDE4",
-  textDim: "rgba(242, 237, 228, 0.60)",
-  textFaint: "rgba(242, 237, 228, 0.28)",
-  barBg: "#030a14",
-  divider: "rgba(204, 0, 30, 0.35)",
-  font: "'Barlow Condensed', 'Segoe UI', Arial, sans-serif",
+  bg: "#FDB80B",
+  bgTop: "#1a1a2e",
+  bgMid: "#16213e",
+  buttonBody: "#2B2B2B",
+  buttonShadow: "#8E8E8E",
+  accent: "#E60000",
+  gold: "#FDB80B",
+  steel: "#FFFFFF",
+  steelDim: "rgba(255, 255, 255, 0.70)",
+  text: "#FFFFFF",
+  textDim: "rgba(255, 255, 255, 0.80)",
+  textFaint: "rgba(255, 255, 255, 0.35)",
+  textHeader: "#000000",
+  barBg: "#1C1C1C",
+  divider: "rgba(0, 0, 0, 0.25)",
+  font: "monospace",
 };
 
 function csz(ref, ratio, lo, hi) {
   return Math.max(lo, Math.min(hi, ref * ratio));
 }
 
-function scanlines(ctx, w, h) {
+function drawButton(ctx, x, y, w, h, label, isSelected) {
+  const shadow = 4;
+  ctx.fillStyle = R.buttonShadow;
+  ctx.fillRect(x + shadow, y + shadow, w, h);
+  const bx = isSelected ? x + shadow : x;
+  const by = isSelected ? y + shadow : y;
+  ctx.fillStyle = R.buttonBody;
+  ctx.fillRect(bx, by, w, h);
+  const sz = Math.max(12, Math.min(18, h * 0.45));
+  const pad = Math.round(h * 0.35);
+  ctx.fillStyle = R.text;
+  ctx.font = `700 ${sz}px ${R.font}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(label, bx + pad, by + h * 0.5);
+  const cbSize = Math.max(10, Math.round(h * 0.38));
+  const cbX = bx + w - pad - cbSize;
+  const cbY = by + (h - cbSize) * 0.5;
+  ctx.strokeStyle = isSelected ? R.gold : "rgba(255,255,255,0.45)";
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(cbX, cbY, cbSize, cbSize);
+  if (isSelected) {
+    ctx.fillStyle = R.gold;
+    ctx.fillRect(cbX + 3, cbY + 3, cbSize - 6, cbSize - 6);
+  }
+}
+
+function sectionHeader(ctx, x, y, w, text, color) {
+  const sz = Math.max(11, Math.min(15, w * 0.038));
   ctx.save();
-  ctx.fillStyle = "rgba(0,0,0,0.05)";
-  for (let y = 0; y < h; y += 2) ctx.fillRect(0, y, w, 1);
+  ctx.font = `700 ${sz}px ${R.font}`;
+  ctx.fillStyle = color || R.textHeader;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText(`* ${text}`, x, y);
+  ctx.strokeStyle = color || R.textHeader;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x, y + 5);
+  ctx.lineTo(x + w, y + 5);
+  ctx.stroke();
   ctx.restore();
 }
 
-function bottomBar(ctx, w, h, leftTxt, rightTxt, blink) {
-  const bh = 44,
-    by = h - bh;
+function bottomBar(ctx, w, h, actions) {
+  const bh = 40;
+  const by = h - bh;
   ctx.save();
-  ctx.fillStyle = R.barBg;
+  ctx.fillStyle = R.bg;
   ctx.fillRect(0, by, w, bh);
-  ctx.strokeStyle = R.divider;
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.moveTo(0, by);
   ctx.lineTo(w, by);
   ctx.stroke();
+  const sz = Math.max(12, Math.min(15, w * 0.032));
+  ctx.font = `700 ${sz}px ${R.font}`;
   ctx.textBaseline = "middle";
   const cy = by + bh * 0.5;
-  ctx.font = `400 ${csz(w, 0.016, 12, 16)}px ${R.font}`;
-  ctx.fillStyle = R.textDim;
-  ctx.textAlign = "left";
-  ctx.fillText(leftTxt, 22, cy);
-  ctx.font = `700 ${csz(w, 0.018, 13, 18)}px ${R.font}`;
-  if (blink) {
-    ctx.shadowColor = R.crimson;
-    ctx.shadowBlur = 10;
-    ctx.fillStyle = R.crimson;
-  } else {
-    ctx.fillStyle = R.textFaint;
+  let curX = 20;
+  for (const action of actions) {
+    ctx.fillStyle = R.textHeader;
+    ctx.textAlign = "left";
+    ctx.fillText(`${action.icon} ${action.label}`, curX, cy);
+    curX += ctx.measureText(`${action.icon} ${action.label}`).width + 28;
   }
-  ctx.textAlign = "right";
-  ctx.fillText(rightTxt, w - 22, cy);
-  ctx.shadowBlur = 0;
   ctx.restore();
 }
 
 function topStripe(ctx, w, leftTxt, rightTxt) {
   const sh = 32;
   ctx.save();
-  ctx.fillStyle = "#0a1220";
+  ctx.fillStyle = R.barBg;
   ctx.fillRect(0, 0, w, sh);
-  ctx.strokeStyle = R.divider;
+  ctx.strokeStyle = "rgba(255,255,255,0.35)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(0, sh);
@@ -78,118 +109,72 @@ function topStripe(ctx, w, leftTxt, rightTxt) {
   ctx.font = `700 ${csz(w, 0.016, 11, 15)}px ${R.font}`;
   ctx.textAlign = "left";
   ctx.fillText(leftTxt, 20, sh * 0.5);
-  ctx.fillStyle = R.textDim;
+  ctx.fillStyle = R.steelDim;
   ctx.textAlign = "right";
   ctx.fillText(rightTxt, w - 20, sh * 0.5);
   ctx.restore();
 }
 
-function diagonalCut(ctx, w, size) {
-  ctx.save();
-  ctx.fillStyle = R.crimson;
-  ctx.beginPath();
-  ctx.moveTo(w - size, 0);
-  ctx.lineTo(w, 0);
-  ctx.lineTo(w, size);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-}
-
-function sectionLabel(ctx, x, y, w, text) {
-  ctx.save();
-  ctx.textBaseline = "middle";
-  ctx.textAlign = "left";
-  ctx.fillStyle = R.steel;
-  ctx.font = `700 ${csz(w, 0.04, 10, 15)}px ${R.font}`;
-  ctx.fillText(text, x, y);
-  const lw = ctx.measureText(text).width;
-  ctx.strokeStyle = R.divider;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(x + lw + 10, y);
-  ctx.lineTo(x + w, y);
-  ctx.stroke();
-  ctx.restore();
-}
-
 function drawRankList(ctx, x, y, w, rowH, rankings, slotCount) {
-  const numW = csz(w, 0.08, 16, 24);
-  const nameSz = csz(w, 0.056, 11, 17);
-  const timeSz = csz(w, 0.052, 11, 16);
   for (let i = 0; i < slotCount; i++) {
     const ry = y + i * (rowH + 4);
-    const mid = ry + rowH * 0.5;
     const entry = (rankings || [])[i];
+    // row background alternating
+    ctx.fillStyle = i % 2 === 0 ? "rgba(0,0,0,0.08)" : "transparent";
+    ctx.fillRect(x, ry, w, rowH);
+    const mid = ry + rowH * 0.5;
+    const sz = Math.max(11, Math.min(16, rowH * 0.45));
     ctx.save();
     ctx.textBaseline = "middle";
-    ctx.fillStyle = R.steelDim;
-    ctx.font = `700 ${csz(w, 0.042, 9, 13)}px ${R.font}`;
+    ctx.font = `700 ${sz}px ${R.font}`;
+    ctx.fillStyle = R.textHeader;
     ctx.textAlign = "left";
-    ctx.fillText(`${(i + 1).toString().padStart(2, "0")}`, x, mid);
+    ctx.fillText(`${(i + 1).toString().padStart(2, "0")}`, x + 6, mid);
     if (entry) {
-      ctx.fillStyle = R.textDim;
-      ctx.font = `700 ${nameSz}px ${R.font}`;
-      ctx.fillText(entry.name.substring(0, 8), x + numW, mid);
-      ctx.fillStyle = R.textDim;
-      ctx.font = `700 ${timeSz}px ${R.font}`;
+      ctx.fillText(entry.name.substring(0, 8), x + 34, mid);
       ctx.textAlign = "right";
-      ctx.fillText(formatTime(entry.time), x + w, mid);
+      ctx.fillText(formatTime(entry.time), x + w - 6, mid);
     } else {
-      ctx.fillStyle = R.textFaint;
-      ctx.font = `400 ${nameSz}px ${R.font}`;
-      ctx.fillText("---", x + numW, mid);
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.fillText("---", x + 34, mid);
       ctx.textAlign = "right";
-      ctx.fillText("--:--.---", x + w, mid);
+      ctx.fillText("--:--.---", x + w - 6, mid);
     }
     ctx.restore();
   }
 }
 
 function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
-  const numW = csz(w, 0.08, 16, 24);
-  const nameSz = csz(w, 0.056, 11, 17);
-  const timeSz = csz(w, 0.052, 11, 16);
   for (let i = 0; i < slotCount; i++) {
     const ry = y + i * (rowH + 4);
-    const mid = ry + rowH * 0.5;
     const isHL = i === hlIdx;
     const entry = rankings && rankings[i];
     if (isHL) {
-      ctx.save();
-      ctx.fillStyle = R.crimsonHigh;
-      ctx.fillRect(x - 4, ry - 1, w + 8, rowH + 2);
-      ctx.strokeStyle = R.crimson;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(x - 4, ry - 1, w + 8, rowH + 2);
-      ctx.restore();
+      ctx.fillStyle = R.buttonBody;
+      ctx.fillRect(x, ry, w, rowH);
+    } else {
+      ctx.fillStyle = i % 2 === 0 ? "rgba(0,0,0,0.08)" : "transparent";
+      ctx.fillRect(x, ry, w, rowH);
     }
+    const mid = ry + rowH * 0.5;
+    const sz = Math.max(11, Math.min(16, rowH * 0.45));
     ctx.save();
     ctx.textBaseline = "middle";
-    ctx.fillStyle = isHL ? R.crimson : R.steelDim;
-    ctx.font = `700 ${csz(w, 0.042, 9, 13)}px ${R.font}`;
+    ctx.font = `700 ${sz}px ${R.font}`;
+    ctx.fillStyle = isHL ? R.gold : R.textHeader;
     ctx.textAlign = "left";
-    ctx.fillText(`${(i + 1).toString().padStart(2, "0")}`, x, mid);
+    ctx.fillText(`${(i + 1).toString().padStart(2, "0")}`, x + 6, mid);
     if (entry) {
-      ctx.fillStyle = isHL ? R.text : R.textDim;
-      ctx.font = `700 ${nameSz}px ${R.font}`;
-      ctx.fillText(entry.name.substring(0, 8), x + numW, mid);
-      ctx.fillStyle = isHL ? R.gold : R.textDim;
-      ctx.font = `700 ${timeSz}px ${R.font}`;
+      ctx.fillStyle = isHL ? R.steel : R.textHeader;
+      ctx.fillText(entry.name.substring(0, 8), x + 34, mid);
+      ctx.fillStyle = isHL ? R.gold : R.textHeader;
       ctx.textAlign = "right";
-      ctx.fillText(formatTime(entry.time), x + w, mid);
-      if (isHL) {
-        ctx.fillStyle = R.crimson;
-        ctx.font = `700 ${csz(w, 0.038, 8, 11)}px ${R.font}`;
-        const tw = ctx.measureText(formatTime(entry.time)).width;
-        ctx.fillText("NEW", x + w - tw - 8, mid);
-      }
+      ctx.fillText(formatTime(entry.time), x + w - 6, mid);
     } else {
-      ctx.fillStyle = R.textFaint;
-      ctx.font = `400 ${nameSz}px ${R.font}`;
-      ctx.fillText("---", x + numW, mid);
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.fillText("---", x + 34, mid);
       ctx.textAlign = "right";
-      ctx.fillText("--:--.---", x + w, mid);
+      ctx.fillText("--:--.---", x + w - 6, mid);
     }
     ctx.restore();
   }
@@ -197,41 +182,34 @@ function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
 
 function drawNewEntryRow(ctx, x, y, w, rowH, entryTime, pending, blink) {
   const mid = y + rowH * 0.5;
-  const numW = csz(w, 0.08, 16, 24);
-  const nameSz = csz(w, 0.056, 11, 17);
-  const timeSz = csz(w, 0.052, 11, 16);
+  const sz = Math.max(11, Math.min(16, rowH * 0.45));
+  // shadow + body
+  ctx.fillStyle = R.buttonShadow;
+  ctx.fillRect(x + 4, y + 4, w, rowH);
+  ctx.fillStyle = R.buttonBody;
+  ctx.fillRect(x, y, w, rowH);
   ctx.save();
-  ctx.fillStyle = R.crimsonFill;
-  ctx.fillRect(x - 4, y - 1, w + 8, rowH + 2);
-  ctx.strokeStyle = R.crimsonDim;
-  ctx.lineWidth = 1;
-  ctx.strokeRect(x - 4, y - 1, w + 8, rowH + 2);
   ctx.textBaseline = "middle";
-  ctx.fillStyle = R.crimson;
-  ctx.font = `700 ${csz(w, 0.042, 9, 13)}px ${R.font}`;
+  ctx.font = `700 ${sz}px ${R.font}`;
+  ctx.fillStyle = R.gold;
   ctx.textAlign = "left";
-  ctx.fillText("—", x, mid);
+  ctx.fillText("—", x + 6, mid);
   const cursor = blink ? "▮" : "▯";
   const display = (pending + cursor).substring(0, 9);
-  ctx.fillStyle = R.text;
-  ctx.font = `700 ${nameSz}px ${R.font}`;
-  ctx.fillText(display, x + numW, mid);
-  ctx.fillStyle = R.gold;
-  ctx.font = `700 ${timeSz}px ${R.font}`;
+  ctx.fillStyle = R.steel;
+  ctx.fillText(display, x + 34, mid);
   ctx.textAlign = "right";
-  ctx.fillText(formatTime(entryTime), x + w, mid);
+  ctx.fillText(formatTime(entryTime), x + w - 6, mid);
   ctx.restore();
 }
 
 function calculateTrackBounds(points) {
   let minX = Infinity;
   let maxX = -Infinity;
-
   for (let i = 0; i < points.length; i++) {
     if (points[i].x < minX) minX = points[i].x;
     if (points[i].x > maxX) maxX = points[i].x;
   }
-
   return { minX, xRange: Math.max(1, maxX - minX) };
 }
 
@@ -253,9 +231,9 @@ function sampleTrackPointIndexes(pointsLength) {
 }
 
 function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
-  ctx.fillStyle = "rgba(4,10,20,0.97)";
+  ctx.fillStyle = R.buttonBody;
   ctx.fillRect(mapX, mapY, mapW, mapH);
-  ctx.strokeStyle = "rgba(58,80,112,0.35)";
+  ctx.strokeStyle = "rgba(255,255,255,0.25)";
   ctx.lineWidth = 1;
   ctx.strokeRect(mapX, mapY, mapW, mapH);
   const points = track.trackData;
@@ -275,15 +253,12 @@ function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
   ctx.beginPath();
   ctx.moveTo(path[0].x, path[0].y);
   for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
-  ctx.shadowColor = R.steel;
-  ctx.shadowBlur = 6;
-  ctx.strokeStyle = R.steel;
+  ctx.strokeStyle = R.gold;
   ctx.lineWidth = 2;
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
   ctx.stroke();
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = R.crimson;
+  ctx.fillStyle = R.accent;
   ctx.beginPath();
   ctx.arc(path[0].x, path[0].y, 5, 0, Math.PI * 2);
   ctx.fill();
@@ -291,7 +266,7 @@ function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
   ctx.beginPath();
   ctx.arc(path[path.length - 1].x, path[path.length - 1].y, 4, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = R.textDim;
+  ctx.fillStyle = R.steel;
   ctx.font = `700 10px ${R.font}`;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
@@ -299,38 +274,27 @@ function drawMinimap(ctx, mapX, mapY, mapW, mapH, track) {
   ctx.restore();
 }
 
+function drawIOSPermissionButton(ctx, x, y, w, blink) {
+  const btnH = 44;
+  drawButton(
+    ctx,
+    x,
+    y,
+    Math.min(w, w * 0.9),
+    btnH,
+    "ATIVAR SENSOR DE MOVIMENTO",
+    blink,
+  );
+}
+
 function drawGyroscopeWarning(ctx, x, y, w) {
-  const sz = csz(w, 0.028, 10, 13);
+  const sz = Math.max(10, Math.min(13, w * 0.028));
   ctx.save();
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
-  ctx.fillStyle = R.gold;
+  ctx.fillStyle = R.textHeader;
   ctx.font = `700 ${sz}px ${R.font}`;
-  ctx.fillText(
-    "[!]  CHROME NO iOS NAO SUPORTA SENSOR DE MOVIMENTO — USE O SAFARI",
-    x,
-    y,
-  );
-  ctx.restore();
-}
-
-function drawIOSPermissionButton(ctx, x, y, w, blink) {
-  const sz = csz(w, 0.034, 11, 15);
-  const btnH = sz + 16;
-  const btnW = Math.min(w, w * 0.9);
-  ctx.save();
-  ctx.fillStyle = blink
-    ? "rgba(74, 104, 144, 0.18)"
-    : "rgba(74, 104, 144, 0.10)";
-  ctx.fillRect(x, y, btnW, btnH);
-  ctx.strokeStyle = blink ? R.steel : R.steelDim;
-  ctx.lineWidth = 1;
-  ctx.strokeRect(x, y, btnW, btnH);
-  ctx.textBaseline = "middle";
-  ctx.textAlign = "left";
-  ctx.fillStyle = blink ? R.steel : R.steelDim;
-  ctx.font = `700 ${sz}px ${R.font}`;
-  ctx.fillText("▶  ATIVAR SENSOR DE MOVIMENTO", x + 10, y + btnH / 2);
+  ctx.fillText("[!] USE SAFARI NO iOS PARA GIROSCOPIO", x, y);
   ctx.restore();
 }
 
@@ -340,215 +304,128 @@ function drawStartScreen(ctx, w, h, gameState, track) {
   const fade = Math.min(1, age / 0.5);
   const blink = Math.sin(age * Math.PI * 1.4) > 0;
   const rankings = (gameState && gameState.rankings) || [];
-  const km = track ? ((track.lapLength || 0) / 1000).toFixed(2) : "?.??";
-  const seed = track ? track.seed : "—";
-  const segs = track && track.segments ? track.segments.length : 0;
 
   ctx.save();
   ctx.globalAlpha = fade;
 
-  const _bgGrad = ctx.createLinearGradient(0, 0, w * 0.4, h);
-  _bgGrad.addColorStop(0, R.bgTop);
-  _bgGrad.addColorStop(0.5, R.bgMid);
-  _bgGrad.addColorStop(1, R.bg);
-  ctx.fillStyle = _bgGrad;
+  // Yellow background
+  ctx.fillStyle = R.bg;
   ctx.fillRect(0, 0, w, h);
-  scanlines(ctx, w, h);
-  diagonalCut(ctx, w, isPortrait ? 50 : 72);
 
-  {
-    const btnSz = csz(w, 0.06, 18, 28);
-    const btnPad = 8;
-    const btnX = btnPad;
-    const btnY = btnPad;
-    ctx.save();
-    ctx.textBaseline = "top";
-    ctx.textAlign = "left";
-    ctx.fillStyle = R.steel;
-    ctx.font = `700 ${btnSz}px ${R.font}`;
-    ctx.fillText("⚙ CONFIG", btnX, btnY);
-    ctx.restore();
-  }
+  const pad = Math.max(20, w * 0.05);
+  const btnW = Math.min(w - pad * 2, 380);
+  const btnH = Math.max(44, Math.round(h * 0.075));
+  const btnGap = Math.max(10, Math.round(h * 0.018));
 
   if (isPortrait) {
-    const tx = csz(w, 0.06, 18, 36);
-    const apexSz = csz(w, 0.2, 48, 80);
-    const typezSz = csz(w, 0.168, 40, 66);
-
-    ctx.save();
-    ctx.shadowColor = R.crimson;
-    ctx.shadowBlur = 18;
-    ctx.fillStyle = R.crimson;
-    ctx.font = `700 ${apexSz}px ${R.font}`;
+    // Title
+    const titleSz = csz(w, 0.16, 40, 72);
+    ctx.fillStyle = R.textHeader;
+    ctx.font = `700 ${titleSz}px ${R.font}`;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    ctx.fillText("APEX", tx, h * 0.155);
-    ctx.restore();
+    ctx.fillText("APEX", pad, h * 0.14);
+    ctx.fillText("TYPE Z", pad, h * 0.14 + titleSz * 1.1);
 
-    ctx.save();
-    ctx.fillStyle = R.text;
-    ctx.font = `700 ${typezSz}px ${R.font}`;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillText("TYPE Z", tx, h * 0.155 + apexSz * 1.1);
-    ctx.restore();
+    // Subtitle
+    const subSz = csz(w, 0.03, 11, 14);
+    ctx.font = `700 ${subSz}px ${R.font}`;
+    ctx.fillStyle = R.textHeader;
+    ctx.fillText("TIME ATTACK", pad, h * 0.14 + titleSz * 2.4);
 
-    ctx.save();
-    ctx.fillStyle = R.steel;
-    ctx.font = `400 ${csz(w, 0.028, 12, 16)}px ${R.font}`;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillText("TIME ATTACK", tx, h * 0.36);
-    ctx.restore();
-
-    ctx.save();
-    ctx.strokeStyle = R.divider;
-    ctx.lineWidth = 1;
+    // Separator
+    ctx.strokeStyle = R.textHeader;
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(tx, h * 0.4);
-    ctx.lineTo(w * 0.9, h * 0.4);
+    ctx.moveTo(pad, h * 0.14 + titleSz * 2.7);
+    ctx.lineTo(w - pad, h * 0.14 + titleSz * 2.7);
     ctx.stroke();
-    ctx.restore();
 
-    const ctrlSz = csz(w, 0.034, 12, 16);
-    const ctrlY = h * 0.44;
-    sectionLabel(ctx, tx, ctrlY, w * 0.88, "CONTROLES");
-    ctx.save();
-    ctx.textBaseline = "top";
-    ctx.textAlign = "left";
-    ctx.fillStyle = R.textDim;
-    ctx.font = `400 ${ctrlSz}px ${R.font}`;
-    ctx.fillText("←  SEGURAR ESQUERDA  —  FREIO / ERS", tx, ctrlY + 14);
-    ctx.fillText("→  SEGURAR DIREITA   —  BOOST", tx, ctrlY + 14 + ctrlSz + 5);
-    ctx.fillStyle = R.steelDim;
-    ctx.font = `400 ${csz(w, 0.028, 10, 14)}px ${R.font}`;
-    ctx.fillText(
-      "CENTRO-DIREITA / Z ou X  —  ALTERNA MODO",
-      tx,
-      ctrlY + 14 + (ctrlSz + 5) * 2,
-    );
-    ctx.restore();
-
-    if (gameState && gameState.iosPermissionStatus === "prompt") {
-      drawIOSPermissionButton(ctx, tx, h * 0.54, w - tx * 2, blink);
-    } else if (gameState && gameState.gyroscopeWarning) {
-      drawGyroscopeWarning(ctx, tx, h * 0.54, w - tx * 2);
-    }
-
-    const rkY = h * 0.6;
-    sectionLabel(ctx, tx, rkY, w * 0.88, "RANKING");
-    const rkAvail = h - 44 - (rkY + 16) - 8;
-    const rowH = Math.min(36, rkAvail / 5 - 4);
-    drawRankList(ctx, tx, rkY + 16, w - tx * 2, rowH, rankings, 5);
-  } else {
-    const divX = Math.round(w * 0.6);
-    const titleX = csz(w, 0.04, 18, 40);
-    const leftW = divX - titleX - 24;
-    const rightX = divX + 20;
-    const rightW = w - rightX - 16;
-
-    ctx.save();
-    ctx.strokeStyle = R.divider;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(divX, 22);
-    ctx.lineTo(divX, h - 52);
-    ctx.stroke();
-    ctx.restore();
-
-    const apexSz = csz(w, 0.12, 52, 108);
-    const typezSz = csz(w, 0.095, 42, 86);
-
-    ctx.save();
-    ctx.shadowColor = R.crimson;
-    ctx.shadowBlur = 22;
-    ctx.fillStyle = R.crimson;
-    ctx.font = `700 ${apexSz}px ${R.font}`;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillText("APEX", titleX, h * 0.26);
-    ctx.restore();
-
-    ctx.save();
-    ctx.fillStyle = R.text;
-    ctx.font = `700 ${typezSz}px ${R.font}`;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillText("TYPE Z", titleX, h * 0.26 + apexSz * 1.1);
-    ctx.restore();
-
-    ctx.save();
-    ctx.fillStyle = R.steel;
-    ctx.font = `400 ${csz(w, 0.018, 12, 17)}px ${R.font}`;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillText("TIME ATTACK", titleX, h * 0.26 + apexSz * 1.1 + typezSz);
-    ctx.restore();
-
-    const ruleY = h * 0.57;
-    ctx.save();
-    ctx.strokeStyle = R.divider;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(titleX, ruleY);
-    ctx.lineTo(divX - 20, ruleY);
-    ctx.stroke();
-    ctx.restore();
-
-    const ctrlY = ruleY + 18;
-    const ctrlSz = csz(w, 0.022, 12, 17);
-    sectionLabel(ctx, titleX, ctrlY, leftW, "CONTROLES");
-    ctx.save();
-    ctx.textBaseline = "top";
-    ctx.textAlign = "left";
-    ctx.fillStyle = R.textDim;
-    ctx.font = `400 ${ctrlSz}px ${R.font}`;
-    ctx.fillText("←  SEGURAR ESQUERDA  —  FREIO / ERS", titleX, ctrlY + 14);
-    ctx.fillText(
-      "→  SEGURAR DIREITA   —  BOOST",
-      titleX,
-      ctrlY + 14 + ctrlSz + 5,
-    );
-    ctx.fillStyle = R.steelDim;
-    ctx.font = `400 ${csz(w, 0.018, 10, 14)}px ${R.font}`;
-    ctx.fillText(
-      "CENTRO-DIREITA / Z ou X  —  ALTERNA MODO AERO",
-      titleX,
-      ctrlY + 14 + (ctrlSz + 5) * 2,
-    );
-    ctx.restore();
+    // Buttons
+    const btnStartY = h * 0.44;
+    drawButton(ctx, pad, btnStartY, btnW, btnH, "INICIAR CORRIDA", blink);
 
     if (gameState && gameState.iosPermissionStatus === "prompt") {
       drawIOSPermissionButton(
         ctx,
-        titleX,
-        ctrlY + 14 + (ctrlSz + 5) * 3 + 4,
-        leftW,
+        pad,
+        btnStartY + btnH + btnGap + 4,
+        btnW,
         blink,
       );
     } else if (gameState && gameState.gyroscopeWarning) {
-      drawGyroscopeWarning(
-        ctx,
-        titleX,
-        ctrlY + 14 + (ctrlSz + 5) * 3 + 4,
-        leftW,
-      );
+      drawGyroscopeWarning(ctx, pad, btnStartY + btnH + btnGap + 4, btnW);
     }
 
-    sectionLabel(ctx, rightX, h * 0.12, rightW, "RANKING");
-    const rkAvail = h - 44 - (h * 0.12 + 16) - 8;
-    const rowH = Math.min(48, rkAvail / 5 - 4);
-    drawRankList(ctx, rightX, h * 0.12 + 16, rightW, rowH, rankings, 5);
+    // Ranking
+    const rkY = h * 0.63;
+    sectionHeader(ctx, pad, rkY, w - pad * 2, "RANKING");
+    const rkAvail = h - 40 - (rkY + 14) - 8;
+    const rowH = Math.max(24, Math.min(34, rkAvail / 5 - 4));
+    drawRankList(ctx, pad, rkY + 14, w - pad * 2, rowH, rankings, 5);
+  } else {
+    // Landscape: left = title + buttons, right = ranking
+    const divX = Math.round(w * 0.5);
+    const leftW = divX - pad - 16;
+    const rightX = divX + 20;
+    const rightW = w - rightX - pad;
+
+    // Vertical divider
+    ctx.strokeStyle = R.textHeader;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(divX, pad);
+    ctx.lineTo(divX, h - 48);
+    ctx.stroke();
+
+    // Title
+    const titleSz = csz(leftW, 0.22, 36, 80);
+    ctx.fillStyle = R.textHeader;
+    ctx.font = `700 ${titleSz}px ${R.font}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText("APEX", pad, h * 0.28);
+    ctx.fillText("TYPE Z", pad, h * 0.28 + titleSz * 1.1);
+
+    const subSz = csz(w, 0.02, 10, 13);
+    ctx.font = `700 ${subSz}px ${R.font}`;
+    ctx.fillText("TIME ATTACK", pad, h * 0.28 + titleSz * 2.35);
+
+    // Buttons
+    const btnStartY = h * 0.62;
+    drawButton(
+      ctx,
+      pad,
+      btnStartY,
+      Math.min(leftW, btnW),
+      btnH,
+      "INICIAR CORRIDA",
+      blink,
+    );
+
+    if (gameState && gameState.iosPermissionStatus === "prompt") {
+      drawIOSPermissionButton(
+        ctx,
+        pad,
+        btnStartY + btnH + btnGap,
+        Math.min(leftW, btnW),
+        blink,
+      );
+    } else if (gameState && gameState.gyroscopeWarning) {
+      drawGyroscopeWarning(ctx, pad, btnStartY + btnH + btnGap, leftW);
+    }
+
+    // Ranking (right column)
+    sectionHeader(ctx, rightX, pad + 8, rightW, "RANKING");
+    const rkAvail = h - 40 - (pad + 22) - 8;
+    const rowH = Math.max(24, Math.min(42, rkAvail / 5 - 4));
+    drawRankList(ctx, rightX, pad + 22, rightW, rowH, rankings, 5);
   }
 
-  bottomBar(
-    ctx,
-    w,
-    h,
-    `SEED ${seed}  ·  ${segs} SEG  ·  ${km} km`,
-    "INICIAR  ▶",
-    blink,
-  );
+  bottomBar(ctx, w, h, [
+    { icon: "○", label: "INICIAR" },
+    { icon: "△", label: "CONFIG" },
+  ]);
   ctx.restore();
 }
 
@@ -571,139 +448,81 @@ function drawGameOverScreen(ctx, w, h, gameState) {
   ctx.save();
   ctx.globalAlpha = fade;
 
-  const _goGrad = ctx.createLinearGradient(0, 0, w * 0.4, h);
-  _goGrad.addColorStop(0, R.bgTop);
-  _goGrad.addColorStop(0.5, R.bgMid);
-  _goGrad.addColorStop(1, R.bg);
-  ctx.fillStyle = _goGrad;
+  ctx.fillStyle = R.bg;
   ctx.fillRect(0, 0, w, h);
-  scanlines(ctx, w, h);
 
-  const grad = ctx.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0, R.crimson);
-  grad.addColorStop(1, "rgba(204,0,30,0)");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 3, h);
+  const pad = Math.max(20, w * 0.05);
 
   if (isPortrait) {
-    const headSz = csz(w, 0.09, 28, 48);
-    ctx.save();
-    ctx.shadowColor = R.crimson;
-    ctx.shadowBlur = 14;
-    ctx.fillStyle = R.text;
+    // Title
+    const headSz = csz(w, 0.09, 24, 44);
+    ctx.fillStyle = R.textHeader;
     ctx.font = `700 ${headSz}px ${R.font}`;
-    ctx.textAlign = "center";
+    ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    ctx.fillText("RACE RESULT", w * 0.5, h * 0.1);
-    ctx.restore();
+    ctx.fillText("RESULT", pad, h * 0.1);
 
-    ctx.save();
-    ctx.fillStyle = R.crimson;
-    ctx.fillRect(w * 0.5 - 60, h * 0.1 + 6, 120, 2);
-    ctx.restore();
-
-    ctx.save();
-    ctx.textAlign = "center";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillStyle = R.steelDim;
-    ctx.font = `700 ${csz(w, 0.03, 11, 15)}px ${R.font}`;
-    ctx.fillText("TEMPO TOTAL", w * 0.5, h * 0.18);
-    const timeSz = csz(w, 0.12, 40, 70);
-    ctx.shadowColor = R.gold;
-    ctx.shadowBlur = 18;
-    ctx.fillStyle = R.gold;
+    sectionHeader(ctx, pad, h * 0.13, w - pad * 2, "TEMPO TOTAL");
+    const timeSz = csz(w, 0.11, 36, 64);
+    ctx.fillStyle = R.buttonBody;
     ctx.font = `700 ${timeSz}px ${R.font}`;
-    ctx.fillText(formatTime(finalTime), w * 0.5, h * 0.18 + timeSz + 8);
-    ctx.restore();
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(formatTime(finalTime), pad, h * 0.13 + 14 + timeSz);
 
-    ctx.save();
-    ctx.strokeStyle = R.divider;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(16, h * 0.36);
-    ctx.lineTo(w - 16, h * 0.36);
-    ctx.stroke();
-    ctx.restore();
-
-    const rkX = 20;
-    const rkW = w - 40;
-    const rkY = h * 0.38;
-    sectionLabel(ctx, rkX, rkY, rkW, "LEADERBOARD");
-    const rkAvail = h - 44 - (rkY + 16) - 8;
-    const rowH = Math.min(36, rkAvail / 5 - 4);
-    const rkStart = rkY + 16;
+    const rkY = h * 0.36;
+    sectionHeader(ctx, pad, rkY, w - pad * 2, "RANKING");
+    const rkAvail = h - 40 - (rkY + 14) - 8;
+    const rowH = Math.max(24, Math.min(34, rkAvail / 5 - 4));
+    const rkStart = rkY + 14;
     if (isEntering) {
-      drawRankList(ctx, rkX, rkStart, rkW, rowH, rankings, 4);
+      drawRankList(ctx, pad, rkStart, w - pad * 2, rowH, rankings, 4);
       drawNewEntryRow(
         ctx,
-        rkX,
+        pad,
         rkStart + 4 * (rowH + 4),
-        rkW,
+        w - pad * 2,
         rowH,
         finalTime,
         pending,
         blink,
       );
     } else {
-      drawResultRows(ctx, rkX, rkStart, rkW, rowH, rankings, 5, hlIdx);
+      drawResultRows(ctx, pad, rkStart, w - pad * 2, rowH, rankings, 5, hlIdx);
     }
   } else {
     const divX = Math.round(w * 0.5);
-    const leftX = csz(w, 0.06, 24, 56);
-    const leftW = divX - leftX - 16;
+    const leftW = divX - pad - 16;
     const rightX = divX + 20;
-    const rightW = w - rightX - 20;
+    const rightW = w - rightX - pad;
 
-    ctx.save();
-    ctx.strokeStyle = R.divider;
+    ctx.strokeStyle = R.textHeader;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(divX, 20);
-    ctx.lineTo(divX, h - 52);
+    ctx.moveTo(divX, pad);
+    ctx.lineTo(divX, h - 48);
     ctx.stroke();
-    ctx.restore();
 
-    const headSz = csz(leftW, 0.18, 28, 54);
-    ctx.save();
-    ctx.shadowColor = R.crimson;
-    ctx.shadowBlur = 14;
-    ctx.fillStyle = R.text;
+    const headSz = csz(leftW, 0.18, 24, 52);
+    ctx.fillStyle = R.textHeader;
     ctx.font = `700 ${headSz}px ${R.font}`;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    ctx.fillText("RACE", leftX, h * 0.22);
-    ctx.fillText("RESULT", leftX, h * 0.22 + headSz * 1.1);
-    ctx.shadowBlur = 0;
-    ctx.restore();
+    ctx.fillText("RACE", pad, h * 0.22);
+    ctx.fillText("RESULT", pad, h * 0.22 + headSz * 1.1);
 
-    ctx.save();
-    ctx.fillStyle = R.crimson;
-    ctx.fillRect(
-      leftX,
-      h * 0.22 + headSz * 2.35,
-      Math.min(120, leftW * 0.5),
-      2,
-    );
-    ctx.restore();
-
-    ctx.save();
+    sectionHeader(ctx, pad, h * 0.56, leftW, "TEMPO TOTAL");
+    const timeSz = csz(leftW, 0.14, 32, 60);
+    ctx.fillStyle = R.buttonBody;
+    ctx.font = `700 ${timeSz}px ${R.font}`;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    ctx.fillStyle = R.steelDim;
-    ctx.font = `700 ${csz(leftW, 0.04, 11, 15)}px ${R.font}`;
-    ctx.fillText("TEMPO TOTAL", leftX, h * 0.62);
-    const timeSz = csz(leftW, 0.15, 38, 70);
-    ctx.shadowColor = R.gold;
-    ctx.shadowBlur = 16;
-    ctx.fillStyle = R.gold;
-    ctx.font = `700 ${timeSz}px ${R.font}`;
-    ctx.fillText(formatTime(finalTime), leftX, h * 0.62 + timeSz + 8);
-    ctx.restore();
+    ctx.fillText(formatTime(finalTime), pad, h * 0.56 + 14 + timeSz);
 
-    sectionLabel(ctx, rightX, h * 0.12, rightW, "LEADERBOARD");
-    const rkAvail = h - 44 - (h * 0.12 + 16) - 8;
-    const rowH = Math.min(48, rkAvail / 5 - 4);
-    const rkStart = h * 0.12 + 16;
+    sectionHeader(ctx, rightX, pad + 8, rightW, "RANKING");
+    const rkAvail = h - 40 - (pad + 22) - 8;
+    const rowH = Math.max(24, Math.min(42, rkAvail / 5 - 4));
+    const rkStart = pad + 22;
     if (isEntering) {
       drawRankList(ctx, rightX, rkStart, rightW, rowH, rankings, 4);
       drawNewEntryRow(
@@ -721,9 +540,11 @@ function drawGameOverScreen(ctx, w, h, gameState) {
     }
   }
 
-  const ctaLeft = isEntering ? "INSIRA SEU NOME E PRESSIONE ENTER" : "";
-  const ctaRight = isEntering ? "ENTER PARA SALVAR" : "JOGAR NOVAMENTE  ▶";
-  bottomBar(ctx, w, h, ctaLeft, ctaRight, !isEntering || blink);
+  if (isEntering) {
+    bottomBar(ctx, w, h, [{ icon: "↵", label: "SALVAR NOME" }]);
+  } else {
+    bottomBar(ctx, w, h, [{ icon: "○", label: "JOGAR NOVAMENTE" }]);
+  }
   ctx.restore();
 }
 
@@ -738,44 +559,37 @@ function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
   ctx.save();
   ctx.globalAlpha = fade;
 
-  const _csGrad = ctx.createLinearGradient(0, 0, w * 0.4, h);
-  _csGrad.addColorStop(0, R.bgTop);
-  _csGrad.addColorStop(0.5, R.bgMid);
-  _csGrad.addColorStop(1, R.bg);
-  ctx.fillStyle = _csGrad;
+  ctx.fillStyle = R.bg;
   ctx.fillRect(0, 0, w, h);
-  scanlines(ctx, w, h);
   topStripe(ctx, w, "CIRCUIT SELECT", "CIRCUIT 01");
 
   const stripeH = 32;
-  const barH = 44;
+  const barH = 40;
+  const pad = Math.max(12, w * 0.03);
   const infoRows = [
     ["SEED", String(track.seed)],
-    ["SEGMENTOS", String(segs)],
+    ["SEGS", String(segs)],
     ["VOLTA", `${km} km`],
     ["VOLTAS", "3"],
   ];
 
   if (isPortrait) {
-    const mapH = Math.round((h - stripeH - barH) * 0.5);
-    drawMinimap(ctx, 10, stripeH + 6, w - 20, mapH, track);
+    const mapH = Math.round((h - stripeH - barH) * 0.48);
+    drawMinimap(ctx, pad, stripeH + 6, w - pad * 2, mapH, track);
 
-    const infoX = 20;
-    const infoW = w - 40;
-    const infoY = stripeH + 6 + mapH + 16;
-    const rowSz = csz(w, 0.035, 14, 20);
-    const labSz = csz(w, 0.026, 10, 14);
-    sectionLabel(ctx, infoX, infoY, infoW, "CONFIGURAÇÃO");
+    const infoX = pad;
+    const infoW = w - pad * 2;
+    const infoY = stripeH + 6 + mapH + 18;
+    const rowSz = csz(w, 0.034, 13, 18);
+    sectionHeader(ctx, infoX, infoY, infoW, "CIRCUITO", R.textHeader);
     ctx.save();
+    ctx.font = `700 ${rowSz}px ${R.font}`;
     infoRows.forEach(([label, value], i) => {
-      const ry = infoY + 20 + i * (rowSz + 8);
+      const ry = infoY + 18 + i * (rowSz + 8);
       ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = R.textHeader;
       ctx.textAlign = "left";
-      ctx.fillStyle = R.steelDim;
-      ctx.font = `700 ${labSz}px ${R.font}`;
       ctx.fillText(label, infoX, ry);
-      ctx.fillStyle = R.text;
-      ctx.font = `700 ${rowSz}px ${R.font}`;
       ctx.textAlign = "right";
       ctx.fillText(value, infoX + infoW, ry);
     });
@@ -783,135 +597,114 @@ function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
   } else {
     const mapW = Math.round(w * 0.52);
     const mapH = Math.round((h - stripeH - barH) * 0.9);
-    drawMinimap(ctx, 10, stripeH + 6, mapW - 10, mapH, track);
+    drawMinimap(ctx, pad, stripeH + 6, mapW - pad - 4, mapH, track);
 
-    ctx.save();
-    ctx.strokeStyle = R.divider;
+    ctx.strokeStyle = R.textHeader;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(mapW + 8, stripeH + 14);
     ctx.lineTo(mapW + 8, h - barH - 10);
     ctx.stroke();
-    ctx.restore();
 
-    const infoX = mapW + 22;
-    const infoW = w - infoX - 16;
+    const infoX = mapW + 20;
+    const infoW = w - infoX - pad;
     const infoY = stripeH + 20;
-    const rowSz = csz(w, 0.028, 14, 22);
-    const labSz = csz(w, 0.018, 10, 14);
-    sectionLabel(ctx, infoX, infoY, infoW, "CONFIGURAÇÃO");
+    const rowSz = csz(w, 0.026, 13, 20);
+    sectionHeader(ctx, infoX, infoY, infoW, "CIRCUITO", R.textHeader);
     ctx.save();
+    ctx.font = `700 ${rowSz}px ${R.font}`;
     infoRows.forEach(([label, value], i) => {
-      const ry = infoY + 22 + i * (rowSz + 14);
+      const ry = infoY + 18 + i * (rowSz + 14);
       ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = R.textHeader;
       ctx.textAlign = "left";
-      ctx.fillStyle = R.steelDim;
-      ctx.font = `700 ${labSz}px ${R.font}`;
       ctx.fillText(label, infoX, ry);
-      ctx.fillStyle = R.text;
-      ctx.font = `700 ${rowSz}px ${R.font}`;
       ctx.textAlign = "right";
       ctx.fillText(value, infoX + infoW, ry);
     });
     ctx.restore();
   }
 
-  bottomBar(ctx, w, h, "", "CONTINUAR  ▶", blink);
+  bottomBar(ctx, w, h, [{ icon: "○", label: "CONTINUAR" }]);
   ctx.restore();
 }
 
 function drawSettingsScreen(ctx, w, h, gameState) {
-  const isPortrait = h > w;
   const age = gameState ? gameState.screenAge || 0 : 0;
   const fade = Math.min(1, age / 0.5);
-  const blink = Math.sin(age * Math.PI * 1.4) > 0;
+  const isPortrait = h > w;
 
   ctx.save();
   ctx.globalAlpha = fade;
 
-  const _bgGrad = ctx.createLinearGradient(0, 0, w * 0.4, h);
-  _bgGrad.addColorStop(0, R.bgTop);
-  _bgGrad.addColorStop(0.5, R.bgMid);
-  _bgGrad.addColorStop(1, R.bg);
-  ctx.fillStyle = _bgGrad;
+  ctx.fillStyle = R.bg;
   ctx.fillRect(0, 0, w, h);
-  scanlines(ctx, w, h);
-  diagonalCut(ctx, w, isPortrait ? 50 : 72);
 
-  const tx = csz(w, 0.06, 18, 40);
+  const pad = Math.max(20, w * 0.05);
+  const btnW = Math.min(w - pad * 2, 380);
+  const btnH = Math.max(44, Math.round(h * 0.075));
+  const btnGap = Math.max(10, Math.round(h * 0.018));
 
-  ctx.save();
-  ctx.shadowColor = R.crimson;
-  ctx.shadowBlur = 14;
-  ctx.fillStyle = R.text;
-  ctx.font = `700 ${csz(w, 0.1, 28, 52)}px ${R.font}`;
+  // Title
+  const titleSz = csz(w, 0.055, 18, 30);
+  ctx.fillStyle = R.textHeader;
+  ctx.font = `700 ${titleSz}px ${R.font}`;
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
-  ctx.fillText("CONFIG", tx, h * 0.18);
-  ctx.shadowBlur = 0;
-  ctx.restore();
-
-  ctx.save();
-  ctx.fillStyle = R.crimson;
-  ctx.fillRect(tx, h * 0.18 + 6, 80, 2);
-  ctx.restore();
-
-  const secY1 = h * 0.26;
-  const colW = isPortrait ? w - tx * 2 : (w - tx * 3) * 0.5;
-  const col2X = isPortrait ? tx : tx * 2 + colW;
-
-  const ctrlSz = csz(w, 0.032, 12, 17);
-  const labSz = csz(w, 0.024, 10, 14);
-
-  sectionLabel(ctx, tx, secY1, colW, "CONTROLES");
-  ctx.save();
-  ctx.textBaseline = "top";
-  ctx.textAlign = "left";
-  ctx.fillStyle = R.textDim;
-  ctx.font = `400 ${ctrlSz}px ${R.font}`;
-  const ctrlLines = [
-    "←  SEGURAR ESQUERDA  —  FREIO / ERS",
-    "→  SEGURAR DIREITA   —  BOOST",
-  ];
-  ctrlLines.forEach((line, i) => {
-    ctx.fillText(line, tx, secY1 + 18 + i * (ctrlSz + 6));
-  });
-  ctx.fillStyle = R.steelDim;
-  ctx.font = `400 ${labSz}px ${R.font}`;
-  ctx.fillText(
-    "CENTRO-DIREITA / Z ou X  —  ALTERNA MODO AERO",
-    tx,
-    secY1 + 18 + ctrlLines.length * (ctrlSz + 6),
+  ctx.fillText("* CONFIG", pad, pad + titleSz);
+  ctx.strokeStyle = R.textHeader;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(pad, pad + titleSz + 5);
+  ctx.lineTo(
+    isPortrait ? w - pad : Math.min(w - pad, pad + btnW + 4),
+    pad + titleSz + 5,
   );
-  ctx.restore();
+  ctx.stroke();
 
-  const secY2 = isPortrait ? secY1 + 18 + (ctrlLines.length + 1) * (ctrlSz + 6) + 24 : secY1;
-  sectionLabel(ctx, col2X, secY2, colW, "MODOS AERO");
-  ctx.save();
-  ctx.textBaseline = "top";
-  ctx.textAlign = "left";
-  const modeLines = [
-    ["MODO X", "Alta carga — melhor em curvas"],
-    ["MODO Z", "Baixa carga — melhor em retas"],
+  let curY = pad + titleSz + 24;
+
+  // Controls section
+  sectionHeader(ctx, pad, curY, btnW, "CONTROLES");
+  curY += 16;
+  const ctrlLines = [
+    "← ESQUERDA  —  FREIO / ERS",
+    "→ DIREITA   —  BOOST",
+    "Z ou X      —  MODO AERO",
   ];
-  modeLines.forEach(([label, desc], i) => {
-    const ly = secY2 + 18 + i * (ctrlSz + 10);
-    ctx.fillStyle = i === 0 ? R.crimson : R.steel;
-    ctx.font = `700 ${ctrlSz}px ${R.font}`;
-    ctx.fillText(label, col2X, ly);
-    const lw = ctx.measureText(label).width;
-    ctx.fillStyle = R.textDim;
-    ctx.font = `400 ${labSz}px ${R.font}`;
-    ctx.fillText(`  ${desc}`, col2X + lw, ly);
+  const lineSz = csz(w, 0.028, 11, 15);
+  ctx.font = `700 ${lineSz}px ${R.font}`;
+  ctx.fillStyle = R.textHeader;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctrlLines.forEach((line, i) => {
+    ctx.fillText(line, pad, curY + (lineSz + 7) * i + lineSz);
   });
-  ctx.restore();
+  curY += ctrlLines.length * (lineSz + 7) + 20;
+
+  // Aero section
+  sectionHeader(ctx, pad, curY, btnW, "MODO AERO");
+  curY += 18;
+  const aeroItems = [
+    { label: "MODO X  —  ALTA CARGA  (CURVAS)", isSelected: false },
+    { label: "MODO Z  —  BAIXA CARGA  (RETAS)", isSelected: true },
+  ];
+  aeroItems.forEach((item) => {
+    drawButton(ctx, pad, curY, btnW, btnH, item.label, item.isSelected);
+    curY += btnH + btnGap;
+  });
 
   if (gameState && gameState.gyroscopeWarning) {
-    drawGyroscopeWarning(ctx, tx, h * 0.74, w - tx * 2);
+    drawGyroscopeWarning(ctx, pad, curY + 8, btnW);
   }
 
-  bottomBar(ctx, w, h, "", "◀  VOLTAR", blink);
+  bottomBar(ctx, w, h, [{ icon: "✕", label: "VOLTAR" }]);
   ctx.restore();
 }
 
-export { drawStartScreen, drawGameOverScreen, drawTrackPreviewScreen, drawSettingsScreen };
+export {
+  drawStartScreen,
+  drawGameOverScreen,
+  drawTrackPreviewScreen,
+  drawSettingsScreen,
+};

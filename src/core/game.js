@@ -23,7 +23,10 @@ import {
   OFF_TRACK_RESCUE_FLASH_DURATION,
 } from "../constants/index.js";
 import { clamp } from "../utils/math.js";
-import { requiresOrientationPermission } from "../utils/platform.js";
+import {
+  requiresOrientationPermission,
+  requiresMotionPermission,
+} from "../utils/platform.js";
 import { createRankingService } from "../ranking/index.js";
 import { createRivals } from "../entities/rival-car.js";
 import { createObstacles } from "../entities/obstacle.js";
@@ -35,7 +38,6 @@ import { StartMenuState } from "../menu/states/StartMenuState.js";
 import { RaceState } from "../menu/states/RaceState.js";
 import { GameOverState } from "../menu/states/GameOverState.js";
 import { SettingsState } from "../menu/states/SettingsState.js";
-
 
 const ORIENTATION_POLL_INTERVAL = 50;
 const ORIENTATION_POLL_MAX_MS = 500;
@@ -167,13 +169,40 @@ class Game {
       onGyroPermissionChange: (status) => {
         this._iosPermissionStatus = status;
         if (this.gameState) this.gameState.iosPermissionStatus = status;
+        this._updateIosTapOverlay();
       },
     });
+
+    // iOS permission overlay: a real HTML <button> covering the canvas so that
+    // Safari treats the click as a genuine user gesture, allowing
+    // DeviceMotionEvent.requestPermission() to succeed.
+    this._iosTapOverlay = document.createElement("button");
+    this._iosTapOverlay.type = "button";
+    this._iosTapOverlay.setAttribute("aria-hidden", "true");
+    Object.assign(this._iosTapOverlay.style, {
+      position: "fixed",
+      top: "0",
+      left: "0",
+      width: "100%",
+      height: "100%",
+      background: "transparent",
+      border: "none",
+      outline: "none",
+      padding: "0",
+      margin: "0",
+      cursor: "pointer",
+      display: "none",
+      zIndex: "5",
+      WebkitTapHighlightColor: "transparent",
+    });
+    document.body.appendChild(this._iosTapOverlay);
+    this._iosTapOverlay.addEventListener("click", (e) =>
+      this._handleIosTapOverlayClick(e),
+    );
 
     this._handleViewportResize = this._handleViewportResize.bind(this);
     window.addEventListener("resize", this._handleViewportResize);
     window.addEventListener("orientationchange", () => {
-
       const deadline = Date.now() + ORIENTATION_POLL_MAX_MS;
       const poll = () => {
         this._handleViewportResize();
@@ -183,7 +212,6 @@ class Game {
       };
       setTimeout(poll, ORIENTATION_POLL_INTERVAL);
     });
-
 
     if (typeof window !== "undefined" && window.visualViewport) {
       window.visualViewport.addEventListener(
@@ -198,7 +226,6 @@ class Game {
     this._initStateManager();
   }
 
-  
   _makeStateDeps() {
     return {
       getGameState: () => this.gameState,
@@ -218,7 +245,6 @@ class Game {
     };
   }
 
-  
   _createState(screen) {
     const deps = this._makeStateDeps();
     switch (screen) {
@@ -237,7 +263,6 @@ class Game {
     }
   }
 
-  
   _initStateManager() {
     this.stateManager = new StateManager();
     this.stateManager.transition(
@@ -246,8 +271,6 @@ class Game {
   }
 
   _handleViewportResize() {
-
-    
     const vv = typeof window !== "undefined" && window.visualViewport;
     if (vv && this._nameInput && this._nameInput.style.display !== "none") {
       const keyboardVisible = window.innerHeight - vv.height > 100;
@@ -270,6 +293,68 @@ class Game {
       this._hideNameInput();
     }
     this.stateManager?.transition(this._createState(screen));
+    this._updateIosTapOverlay();
+  }
+
+  _updateIosTapOverlay() {
+    if (!this._iosTapOverlay) return;
+    const show =
+      this._iosPermissionStatus === "prompt" &&
+      this.gameState?.currentScreen === SCREENS.START;
+    this._iosTapOverlay.style.display = show ? "block" : "none";
+  }
+
+  _handleIosTapOverlayClick(e) {
+    this._iosTapOverlay.style.display = "none";
+
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = rect.width ? this.canvas.width / rect.width : 1;
+    const scaleY = rect.height ? this.canvas.height / rect.height : 1;
+    const cx = Math.max(
+      0,
+      Math.min(this.canvas.width, (e.clientX - rect.left) * scaleX),
+    );
+    const cy = Math.max(
+      0,
+      Math.min(this.canvas.height, (e.clientY - rect.top) * scaleY),
+    );
+
+    const forwardClick = () => {
+      this.stateManager?.onPointerDown(cx, cy);
+      requestAnimationFrame(() => this.stateManager?.onPointerUp(cx, cy));
+    };
+
+    if (requiresMotionPermission) {
+      DeviceMotionEvent.requestPermission()
+        .then((state) => {
+          const status = state === "granted" ? "granted" : "denied";
+          this._iosPermissionStatus = status;
+          if (this.gameState) this.gameState.iosPermissionStatus = status;
+          if (state === "granted") this.input._bindDeviceMotionEvent();
+          forwardClick();
+        })
+        .catch(() => {
+          this._iosPermissionStatus = "denied";
+          if (this.gameState) this.gameState.iosPermissionStatus = "denied";
+          forwardClick();
+        });
+    } else if (requiresOrientationPermission) {
+      DeviceOrientationEvent.requestPermission()
+        .then((state) => {
+          const status = state === "granted" ? "granted" : "denied";
+          this._iosPermissionStatus = status;
+          if (this.gameState) this.gameState.iosPermissionStatus = status;
+          if (state === "granted") this.input._bindDeviceOrientationEvent();
+          forwardClick();
+        })
+        .catch(() => {
+          this._iosPermissionStatus = "denied";
+          if (this.gameState) this.gameState.iosPermissionStatus = "denied";
+          forwardClick();
+        });
+    } else {
+      forwardClick();
+    }
   }
 
   reset(initialScreen = SCREENS.START) {
@@ -401,7 +486,6 @@ class Game {
 
     updateRivals(this.gameState, this.track, dt);
 
-
     if (!this.gameState.rescueInProgress) {
       const offScreenThreshold = this.canvas.width / 2 / LATERAL_RENDER_SCALE;
       if (Math.abs(this.gameState.lateralOffset || 0) >= offScreenThreshold) {
@@ -450,10 +534,9 @@ class Game {
       display: "block",
     });
     this._nameInput.value = "";
-    
+
     this._nameInput.readOnly = false;
 
-    
     setTimeout(() => this._nameInput.focus(), 80);
   }
 
