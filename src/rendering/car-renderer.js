@@ -1,4 +1,3 @@
-import { drawRoundedRect } from "../utils/canvas.js";
 import {
   AERO_MODES,
   BOOST_FLAME_HEIGHT_MIN,
@@ -29,8 +28,8 @@ function _pushTrail(x, y, angle) {
 }
 
 function _drawMotionTrail(ctx, carWidth, carHeight) {
-  const bw = carWidth * 0.78;
-  const bh = carHeight * 0.9;
+  const bw = carWidth * 0.72;
+  const bh = carHeight * 0.88;
   for (let i = 0; i < _trail.length - 1; i++) {
     const t = _trail[i];
     const alpha = ((i + 1) / _trail.length) * 0.055;
@@ -110,123 +109,81 @@ function drawDustCloud(ctx, gameState, drawX, drawY, carWidth, carHeight) {
   }
 }
 function drawCarBody(ctx, gameState, metrics) {
-  const { carWidth, carHeight } = metrics;
-  const bodyWidth = carWidth * 0.78;
-  const bodyHeight = carHeight * 0.9;
-  const bodyX = -bodyWidth / 2;
-  const bodyY = -bodyHeight / 2;
+  const { carWidth: w, carHeight: h } = metrics;
   const isModeZ = gameState.aeroMode === AERO_MODES.Z;
-  const bodyBase = isModeZ ? RENDER_COLORS.modeZ : RENDER_COLORS.red;
-  const bodyDark = isModeZ ? RENDER_COLORS.modeZDark : RENDER_COLORS.redDark;
+  const bodyColor = isModeZ ? RENDER_COLORS.modeZ : RENDER_COLORS.red;
+  const accentColor = isModeZ ? RENDER_COLORS.modeZLight : "#ffffff";
 
-  // ── Projected solid drop-shadow (no blur — hard industrial) ─────────────
-  ctx.fillStyle = "rgba(0,0,0,0.55)";
-  drawRoundedRect(ctx, bodyX + 6, bodyY + 7, bodyWidth, bodyHeight, 12);
+  const bodyW = w * 0.72;
+  const bodyH = h * 0.88;
+
+  // ── Ground shadow ellipse ────────────────────────────────────────────────
+  ctx.fillStyle = "rgba(0,0,0,0.28)";
+  ctx.beginPath();
+  ctx.ellipse(0, h * 0.28, w * 0.46, 5, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // ── Ground contact shadow ellipse ────────────────────────────────────────
-  ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
+  // ── Body ─────────────────────────────────────────────────────────────────
+  ctx.fillStyle = bodyColor;
   ctx.beginPath();
-  ctx.ellipse(0, carHeight * 0.25, CAR_WIDTH * 0.48, 9, 0, 0, Math.PI * 2);
+  ctx.roundRect(-bodyW / 2, -bodyH / 2, bodyW, bodyH, 4);
   ctx.fill();
 
-  // ── Body — linear gradient for roof curvature / volume ───────────────────
-  const bodyGrad = ctx.createLinearGradient(
-    bodyX,
-    bodyY,
-    bodyX + bodyWidth,
-    bodyY,
-  );
-  const highlight = isModeZ ? "rgba(72,112,192,0.85)" : "rgba(255,60,60,0.85)";
-  const midColor = isModeZ ? RENDER_COLORS.modeZ : RENDER_COLORS.red;
-  const edgeColor = isModeZ ? RENDER_COLORS.modeZDark : RENDER_COLORS.redDark;
-  bodyGrad.addColorStop(0, edgeColor);
-  bodyGrad.addColorStop(0.22, highlight);
-  bodyGrad.addColorStop(0.5, midColor);
-  bodyGrad.addColorStop(0.78, highlight);
-  bodyGrad.addColorStop(1, edgeColor);
-  ctx.fillStyle = bodyGrad;
-  drawRoundedRect(ctx, bodyX, bodyY, bodyWidth, bodyHeight, 12);
+  // ── Accent stripe (horizontal band across centre) ────────────────────────
+  const stripeH = bodyH * 0.25;
+  ctx.fillStyle = accentColor;
+  ctx.beginPath();
+  ctx.roundRect(-bodyW * 0.35, -stripeH / 2, bodyW * 0.7, stripeH, 2);
   ctx.fill();
 
-  // Outline
-  ctx.strokeStyle = bodyDark;
-  ctx.lineWidth = 2;
-  ctx.stroke();
+  // ── Front wing ───────────────────────────────────────────────────────────
+  const wingW = w * 0.9;
+  const wingH = h * 0.07;
+  ctx.fillStyle = accentColor;
+  ctx.fillRect(-wingW / 2, -bodyH / 2 - wingH, wingW, wingH);
 
-  // ── Panel lines (door / hood cut lines) ─────────────────────────────────
-  ctx.strokeStyle = bodyDark;
-  ctx.lineWidth = 1;
+  // ── Rear wing ────────────────────────────────────────────────────────────
+  ctx.fillStyle = bodyColor;
+  ctx.fillRect((-wingW / 2) * 0.85, bodyH / 2, wingW * 0.85, wingH);
 
-  // Horizontal door separator
-  const panelLineY = bodyY + bodyHeight * 0.55;
-  ctx.beginPath();
-  ctx.moveTo(bodyX + 4, panelLineY);
-  ctx.lineTo(bodyX + bodyWidth - 4, panelLineY);
-  ctx.stroke();
+  // ── Wheels ───────────────────────────────────────────────────────────────
+  const wheelW = w * 0.2;
+  const wheelH = h * 0.22;
+  const wOffX = bodyW * 0.38;
+  const wOffY = bodyH * 0.28;
+  ctx.fillStyle = "#1A1A1A";
+  for (const [wx, wy] of [
+    [-wOffX, -wOffY],
+    [wOffX, -wOffY],
+    [-wOffX, wOffY],
+    [wOffX, wOffY],
+  ]) {
+    ctx.beginPath();
+    ctx.roundRect(wx - wheelW / 2, wy - wheelH / 2, wheelW, wheelH, 2);
+    ctx.fill();
+  }
 
-  // Vertical hood / bonnet split
-  ctx.beginPath();
-  ctx.moveTo(0, bodyY + 4);
-  ctx.lineTo(0, bodyY + bodyHeight * 0.48);
-  ctx.stroke();
-
-  // ── Cockpit / windshield ─────────────────────────────────────────────────
-  ctx.lineWidth = 2;
-  const cockpitWidth = bodyWidth * 0.58;
-  const cockpitHeight = bodyHeight * 0.28;
-  const cockpitY = bodyY + bodyHeight * 0.2;
-  const cockpitX = -cockpitWidth / 2;
-  drawRoundedRect(ctx, cockpitX, cockpitY, cockpitWidth, cockpitHeight, 7);
+  // ── Cockpit (player identifier) ──────────────────────────────────────────
+  const cpW = bodyW * 0.38;
+  const cpH = bodyH * 0.22;
+  const cpX = -cpW / 2;
+  const cpY = -bodyH / 2 + bodyH * 0.18;
   ctx.fillStyle = "#000000";
+  ctx.beginPath();
+  ctx.roundRect(cpX, cpY, cpW, cpH, 3);
   ctx.fill();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  // Diagonal glare streak (simulate light reflection)
+  // Diagonal glare
   ctx.save();
   ctx.beginPath();
-  ctx.rect(cockpitX, cockpitY, cockpitWidth, cockpitHeight);
+  ctx.rect(cpX, cpY, cpW, cpH);
   ctx.clip();
   ctx.strokeStyle = "rgba(180,220,255,0.55)";
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(cockpitX + cockpitWidth * 0.15, cockpitY + 2);
-  ctx.lineTo(cockpitX + cockpitWidth * 0.45, cockpitY + cockpitHeight - 2);
-  ctx.stroke();
-  ctx.strokeStyle = "rgba(255,255,255,0.22)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(cockpitX + cockpitWidth * 0.25, cockpitY + 2);
-  ctx.lineTo(cockpitX + cockpitWidth * 0.55, cockpitY + cockpitHeight - 2);
+  ctx.moveTo(cpX + cpW * 0.15, cpY + 2);
+  ctx.lineTo(cpX + cpW * 0.55, cpY + cpH - 2);
   ctx.stroke();
   ctx.restore();
-
-  // Top windshield reflection strip
-  ctx.fillStyle = "rgba(255, 255, 255, 0.24)";
-  drawRoundedRect(
-    ctx,
-    cockpitX + 3,
-    cockpitY + 3,
-    cockpitWidth - 6,
-    Math.max(3, cockpitHeight * 0.18),
-    3,
-  );
-  ctx.fill();
-
-  // ── Centre stripe ────────────────────────────────────────────────────────
-  const centerStripeWidth = bodyWidth * 0.16;
-  drawRoundedRect(
-    ctx,
-    -centerStripeWidth / 2,
-    bodyY + 6,
-    centerStripeWidth,
-    bodyHeight * 0.64,
-    3,
-  );
-  ctx.fillStyle = "rgba(255, 255, 255, 0.26)";
-  ctx.fill();
 }
 function drawBoostFlame(ctx, gameState, metrics) {
   if (!gameState.isBoosting || gameState.battery <= 0) return;
