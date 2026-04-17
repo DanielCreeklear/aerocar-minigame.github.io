@@ -472,14 +472,35 @@ class Game {
     const cw = this.canvas.width;
     const ch = this.canvas.height;
     const isPortrait = ch > cw;
-    const x = isPortrait ? Math.round(cw * 0.22) : Math.round(cw * 0.565);
-    const y = isPortrait ? Math.round(ch * 0.832) : Math.round(ch * 0.838);
-    const w = isPortrait ? Math.round(cw * 0.52) : Math.round(cw * 0.2);
-    const fs = Math.max(14, Math.min(22, cw * 0.022));
+    const pad = Math.max(20, cw * 0.05);
+    let entryX, entryY, entryW, rowH;
+    if (isPortrait) {
+      const rkY = ch * 0.36;
+      const rkAvail = ch - 40 - (rkY + 14) - 8;
+      rowH = Math.max(24, Math.min(34, rkAvail / 5 - 4));
+      const rkStart = rkY + 14;
+      entryX = pad + 34;
+      entryY = rkStart + 4 * (rowH + 4);
+      entryW = cw - pad * 2 - 34;
+    } else {
+      const divX = Math.round(cw * 0.5);
+      const rightX = divX + 20;
+      const rightW = cw - rightX - pad;
+      const rkAvail = ch - 40 - (pad + 22) - 8;
+      rowH = Math.max(24, Math.min(42, rkAvail / 5 - 4));
+      const rkStart = pad + 22;
+      entryX = rightX + 34;
+      entryY = rkStart + 4 * (rowH + 4);
+      entryW = rightW - 34;
+    }
+    // font-size >= 16px prevents iOS Safari from zooming on focus
+    const fs = Math.max(16, Math.min(22, cw * 0.022));
     Object.assign(this._nameInput.style, {
-      left: `${x}px`,
-      top: `${y}px`,
-      width: `${w}px`,
+      left: `${Math.round(entryX)}px`,
+      top: `${Math.round(entryY)}px`,
+      width: `${Math.round(entryW)}px`,
+      height: `${Math.round(rowH)}px`,
+      lineHeight: `${Math.round(rowH)}px`,
       fontSize: `${fs}px`,
       display: "block",
     });
@@ -507,4 +528,4 @@ class Game {
     });
   }
 }
-export { Game };
+export { Game };

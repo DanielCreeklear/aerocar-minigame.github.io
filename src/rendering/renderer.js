@@ -25,6 +25,12 @@ const CAMERA_SHAKE_SPEED_KMH_SCALE = 17;
 const CAMERA_SHAKE_SPEED_MIN = 325;
 const CAMERA_SHAKE_SPEED_MAX = 375;
 const CAMERA_SHAKE_MAX_PX = 2.8;
+
+// ─── Rain camera-flash state ────────────────────────────────────────────────
+const RAIN_FLASH_INTERVAL_MS = 1800;
+const RAIN_FLASH_DURATION_MS = 16; // ~1 frame
+let _nextRainFlashAt = 0;
+let _rainFlashActive = false;
 function getCameraShakeOffset(gameState) {
   const rawSpeed = gameState?.speed || 0;
   const speedKmh = rawSpeed * CAMERA_SHAKE_SPEED_KMH_SCALE;
@@ -122,10 +128,32 @@ class Renderer {
     if (scale !== 1) ctx.scale(scale, scale);
     this.hud.draw(ctx, gameState, logW, logH);
     if (telemetry) telemetry.drawHUD(ctx, logW, logH, metrics.isPortrait);
+
+    // ── Rain camera-flash VFX ──────────────────────────────────────────────
+    const now = performance.now();
+    if (now >= _nextRainFlashAt) {
+      _rainFlashActive = true;
+      _nextRainFlashAt = now + RAIN_FLASH_INTERVAL_MS + Math.random() * 1200;
+    }
+    if (_rainFlashActive) {
+      // Scatter 4-8 bright white spots to simulate raindrops hitting lens
+      const count = 4 + Math.floor(Math.random() * 5);
+      for (let i = 0; i < count; i++) {
+        const fx = Math.random() * logW;
+        const fy = Math.random() * logH;
+        const fr = 2 + Math.random() * 5;
+        ctx.beginPath();
+        ctx.arc(fx, fy, fr, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,255,0.55)";
+        ctx.fill();
+      }
+      _rainFlashActive = false;
+    }
+
     ctx.restore();
   }
   resetHud() {
     this.hud.reset();
   }
 }
-export { Renderer };
+export { Renderer };

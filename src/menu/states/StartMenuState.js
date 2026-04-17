@@ -11,8 +11,10 @@ export class StartMenuState extends GameState {
   }
   render(ctx, w, h) {
     drawStartScreen(ctx, w, h, this._deps.getGameState(), this._deps.track);
-    const thumbY = h * 0.65;
-    this._ctaBtn.setRect(0, thumbY, w, h - thumbY - 40);
+    const isPortrait = h > w;
+    const btnStartY = isPortrait ? h * 0.44 : h * 0.62;
+    const btnH = Math.max(44, Math.round(h * 0.075));
+    this._ctaBtn.setRect(0, btnStartY, w, btnH);
     this._ctaBtn.renderPressOverlay(ctx);
     const footerH = 40;
     this._settingsBtn.setRect(w * 0.5, h - footerH, w * 0.5, footerH);
@@ -79,4 +81,4 @@ export class StartMenuState extends GameState {
     this._settingsBtn.pressed = false;
     this._gyroBtn.pressed = false;
   }
-}
+}
