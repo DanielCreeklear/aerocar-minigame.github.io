@@ -108,7 +108,9 @@ class Game {
             this.gameState.rankings = rankings;
             this.gameState.newEntryIndex = newEntryIndex;
           })
-          .catch(() => {});
+          .catch((err) => {
+            console.error("[Ranking] Failed to save entry:", err);
+          });
       }
     });
     this._nameInput.addEventListener("input", () => {

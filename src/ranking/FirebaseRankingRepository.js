@@ -14,6 +14,15 @@ export class FirebaseRankingRepository {
   constructor() {
     this._configured = _isConfigured(firebaseConfig);
     this._db = null;
+    if (this._configured) {
+      console.info(
+        "[Firebase] Ranking repository configured — remote sync enabled.",
+      );
+    } else {
+      console.warn(
+        "[Firebase] VITE_FIREBASE_API_KEY is missing or project not set — rankings will only be saved locally.",
+      );
+    }
   }
 
   _getDb() {
@@ -54,8 +63,12 @@ export class FirebaseRankingRepository {
     try {
       const ref = doc(this._getDb(), RANKINGS_COLLECTION, RANKINGS_DOC);
       await setDoc(ref, { entries });
+      console.info(
+        `[Firebase] Rankings saved successfully (${entries.length} entries).`,
+      );
     } catch (err) {
-      console.warn("[RankingService] Firebase saveAll failed:", err.message);
+      console.error("[Firebase] saveAll failed:", err.code ?? err.message, err);
+      throw err;
     }
   }
 }

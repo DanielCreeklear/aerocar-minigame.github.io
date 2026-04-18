@@ -15,8 +15,15 @@ export class HybridRankingRepository {
   }
   async saveAll(entries) {
     await this._local.saveAll(entries);
-    this._firebase.saveAll(entries).catch((err) => {
-      console.warn("[RankingService] Firebase background sync failed:", err.message);
+    if (!this._firebase.isConfigured()) return;
+    const timeout = new Promise((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Firebase save timed out after 8s")),
+        8000,
+      ),
+    );
+    Promise.race([this._firebase.saveAll(entries), timeout]).catch((err) => {
+      console.warn("[Firebase] Background sync failed:", err.message);
     });
   }
-}
+}
