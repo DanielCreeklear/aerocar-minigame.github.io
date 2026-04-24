@@ -22,7 +22,7 @@ function computeForwardVelocity(gameState, dt, strategy) {
   const maxZ = getPhysicsValue("VZ_MAX_MODE_Z", strategy.name === 'Z' ? strategy.maxVz : undefined);
   const boostGain = getPhysicsValue("BOOST_BASE_GAIN", BOOST_BASE_GAIN);
   // use the proper default BOOST_BATTERY_DRAIN constant (not BOOST_BASE_GAIN)
-  const boostDrain = getPhysicsValue("BOOST_BATTERY_DRAIN", undefined);
+  const boostDrain = getPhysicsValue("BOOST_BATTERY_DRAIN", BOOST_BATTERY_DRAIN);
   const boostMin = getPhysicsValue("BOOST_MIN_EFFECT", BOOST_MIN_EFFECT);
   const boostSlipFactor = getPhysicsValue("BOOST_SLIP_EFFECT_FACTOR", BOOST_SLIP_EFFECT_FACTOR);
   const offTrackAccelFactor = getPhysicsValue("OFF_TRACK_ACCEL_FACTOR", OFF_TRACK_ACCEL_FACTOR);

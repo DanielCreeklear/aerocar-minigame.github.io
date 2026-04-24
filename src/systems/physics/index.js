@@ -67,7 +67,10 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
   gameState.visualOverDrive =
     _prevVisualOD + (_overDrive - _prevVisualOD) * Math.min(1, _buildRate * dt);
   const _visualOD = gameState.visualOverDrive;
-  const _steerEff = clamp(1 - _visualOD * UNDERSTEER_FACTOR, 0, 1);
+  // Use the current aero strategy's understeerFactor (visual should reflect physics)
+  const strategy = getAeroStrategy(gameState.aeroMode);
+  const visualUndersteer = strategy.understeerFactor ?? UNDERSTEER_FACTOR;
+  const _steerEff = clamp(1 - _visualOD * visualUndersteer, 0, 1);
   const _targetVisualHeading = (gameState.carHeading || 0) * _steerEff;
   gameState.carVisualHeading =
     (gameState.carVisualHeading || 0) +

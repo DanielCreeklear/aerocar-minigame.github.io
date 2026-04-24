@@ -493,6 +493,12 @@ class Game {
         this.gameState.rescueFlashTimer = OFF_TRACK_RESCUE_FLASH_DURATION;
       }
     }
+
+    // Ensure centrifugal drift is cleared when rescue is requested from the
+    // general game-level check so both paths behave the same.
+    if (this.gameState.rescueInProgress) {
+      this.gameState.centrifugalDrift = 0;
+    }
     if (lapCompleted) {
       const now = Date.now();
       const lapTime = now - this.gameState.lapStartTime;

@@ -33,9 +33,6 @@ import {
   DRIFT_ERS_MIN_SLIP,
   DRIFT_REWARD_DELAY_S,
   MAX_OVERDRIVE_FACTOR,
-  TELEMETRY_LATERAL_WARN_ENABLED,
-  TELEMETRY_LATERAL_WARN_GRIP_RATIO,
-  TELEMETRY_LATERAL_WARN_OVERDRIVE,
 } from "../../constants/index.js";
 import { getPhysicsValue } from "../../constants/physics-overrides.js";
 function updateHeadingAndLateral(
@@ -74,10 +71,10 @@ function updateHeadingAndLateral(
   gameState.overDriveFactor = overDriveFactor;
 
   
-  const clampedOverDrive = Math.min(overDriveFactor, MAX_OVERDRIVE_FACTOR);
-  const usedOverDrive = clampedOverDrive;
+  // cap overdrive for steering computations but preserve raw overdrive elsewhere
+  const usedOverDrive = Math.min(overDriveFactor, MAX_OVERDRIVE_FACTOR);
   const usf = understeerFactor ?? getPhysicsValue("UNDERSTEER_FACTOR", UNDERSTEER_FACTOR);
-  const driftIntensity = Math.max(0, gripRatio - 1);
+  const driftIntensity = overDriveFactor; // same metric, use the canonical name
   
   const steerEffectiveness = clamp(
     1 - usedOverDrive * usf * (1 + driftIntensity * getPhysicsValue("DRIFT_VX_REDUCTION", DRIFT_VX_REDUCTION)),
@@ -236,10 +233,14 @@ function integrateLateralState(
   }
   gameState.isDrifting = !gameState.isSpinning && (gameState.driftTimer || 0) >= DRIFT_REWARD_DELAY_S && gameState.currentSlip >= DRIFT_ERS_MIN_SLIP;
   
+  // include aero contribution in reported effective grip when available
+  const effectiveGripReported = diag && Number.isFinite(diag.gripLimit)
+    ? diag.gripLimit
+    : strategy.lateralFriction + (strategy.aeroGripFactor || 0) * vz;
+
   const forces = {
-    
-    effectiveGrip: strategy.lateralFriction,
-    
+    effectiveGrip: effectiveGripReported,
+    // report a velocity-like centripetal demand (named for UI/backwards compatibility)
     centrifugalForce: diag && Number.isFinite(diag.vxDemand) ? Math.abs(diag.vxDemand) : 0,
   };
 
