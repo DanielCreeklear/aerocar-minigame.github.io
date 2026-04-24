@@ -224,7 +224,23 @@ class Game {
         onRaceEnter: () => {},
         onRaceExit: () => {},
         openSettings: () => this._setScreen(SCREENS.SETTINGS),
-        openLeaderboard: () => this._setScreen(SCREENS.LEADERBOARD),
+      openLeaderboard: () => {
+        // reset to first page when opening
+        if (this.gameState) this.gameState.leaderboardPage = 0;
+        this._setScreen(SCREENS.LEADERBOARD);
+      },
+      changeLeaderboardPage: (delta) => {
+        // delta: -1 or +1
+        if (!this.gameState) return;
+        const PAGE_SIZE = 10;
+        const total = (this.gameState.rankings || []).length;
+        const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        const cur = typeof this.gameState.leaderboardPage === 'number' ? this.gameState.leaderboardPage : 0;
+        let next = cur + (delta || 0);
+        if (next < 0) next = 0;
+        if (next >= totalPages) next = totalPages - 1;
+        this.gameState.leaderboardPage = next;
+      },
         backToMenu: () => this._setScreen(SCREENS.START),
         requestGyroPermission: () => this.input.requestOrientationPermission(),
       },
@@ -366,6 +382,7 @@ class Game {
       lapStartTime: Date.now(),
       rankingPhase: null,
       rankings: this.rankings,
+      leaderboardPage: 0,
       newEntryIndex: -1,
       screenAge: 0,
       pendingName: "",

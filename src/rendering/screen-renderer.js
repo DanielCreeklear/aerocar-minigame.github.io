@@ -63,7 +63,8 @@ function drawSmallButton(ctx, x, y, w, h, label, isSelected) {
   // label
   const sz = Math.max(10, Math.min(12, h * 0.45));
   ctx.font = `700 ${sz}px ${R.font}`;
-  ctx.fillStyle = isSelected ? R.buttonBody : R.textHeader;
+  // Use white text for small buttons
+  ctx.fillStyle = R.text;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(label, x + w * 0.5, y + h * 0.5);
@@ -367,18 +368,12 @@ function drawStartScreen(ctx, w, h, gameState, track) {
     const rkY = h * 0.63;
     // Draw header and small "VER TUDO" button to access full leaderboard
     sectionHeader(ctx, pad, rkY, w - pad * 2, "RANKING");
-    const hdrBtnW = 86;
-    const hdrBtnH = 26;
+    // compact responsive header button for "VER TUDO"
+    const hdrBtnW = Math.min(72, Math.round(w * 0.14));
+    const hdrBtnH = 20;
     const hdrBtnX = w - pad - hdrBtnW;
     const hdrBtnY = rkY - hdrBtnH - 6;
-    // small right-aligned label
-    ctx.save();
-    ctx.font = `700 11px ${R.font}`;
-    ctx.fillStyle = R.textHeader;
-    ctx.textAlign = "right";
-    ctx.textBaseline = "top";
-    ctx.fillText("VER TUDO", hdrBtnX + hdrBtnW - 6, hdrBtnY + 6);
-    ctx.restore();
+    drawSmallButton(ctx, hdrBtnX, hdrBtnY, hdrBtnW, hdrBtnH, "VER TUDO", false);
     const rkAvail = h - 40 - (rkY + 14) - 8;
     const rowH = Math.max(24, Math.min(34, rkAvail / 5 - 4));
     drawRankList(ctx, pad, rkY + 14, w - pad * 2, rowH, rankings, 5);
@@ -425,18 +420,12 @@ function drawStartScreen(ctx, w, h, gameState, track) {
       drawGyroscopeWarning(ctx, pad, btnStartY + btnH + btnGap, leftW);
     }
     sectionHeader(ctx, rightX, pad + 8, rightW, "RANKING");
-    // small "VER TUDO" label on the top-right of the right column
-    const hdrBtnW = 86;
-    const hdrBtnH = 20;
+    // small "VER TUDO" visual button on the top-right of the right column
+    const hdrBtnW = Math.min(72, Math.round(w * 0.12));
+    const hdrBtnH = 18;
     const hdrBtnX = rightX + rightW - hdrBtnW;
     const hdrBtnY = pad + 8 - hdrBtnH - 4;
-    ctx.save();
-    ctx.font = `700 11px ${R.font}`;
-    ctx.fillStyle = R.textHeader;
-    ctx.textAlign = "right";
-    ctx.textBaseline = "top";
-    ctx.fillText("VER TUDO", hdrBtnX + hdrBtnW - 6, hdrBtnY + 6);
-    ctx.restore();
+    drawSmallButton(ctx, hdrBtnX, hdrBtnY, hdrBtnW, hdrBtnH, "VER TUDO", false);
     const rkAvail = h - 40 - (pad + 22) - 8;
     const rowH = Math.max(24, Math.min(42, rkAvail / 5 - 4));
     drawRankList(ctx, rightX, pad + 22, rightW, rowH, rankings, 5);
@@ -662,6 +651,11 @@ function drawLeaderboardScreen(ctx, w, h, gameState) {
   const age = gameState ? gameState.screenAge || 0 : 0;
   const fade = Math.min(1, age / 0.5);
   const rankings = (gameState && gameState.rankings) || [];
+  const page = (gameState && typeof gameState.leaderboardPage === "number") ? gameState.leaderboardPage : 0;
+  const effectivePageSize = isPortrait ? 6 : 10;
+  const totalPages = Math.max(1, Math.ceil((rankings.length || 0) / effectivePageSize));
+  const curPage = Math.max(0, Math.min(page, totalPages - 1));
+
   ctx.save();
   ctx.globalAlpha = fade;
   ctx.fillStyle = R.bg;
@@ -672,7 +666,7 @@ function drawLeaderboardScreen(ctx, w, h, gameState) {
   ctx.font = `700 ${titleSz}px ${R.font}`;
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
-  ctx.fillText("RANKING COMPLETO", pad, pad + titleSz);
+  ctx.fillText("RANKING", pad, pad + titleSz);
   ctx.strokeStyle = R.textHeader;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -680,11 +674,31 @@ function drawLeaderboardScreen(ctx, w, h, gameState) {
   ctx.lineTo(w - pad, pad + titleSz + 6);
   ctx.stroke();
 
-  const topY = pad + titleSz + 18;
+  // Prev / Next controls on the right. Use smaller, responsive sizing for mobile
+  const ctrlBtnW = Math.min(72, Math.round(w * 0.14));
+  const ctrlBtnH = isPortrait ? 24 : 18;
+  const gap = 6;
+  // Place controls just below the title divider to avoid overlap
+  const lineY = pad + titleSz + 6;
+  const nextBtnX = w - pad - ctrlBtnW;
+  const prevBtnX = nextBtnX - (ctrlBtnW + gap);
+  const ctrlBtnY = Math.round(lineY + 6);
+  const showPagingControls = (rankings && rankings.length) > 10;
+  if (showPagingControls) {
+    drawSmallButton(ctx, prevBtnX, ctrlBtnY, ctrlBtnW, ctrlBtnH, "ANT", false);
+    drawSmallButton(ctx, nextBtnX, ctrlBtnY, ctrlBtnW, ctrlBtnH, "PROX", false);
+  }
+
+  // page label removed per user request
+
+  // Ensure the rank list starts below the controls and title
+  const topY = showPagingControls ? Math.max(pad + titleSz + 18, ctrlBtnY + ctrlBtnH + 6) : (pad + titleSz + 18);
   const bottomH = 40;
   const availH = h - topY - bottomH - pad;
-  const rowH = Math.max(22, Math.min(48, availH / 10 - 4));
-  drawRankList(ctx, pad, topY, w - pad * 2, rowH, rankings, 10);
+  // reduce page size on narrow screens so rows don't overlap and remain tappable
+  const rowH = Math.max(20, Math.min(48, availH / effectivePageSize - 4));
+  const offset = curPage * effectivePageSize;
+  drawRankListPaged(ctx, pad, topY, w - pad * 2, rowH, rankings, effectivePageSize, offset);
 
   bottomBar(ctx, w, h, [{ icon: "✕", label: "VOLTAR" }]);
   ctx.restore();
