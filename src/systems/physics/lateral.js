@@ -171,7 +171,7 @@ function integrateLateralState(
     gameState.centrifugalDrift =
       (gameState.centrifugalDrift || 0) * Math.pow(0.12, dt);
   }
-  const { x: rawX, vx: rawVx } = updateHeadingAndLateral(
+  const { x: rawX, vx: rawVx, diag } = updateHeadingAndLateral(
     gameState,
     effectiveCurvatureForLateral,
     vz,
@@ -234,9 +234,18 @@ function integrateLateralState(
     gameState.driftTimer = 0;
   }
   gameState.isDrifting = !gameState.isSpinning && (gameState.driftTimer || 0) >= DRIFT_REWARD_DELAY_S && gameState.currentSlip >= DRIFT_ERS_MIN_SLIP;
+  // expose computed diagnostics and forces for telemetry consumers
+  const forces = {
+    // surface-level effective grip
+    effectiveGrip: strategy.lateralFriction,
+    // expose a centrifugal-like force for telemetry/UI (use vxDemand when available)
+    centrifugalForce: diag && Number.isFinite(diag.vxDemand) ? Math.abs(diag.vxDemand) : 0,
+  };
+
   return {
     nextVz: rescuedVz,
-    forces: { centrifugalForce: 0, effectiveGrip: strategy.lateralFriction },
+    forces,
+    diag: diag || null,
   };
 }
 export {

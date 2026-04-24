@@ -12,6 +12,16 @@ function buildPhysicsTelemetry(data) {
       steerEffectiveness: data.lateral.steerEffectiveness,
       drift: data.lateral.drift,
     };
+  } else if (data.diag) {
+    // Backwards-compatible: allow callers to pass diag directly
+    out.lateral = {
+      vxDemand: data.diag.vxDemand,
+      gripLimit: data.diag.gripLimit,
+      gripRatio: data.diag.gripRatio,
+      overDriveFactor: data.diag.overDriveFactor,
+      steerEffectiveness: data.diag.steerEffectiveness,
+      drift: data.diag.drift,
+    };
   }
   return out;
 }
