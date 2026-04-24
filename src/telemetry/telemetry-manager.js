@@ -2,8 +2,37 @@ import { drawRoundedRect } from "../utils/canvas.js";
 const SAMPLE_INTERVAL_MS = 50;
 const MAX_SAMPLES = 600;
 const ACCEL_REF = 5;
+
+function _isDevMode() {
+  try {
+    if (typeof window === 'undefined') return false;
+    const host = window.location && window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') return true;
+    if (window.__AEROCAR_DEV__ === true) return true;
+    if (typeof URLSearchParams !== 'undefined') {
+      const p = new URLSearchParams(window.location.search || '');
+      const v = p.get('dev');
+      if (v === '1' || v === 'true') return true;
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
 class TelemetryManager {
   constructor() {
+    this._enabled = _isDevMode();
+    if (!this._enabled) {
+      // keep very small memory footprint and make all methods no-op
+      this._buf = null;
+      this._head = 0;
+      this._count = 0;
+      this._lastSampleMs = -Infinity;
+      this._hudVisible = false;
+      return;
+    }
+    // enabled: allocate buffers
     this._buf = new Array(MAX_SAMPLES).fill(null);
     this._head = 0;
     this._count = 0;
@@ -11,11 +40,13 @@ class TelemetryManager {
     this._hudVisible = true;
   }
   reset() {
+    if (!this._enabled) return;
     this._head = 0;
     this._count = 0;
     this._lastSampleMs = -Infinity;
   }
   log(gameState, physicsTelemetry = null) {
+    if (!this._enabled) return;
     const now = gameState.currentTime;
     if (now - this._lastSampleMs < SAMPLE_INTERVAL_MS) return;
     this._lastSampleMs = now;
@@ -83,6 +114,7 @@ class TelemetryManager {
     if (this._count < MAX_SAMPLES) this._count++;
   }
   exportJSON() {
+    if (!this._enabled) return;
     const samples = this._getSamples();
     if (samples.length === 0) return;
     const blob = new Blob([
@@ -204,10 +236,11 @@ class TelemetryManager {
     URL.revokeObjectURL(url);
   }
   toggleHUD() {
+    if (!this._enabled) return;
     this._hudVisible = !this._hudVisible;
   }
   drawHUD(ctx, width, height, isMobile = false) {
-    if (!this._hudVisible || isMobile) return;
+    if (!this._enabled || !this._hudVisible || isMobile) return;
     const d = this._getLatest();
     if (!d) return;
     const PX = 10;
@@ -573,11 +606,11 @@ class TelemetryManager {
     ctx.restore();
   }
   _getLatest() {
-    if (this._count === 0) return null;
+    if (!this._enabled || this._count === 0) return null;
     return this._buf[(this._head - 1 + MAX_SAMPLES) % MAX_SAMPLES];
   }
   _getLastN(n) {
-    if (this._count === 0) return [];
+    if (!this._enabled || this._count === 0) return [];
     const count = Math.min(n, this._count);
     const oldest = (this._head - count + MAX_SAMPLES) % MAX_SAMPLES;
     const out = new Array(count);
@@ -587,7 +620,7 @@ class TelemetryManager {
     return out;
   }
   _getSamples() {
-    if (this._count === 0) return [];
+    if (!this._enabled || this._count === 0) return [];
     const oldest = this._count < MAX_SAMPLES ? 0 : this._head;
     const out = new Array(this._count);
     for (let i = 0; i < this._count; i++) {
