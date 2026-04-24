@@ -3,66 +3,27 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>AeroCar — Podcast & Minigame</title>
-    <meta name="description" content="AeroCar — insights, podcast and a small minigame about F1 2026 aerodynamics." />
-    <meta name="theme-color" content="#0b1020" />
+    <title>AeroCar</title>
+    <meta name="description" content="AeroCar — Simule Modo X e Modo Z da F1 2026." />
 
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230b1020'/><text x='6' y='22' font-size='14' fill='%23ff6a3d'>AC</text></svg>" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600&family=Inter:wght@300;400&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <header class="site-header" style="padding:20px;display:flex;justify-content:space-between;align-items:center;max-width:1100px;margin:0 auto;">
-      <div style="display:flex;gap:12px;align-items:center">
-        <svg class="logo" width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
-          <rect width="44" height="44" rx="8" fill="#0b1020"/>
-          <path d="M8 28 L18 14 L30 28" stroke="#ff6a3d" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <div style="line-height:1">
-          <strong style="font-family:'Barlow Condensed',sans-serif;font-size:20px;display:block">AeroCar</strong>
-          <small style="color:#98a0b3;font-size:12px">Podcast & Minigame</small>
-        </div>
-      </div>
-      <nav style="display:flex;gap:12px;align-items:center">
-        <a class="btn ghost" href="https://github.com/" target="_blank" rel="noopener" style="text-decoration:none;padding:8px 14px;border-radius:8px;color:#98a0b3;border:1px solid rgba(255,255,255,0.04)">Código</a>
-        <a class="btn primary" href="./play/" style="text-decoration:none;padding:8px 14px;border-radius:8px;background:#ff6a3d;color:#07111a;font-weight:600">Jogar</a>
-      </nav>
-    </header>
+    <main class="hero" role="main">
+      <h1 class="brand">AeroCar</h1>
+      <p class="tag">Simule Modo X &amp; Modo Z da F1 2026.</p>
 
-    <main class="hero" style="display:grid;grid-template-columns:1fr 420px;gap:28px;align-items:center;max-width:1100px;margin:24px auto;padding:24px">
-      <div class="hero-left">
-        <h1 style="font-family:'Barlow Condensed',sans-serif;font-size:44px;margin:0 0 12px;color:#fff">Entenda a aerodinâmica. Jogue. Aprenda.</h1>
-        <p class="lead" style="color:#98a0b3;max-width:44ch">Episódios e análises sobre as regras aero da F1 2026. Ouça o podcast abaixo e teste suas habilidades no minigame.</p>
-        <p style="margin-top:18px"><a class="btn cta" href="./play/" role="button" aria-label="Abrir o jogo" style="background:transparent;border:2px solid #ff6a3d;color:#ff6a3d;padding:10px 16px;border-radius:10px;text-decoration:none">Abrir o jogo</a></p>
+      <div class="actions">
+        <a class="btn primary" href="./play/" aria-label="Jogar AeroCar">Jogar</a>
+        <a class="btn ghost" href="https://open.spotify.com/" target="_blank" rel="noopener">Ouvir podcast</a>
       </div>
-      <aside class="hero-right">
-        <div id="spotify-embed" class="embed-placeholder" data-src="https://open.spotify.com/embed/episode/REPLACE_EPISODE_ID?utm_source=generator" style="background:linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:10px;padding:6px;min-height:232px;display:flex;align-items:center;justify-content:center;overflow:hidden"></div>
-        <noscript>
-          <p><a href="https://open.spotify.com/" target="_blank" rel="noopener">Ouça o podcast no Spotify</a></p>
-        </noscript>
-      </aside>
+
+      <footer class="foot"><small>UFABC • Simulação</small></footer>
     </main>
-
-    <section class="features" style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:1100px;margin:36px auto;padding:0 24px">
-      <article style="background:#0f1724;padding:18px;border-radius:12px">
-        <h3 style="margin-top:0">O que é</h3>
-        <p>Minigame experimental inspirado nas novas regulamentações aero de 2026. Curto, educativo e divertido.</p>
-      </article>
-      <article style="background:#0f1724;padding:18px;border-radius:12px">
-        <h3 style="margin-top:0">Design</h3>
-        <p>Identidade visual própria, foco em contraste e leitura. Interface leve para rodar em qualquer navegador moderno.</p>
-      </article>
-      <article style="background:#0f1724;padding:18px;border-radius:12px">
-        <h3 style="margin-top:0">Suporte</h3>
-        <p>Abra um issue no repositório para feedbacks, sugestões de episódios ou melhorias no jogo.</p>
-      </article>
-    </section>
-
-    <footer class="site-footer" style="text-align:center;padding:28px;color:#98a0b3">
-      <small>© AeroCar — Built with ♥ · <a href="https://github.com/" target="_blank" rel="noopener">GitHub</a></small>
-    </footer>
 
     <script type="module" src="./src/landing.js"></script>
   </body>
