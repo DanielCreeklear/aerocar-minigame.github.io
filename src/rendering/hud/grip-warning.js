@@ -17,22 +17,36 @@ function drawGripWarning(ctx, gameState, width, height, warningTick) {
   const glowColor = isOffTrack
     ? HUD_COLORS.offTrackGlow
     : HUD_COLORS.warningGlow;
+  // Pre-render a blurred border into an offscreen canvas and blit it
+  const key = `${Math.round(width)}x${Math.round(height)}:${isOffTrack ? 1 : 0}`;
+  if (!drawGripWarning._cache) drawGripWarning._cache = new Map();
+  let bmp = drawGripWarning._cache.get(key);
+  if (!bmp) {
+    let canvas;
+    if (typeof OffscreenCanvas !== "undefined") {
+      canvas = new OffscreenCanvas(Math.round(width), Math.round(height));
+    } else {
+      canvas = document.createElement("canvas");
+      canvas.width = Math.round(width);
+      canvas.height = Math.round(height);
+    }
+    const cctx = canvas.getContext("2d");
+    cctx.globalAlpha = 1;
+    cctx.shadowColor = glowColor;
+    cctx.shadowBlur = 20;
+    cctx.strokeStyle = borderColor;
+    cctx.lineWidth = thickness * 2;
+    cctx.strokeRect(0, 0, width, height);
+    cctx.shadowBlur = 0;
+    cctx.lineWidth = thickness;
+    cctx.strokeRect(thickness * 0.5, thickness * 0.5, width - thickness, height - thickness);
+    drawGripWarning._cache.set(key, canvas);
+    bmp = canvas;
+  }
   ctx.save();
   ctx.globalAlpha = pulse;
-  ctx.shadowColor = glowColor;
-  ctx.shadowBlur = 20;
-  ctx.strokeStyle = borderColor;
-  ctx.lineWidth = thickness * 2;
-  ctx.strokeRect(0, 0, width, height);
-  ctx.shadowBlur = 0;
-  ctx.lineWidth = thickness;
-  ctx.strokeRect(
-    thickness * 0.5,
-    thickness * 0.5,
-    width - thickness,
-    height - thickness,
-  );
+  ctx.drawImage(bmp, 0, 0);
   ctx.restore();
   return nextTick;
 }
-export { drawGripWarning };
+export { drawGripWarning };
