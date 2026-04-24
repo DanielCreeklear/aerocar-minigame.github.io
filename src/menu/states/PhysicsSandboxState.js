@@ -1,7 +1,6 @@
 import { SCREENS } from "../../constants/enums.js";
 import { resetAllOverrides, setPhysicsValue, getAllOverrides } from "../../constants/physics-overrides.js";
-import { Game } from "../../core/game.js";
-import { Track } from "../../entities/track.js";
+import { GameState } from "../GameState.js";
 import { updateCarPhysics } from "../../systems/physics/index.js";
 
 // Minimal UI helpers (no external libs)
@@ -18,17 +17,18 @@ function el(tag, attrs = {}, children = []) {
   return d;
 }
 
-export default class PhysicsSandboxState {
-  constructor(stateManager, game) {
-    this.stateManager = stateManager;
-    this.game = game;
+export default class PhysicsSandboxState extends GameState {
+  constructor(deps) {
+    super();
+    // deps: { getGameState, canvas, track, callbacks }
+    this._deps = deps;
     this.container = null;
     this.sliders = [];
     this.running = false;
     this.simState = null; // lightweight sim state
   }
 
-  enter() {
+  onEnter() {
     // build container
     this.container = el('div', { style: { position: 'absolute', left: '0', top: '0', right: '0', bottom: '0', display: 'flex', gap: '12px', padding: '12px', boxSizing: 'border-box' } });
 
@@ -68,7 +68,7 @@ export default class PhysicsSandboxState {
       setTimeout(() => (copyBtn.textContent = 'Copy JSON'), 1200);
     });
     const backBtn = el('button', {}, ['Back']);
-    backBtn.addEventListener('click', () => { this.exit(); this.stateManager.transition(new (this.stateManager._createState ? this.stateManager._createState(SCREENS.START) : null) ); });
+    backBtn.addEventListener('click', () => { try { this._deps.callbacks.backToMenu(); } catch (e) {} this.onExit(); });
     btnRow.appendChild(resetBtn);
     btnRow.appendChild(copyBtn);
     btnRow.appendChild(backBtn);
@@ -182,7 +182,7 @@ export default class PhysicsSandboxState {
     lines.forEach((l, i) => c.fillText(l, 12, 18 + i * 16));
   }
 
-  exit() {
+  onExit() {
     this.running = false;
     if (this.container && this.container.parentNode) this.container.parentNode.removeChild(this.container);
     this.container = null;
