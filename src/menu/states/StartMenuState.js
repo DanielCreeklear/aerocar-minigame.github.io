@@ -9,9 +9,14 @@ export class StartMenuState extends GameState {
     this._settingsBtn = new Button();
     this._gyroBtn = new Button();
     this._rankingBtn = new Button();
+    this._lastW = 0;
+    this._lastH = 0;
+    this._onKeyDown = this._onKeyDown.bind(this);
   }
   render(ctx, w, h) {
     drawStartScreen(ctx, w, h, this._deps.getGameState(), this._deps.track);
+    this._lastW = w;
+    this._lastH = h;
     const isPortrait = h > w;
     const btnStartY = isPortrait ? h * 0.44 : h * 0.62;
     const btnH = Math.max(44, Math.round(h * 0.075));
@@ -114,7 +119,8 @@ export class StartMenuState extends GameState {
     // small dev area: bottom-left corner to open physics sandbox when running on localhost
     try {
       const hostname = typeof window !== 'undefined' && window.location && window.location.hostname;
-      if ((hostname === 'localhost' || hostname === '127.0.0.1') && x < 80 && y > (this._deps.canvas ? this._deps.canvas.height - 60 : 400)) {
+      const hThreshold = this._lastH || (this._deps.canvas ? this._deps.canvas.height : 480);
+      if ((hostname === 'localhost' || hostname === '127.0.0.1') && x < 120 && y > (hThreshold - 80)) {
         requestAnimationFrame(() => this._deps.callbacks.openPhysicsSandbox());
         return;
       }
@@ -125,5 +131,23 @@ export class StartMenuState extends GameState {
     this._settingsBtn.pressed = false;
     this._gyroBtn.pressed = false;
     this._rankingBtn.pressed = false;
+  }
+
+  onEnter() {
+    window.addEventListener('keydown', this._onKeyDown);
+  }
+
+  onExit() {
+    window.removeEventListener('keydown', this._onKeyDown);
+  }
+
+  _onKeyDown(e) {
+    try {
+      const hostname = typeof window !== 'undefined' && window.location && window.location.hostname;
+      if (!(hostname === 'localhost' || hostname === '127.0.0.1')) return;
+      if (e.key === 'd' || e.key === 'D') {
+        this._deps.callbacks.openPhysicsSandbox();
+      }
+    } catch (err) {}
   }
 }
