@@ -78,12 +78,12 @@ class Game {
       background: "transparent",
       border: "none",
       outline: "none",
-      color: "#F0EAE0",
+      color: "transparent",
       fontFamily: "'Barlow Condensed', 'Segoe UI', sans-serif",
       fontWeight: "700",
       letterSpacing: "4px",
       textTransform: "uppercase",
-      caretColor: "#CC001E",
+      caretColor: "transparent",
       display: "none",
       zIndex: "10",
       padding: "0",
@@ -255,8 +255,14 @@ class Game {
     const vv = typeof window !== "undefined" && window.visualViewport;
     if (vv && this._nameInput && this._nameInput.style.display !== "none") {
       const keyboardVisible = window.innerHeight - vv.height > 100;
-      if (keyboardVisible) return;
+      if (keyboardVisible) {
+        this.canvas.style.width = `${this.canvas.width}px`;
+        this.canvas.style.height = `${this.canvas.height}px`;
+        return;
+      }
     }
+    this.canvas.style.width = "";
+    this.canvas.style.height = "";
     resizeCanvas(this.canvas);
     if (this._nameInput && this._nameInput.style.display !== "none") {
       this._showNameInput();
@@ -517,6 +523,9 @@ class Game {
       this._nameInput.blur();
       this._nameInput.readOnly = true;
     }
+    // Release any CSS size lock that was applied while the keyboard was open.
+    this.canvas.style.width = "";
+    this.canvas.style.height = "";
   }
   start() {
     this.gameLoop.start((dt) => {
