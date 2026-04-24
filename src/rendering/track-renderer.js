@@ -72,6 +72,8 @@ function drawTrack(ctx, gameState, track, metrics) {
   const carTrackInfo =
     gameState.currentTrackPoint || track.getTrackPoint(gameState.currentZ);
   const cameraX = carTrackInfo.x;
+  // Reusable object to avoid allocating a new track point per scanline
+  const _scanInfo = {};
 
   // Full-height grass fill (top-down view — no sky)
   ctx.fillStyle = RENDER_COLORS.grass;
@@ -82,10 +84,12 @@ function drawTrack(ctx, gameState, track, metrics) {
   const scanlineScroll = gameState.currentZ * 0.5;
   // Barrier shadow width — fixed narrow strip
   const barrierShadowW = Math.round(metrics.trackWidth * 0.07);
+  const trackWidth = metrics.trackWidth;
+  const rubberWConst = Math.round(trackWidth * 0.16);
 
   for (let y = 0; y < height; y += metrics.roadSampleStep) {
     const sliceZ = gameState.currentZ + (carY - y);
-    const info = track.getTrackPoint(sliceZ);
+    const info = track.getTrackPoint(sliceZ, _scanInfo);
 
     // Track center at 100% camera speed
     const centerX = width * HALF_RATIO + (info.x - cameraX);
@@ -144,7 +148,7 @@ function drawTrack(ctx, gameState, track, metrics) {
       ? RENDER_COLORS.asphaltCurve
       : RENDER_COLORS.asphaltStraight;
     ctx.fillStyle = asphaltColor;
-    ctx.fillRect(left, y, metrics.trackWidth, step);
+    ctx.fillRect(left, y, trackWidth, step);
 
     // ── Barrier shadow projected on asphalt ───────────────────────────────────
     ctx.fillStyle = "rgba(0,0,0,0.20)";
@@ -152,14 +156,13 @@ function drawTrack(ctx, gameState, track, metrics) {
     ctx.fillRect(right - barrierShadowW, y, barrierShadowW, step);
 
     // ── Rubber / centre darkening ─────────────────────────────────────────────
-    const rubberW = Math.round(metrics.trackWidth * 0.16);
     ctx.fillStyle = "rgba(0,0,0,0.14)";
-    ctx.fillRect(Math.round(centerX - rubberW / 2), y, rubberW, step);
+    ctx.fillRect(Math.round(centerX - rubberWConst / 2), y, rubberWConst, step);
 
     // ── Speed scanlines (asphalt texture) ─────────────────────────────────────
     if (Math.floor((y + scanlineScroll) / 4) % 2 === 0) {
       ctx.fillStyle = "rgba(255,255,255,0.04)";
-      ctx.fillRect(left, y, metrics.trackWidth, 1);
+      ctx.fillRect(left, y, trackWidth, 1);
     }
     if (isCurve) {
       const rlOffset = track.getRacingLineTarget(sliceZ);
@@ -171,12 +174,12 @@ function drawTrack(ctx, gameState, track, metrics) {
     }
     if (info.isModeXZone) {
       ctx.fillStyle = RENDER_COLORS.asphaltModeX;
-      ctx.fillRect(left, y, metrics.trackWidth, step);
+      ctx.fillRect(left, y, trackWidth, step);
     }
     if (info.marker === "start-finish") {
       const checkRow = Math.floor(info.z / 10);
       const numCols = 8;
-      const colW = Math.ceil(metrics.trackWidth / numCols);
+      const colW = Math.ceil(trackWidth / numCols);
       for (let col = 0; col < numCols; col++) {
         ctx.fillStyle =
           (checkRow + col) % 2 === 0
@@ -188,10 +191,8 @@ function drawTrack(ctx, gameState, track, metrics) {
     if (info.marker && info.marker.startsWith("grid-")) {
       const gridPos = parseInt(info.marker.slice(5), 10);
       const isRight = gridPos % 2 === 1;
-      const boxW = Math.round(metrics.trackWidth * 0.32);
-      const boxX = isRight
-        ? left + Math.round(metrics.trackWidth * 0.55)
-        : left + Math.round(metrics.trackWidth * 0.13);
+      const boxW = Math.round(trackWidth * 0.32);
+      const boxX = isRight ? left + Math.round(trackWidth * 0.55) : left + Math.round(trackWidth * 0.13);
       ctx.fillStyle = RENDER_COLORS.gridLine;
       ctx.fillRect(boxX, y, boxW, step);
     }

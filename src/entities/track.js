@@ -62,6 +62,9 @@ class Track {
     this.gridCols = 0;
     this.gridRows = 0;
     this.gridMinX = 0;
+    // Pools to reduce per-frame allocations in hot paths
+    this._upcomingPool = [];
+    this._upcomingResults = [];
   }
   setSeed(seed) {
     if (typeof seed === "number" && Number.isFinite(seed)) {
@@ -268,7 +271,9 @@ class Track {
     if (!lap || this.segments.length === 0) return [];
     let wrappedZ = z % lap;
     if (wrappedZ < 0) wrappedZ += lap;
-    const results = [];
+    const results = this._upcomingResults;
+    results.length = 0;
+    const pool = this._upcomingPool;
     for (const seg of this.segments) {
       const isInside = wrappedZ >= seg.startZ && wrappedZ < seg.endZ;
       let distanceAhead;
@@ -288,14 +293,25 @@ class Track {
         if (d < 0) d += lap;
         apexDistanceAhead = d;
       }
-      results.push({
-        segment: seg,
-        distanceAhead,
-        classification: seg.classification,
-        direction: seg.direction,
-        intensity: Math.abs(seg.curveStrength),
-        apexDistanceAhead,
-      });
+      let obj = pool[results.length];
+      if (!obj) {
+        obj = {
+          segment: null,
+          distanceAhead: 0,
+          classification: "",
+          direction: "",
+          intensity: 0,
+          apexDistanceAhead: 0,
+        };
+        pool.push(obj);
+      }
+      obj.segment = seg;
+      obj.distanceAhead = distanceAhead;
+      obj.classification = seg.classification;
+      obj.direction = seg.direction;
+      obj.intensity = Math.abs(seg.curveStrength);
+      obj.apexDistanceAhead = apexDistanceAhead;
+      results.push(obj);
     }
     results.sort((a, b) => a.distanceAhead - b.distanceAhead);
     return results;
@@ -503,6 +519,18 @@ class Track {
   getTrackPoint(z) {
     const lap = this.lapLength || this.totalDistance;
     if (!lap || this.trackData.length === 0) {
+      if (arguments.length >= 2 && typeof arguments[1] === 'object' && arguments[1] !== null) {
+        const out = arguments[1];
+        out.z = 0;
+        out.x = 0;
+        out.yaw = 0;
+        out.type = TRACK_TYPES.STRAIGHT;
+        out.curve = 0;
+        out.rawCurve = 0;
+        out.marker = undefined;
+        out.isModeXZone = false;
+        return out;
+      }
       return { z: 0, x: 0, yaw: 0, type: TRACK_TYPES.STRAIGHT, curve: 0 };
     }
     let wrappedZ = z % lap;
@@ -513,6 +541,22 @@ class Track {
     const currentPoint = this.trackData[currentIndex];
     const nextPoint = this.trackData[nextIndex];
     const t = (wrappedZ - currentIndex * Z_RESOLUTION) / Z_RESOLUTION;
+    if (arguments.length >= 2 && typeof arguments[1] === 'object' && arguments[1] !== null) {
+      const out = arguments[1];
+      out.z = wrappedZ;
+      out.x = currentPoint.x + (nextPoint.x - currentPoint.x) * t;
+      out.yaw = currentPoint.yaw + (nextPoint.yaw - currentPoint.yaw) * t;
+      out.curve = currentPoint.curve + (nextPoint.curve - currentPoint.curve) * t;
+      out.rawCurve =
+        (currentPoint.rawCurve ?? currentPoint.curve) +
+        ((nextPoint.rawCurve ?? nextPoint.curve) -
+          (currentPoint.rawCurve ?? currentPoint.curve)) *
+          t;
+      out.type = currentPoint.type;
+      out.marker = currentPoint.marker;
+      out.isModeXZone = currentPoint.isModeXZone || false;
+      return out;
+    }
     return {
       z: wrappedZ,
       x: currentPoint.x + (nextPoint.x - currentPoint.x) * t,
@@ -529,4 +573,4 @@ class Track {
     };
   }
 }
-export { Track };
+export { Track };

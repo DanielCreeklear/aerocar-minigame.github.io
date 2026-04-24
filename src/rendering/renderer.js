@@ -32,26 +32,24 @@ const RAIN_FLASH_INTERVAL_MS = 1800;
 const RAIN_FLASH_DURATION_MS = 16; // ~1 frame
 let _nextRainFlashAt = 0;
 let _rainFlashActive = false;
-function getCameraShakeOffset(gameState) {
+function getCameraShakeOffset(gameState, out) {
   const rawSpeed = gameState?.speed || 0;
   const speedKmh = rawSpeed * CAMERA_SHAKE_SPEED_KMH_SCALE;
-  if (speedKmh <= CAMERA_SHAKE_SPEED_MIN) return { x: 0, y: 0 };
-  const t = Math.min(
-    1,
-    (speedKmh - CAMERA_SHAKE_SPEED_MIN) /
-      (CAMERA_SHAKE_SPEED_MAX - CAMERA_SHAKE_SPEED_MIN),
-  );
+  if (speedKmh <= CAMERA_SHAKE_SPEED_MIN) {
+    out.x = 0;
+    out.y = 0;
+    return out;
+  }
+  const t = Math.min(1, (speedKmh - CAMERA_SHAKE_SPEED_MIN) / (CAMERA_SHAKE_SPEED_MAX - CAMERA_SHAKE_SPEED_MIN));
   const amp = CAMERA_SHAKE_MAX_PX * t;
   const jitter = amp * 0.1;
   const time = performance.now() * 0.028;
-  return {
-    x: Math.sin(time * 1.7) * amp + (Math.random() * 2 - 1) * jitter,
-    y:
-      Math.cos(time * 2.3 + 0.9) * amp * 0.72 +
-      (Math.random() * 2 - 1) * jitter * 0.8,
-  };
+  out.x = Math.sin(time * 1.7) * amp + (Math.random() * 2 - 1) * jitter;
+  out.y = Math.cos(time * 2.3 + 0.9) * amp * 0.72 + (Math.random() * 2 - 1) * jitter * 0.8;
+  return out;
 }
 function buildRenderMetrics(width, height) {
+  // Keep this function pure but lightweight — caller can cache the result when needed
   const profile = getViewportProfile(width, height);
   if (!profile.isPortrait) {
     return {
@@ -67,9 +65,7 @@ function buildRenderMetrics(width, height) {
       trackWidth: TRACK_WIDTH,
     };
   }
-  const scale = profile.isCompactWidth
-    ? PORTRAIT_SCALE_COMPACT
-    : PORTRAIT_SCALE_TABLET;
+  const scale = profile.isCompactWidth ? PORTRAIT_SCALE_COMPACT : PORTRAIT_SCALE_TABLET;
   const logW = width / scale;
   const logH = height / scale;
   return {
@@ -113,15 +109,25 @@ class Renderer {
       }
       return;
     }
-    const metrics = buildRenderMetrics(width, height);
+    // Cache render metrics per canvas size to avoid allocating every frame
+    if (!this._metricsCache || this._metricsCache.w !== width || this._metricsCache.h !== height) {
+      this._metricsCache = {
+        w: width,
+        h: height,
+        metrics: buildRenderMetrics(width, height),
+      };
+    }
+    const metrics = this._metricsCache.metrics;
     const { scale } = metrics;
     const logW = metrics.width;
     const logH = metrics.height;
-    const shake = getCameraShakeOffset(gameState);
-    ctx.imageSmoothingEnabled = false;
+    // Reuse a small object for camera shake offsets
+    if (!this._shake) this._shake = { x: 0, y: 0 };
+    getCameraShakeOffset(gameState, this._shake);
+    ctx.imageSmoothingEnabled = false; // safe to keep; minimal cost
     ctx.save();
     if (scale !== 1) ctx.scale(scale, scale);
-    ctx.translate(shake.x, shake.y);
+    ctx.translate(this._shake.x, this._shake.y);
     drawTrack(ctx, gameState, track, metrics);
     drawObstacles(ctx, gameState, track, metrics);
     drawRivals(ctx, gameState, track, metrics);

@@ -19,10 +19,18 @@ function drawCentrifugalSlideEffect(ctx, gameState, width, height) {
       : 0;
   const baseAlpha = 0.15 + progress * 0.45 + flashIntensity * 0.25;
   ctx.save();
-  const grad = ctx.createLinearGradient(edgeX, 0, innerX, 0);
-  grad.addColorStop(0, `rgba(255, 140, 0, ${clamp(baseAlpha, 0, 0.85)})`);
-  grad.addColorStop(0.55, `rgba(255, 100, 0, ${clamp(baseAlpha * 0.35, 0, 0.4)})`);
-  grad.addColorStop(1, "rgba(255, 100, 0, 0)");
+  // Cache gradient per dimensions and side to avoid reallocation
+  if (!drawCentrifugalSlideEffect._gradCache) drawCentrifugalSlideEffect._gradCache = {};
+  const side = slideLeft ? "L" : "R";
+  const key = `${width}x${height}@${side}`;
+  let grad = drawCentrifugalSlideEffect._gradCache[key];
+  if (!grad) {
+    grad = ctx.createLinearGradient(edgeX, 0, innerX, 0);
+    grad.addColorStop(0, `rgba(255,140,0,${clamp(baseAlpha, 0, 0.85)})`);
+    grad.addColorStop(0.55, `rgba(255,100,0,${clamp(baseAlpha * 0.35, 0, 0.4)})`);
+    grad.addColorStop(1, "rgba(255,100,0,0)");
+    drawCentrifugalSlideEffect._gradCache[key] = grad;
+  }
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, height);
   const borderAlpha = clamp(progress * 0.9, 0, 0.9);
@@ -66,4 +74,4 @@ function drawCentrifugalSlideEffect(ctx, gameState, width, height) {
   }
   ctx.restore();
 }
-export { drawCentrifugalSlideEffect };
+export { drawCentrifugalSlideEffect };

@@ -17,12 +17,11 @@ const R4_FONT =
 
 // --- R4 Scanline overlay (CRT effect) ---
 function drawScanlines(ctx, width, height) {
+  // Lightweight scanline overlay: single semi-transparent rectangle
   ctx.save();
-  ctx.globalAlpha = 0.05;
+  ctx.globalAlpha = 0.04;
   ctx.fillStyle = "#000000";
-  for (let y = 0; y < height; y += 2) {
-    ctx.fillRect(0, y, width, 1);
-  }
+  ctx.fillRect(0, 0, width, height);
   ctx.restore();
 }
 

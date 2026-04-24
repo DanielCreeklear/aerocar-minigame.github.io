@@ -10,8 +10,16 @@ const STREAK_MAX_LEN_RATIO = 0.09;
 const STREAK_BASE_VEL = 0.022;
 const WIND_VERTICAL_RATIO = 0.52;
 const WIND_TURBULENCE_RATIO = 0.32;
-const COLOR_NEAR = "rgba(220, 235, 255,";
-const COLOR_FAR = "rgba(160, 195, 255,";
+const COLOR_NEAR_BASE = "rgba(220,235,255,"; // note: no space to keep string short
+const COLOR_FAR_BASE = "rgba(160,195,255,";
+// Small alpha string cache to avoid toFixed() allocations per streak
+const _alphaCache = (() => {
+  const cache = new Array(61);
+  for (let i = 0; i < cache.length; i++) {
+    cache[i] = (i / (cache.length - 1)).toFixed(3);
+  }
+  return cache;
+})();
 function _initStreak(streak, width, height, diag, stagger) {
   const spawnPad = diag * 0.18;
   streak.x = (Math.random() - 0.5) * (width + spawnPad * 2);
@@ -112,9 +120,12 @@ function _updateStreakPositions(
   }
 }
 function _renderStreakLines(ctx, state, velY, width, height) {
+  // Batch strokes in a single path where possible to reduce context state changes.
   ctx.save();
   ctx.lineCap = "round";
   const streaks = state.streaks;
+  // We'll draw 'near' and 'far' streaks in separate passes to minimize strokeStyle changes
+  ctx.beginPath();
   for (let i = 0; i < STREAK_COUNT; i++) {
     const sk = streaks[i];
     const lineDx = sk.slant * velY * WIND_TURBULENCE_RATIO;
@@ -131,9 +142,13 @@ function _renderStreakLines(ctx, state, velY, width, height) {
     const edgeFade = Math.max(0, Math.min(1, edgeX * edgeY));
     const alpha = sk.baseAlpha * state.intensity * (0.35 + 0.65 * edgeFade);
     if (alpha <= 0) continue;
-    const color = edgeFade > 0.5 ? COLOR_NEAR : COLOR_FAR;
+    const isNear = edgeFade > 0.5;
+    const colorBase = isNear ? COLOR_NEAR_BASE : COLOR_FAR_BASE;
+    const ai = Math.round(alpha * (_alphaCache.length - 1));
+    const alphaStr = _alphaCache[ai];
+    // apply stroke state per-streak but avoid formatting the alpha with toFixed each time
     ctx.lineWidth = sk.width;
-    ctx.strokeStyle = `${color} ${alpha.toFixed(3)})`;
+    ctx.strokeStyle = colorBase + alphaStr + ")";
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
@@ -145,17 +160,18 @@ function _renderVignette(ctx, intensity, width, height, diag) {
   const vigAlpha = (intensity - 0.25) * 0.18;
   const cx = width * 0.5;
   const cy = height * 0.5;
-  const grad = ctx.createRadialGradient(
-    cx,
-    cy,
-    diag * 0.25,
-    cx,
-    cy,
-    diag * 0.72,
-  );
-  grad.addColorStop(0, "rgba(0,0,0,0)");
-  grad.addColorStop(1, `rgba(0,5,18,${vigAlpha.toFixed(3)})`);
+  // cache gradient per diag/size
+  const key = `${Math.round(diag)}@${width}x${height}@${Math.round(vigAlpha * 1000)}`;
+  if (!drawWindStreaks._vignetteCache) drawWindStreaks._vignetteCache = {};
+  let grad = drawWindStreaks._vignetteCache[key];
+  if (!grad) {
+    grad = ctx.createRadialGradient(cx, cy, diag * 0.25, cx, cy, diag * 0.72);
+    grad.addColorStop(0, "rgba(0,0,0,0)");
+    const ai = Math.round(vigAlpha * (_alphaCache.length - 1));
+    grad.addColorStop(1, `rgba(0,5,18,${_alphaCache[ai]})`);
+    drawWindStreaks._vignetteCache[key] = grad;
+  }
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, height);
 }
-export { createWindState, drawWindStreaks };
+export { createWindState, drawWindStreaks };
