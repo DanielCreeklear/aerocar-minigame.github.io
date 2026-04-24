@@ -1,5 +1,5 @@
 import { drawTrack } from "./track-renderer.js";
-import { drawCar, computeCarDrawPosition } from "./car-renderer.js";
+import { drawCar, computeCarDrawPosition, createTrailState } from "./car-renderer.js";
 import { createSkidLayer } from "./skid-layer.js";
 import { getAeroStrategy } from "../systems/aero.js";
 import { drawRivals } from "./rival-renderer.js";
@@ -45,9 +45,7 @@ const CAMERA_SHAKE_MAX_PX = 2.8;
 
 
 const RAIN_FLASH_INTERVAL_MS = 1800;
-const RAIN_FLASH_DURATION_MS = 16; 
-let _nextRainFlashAt = 0;
-let _rainFlashActive = false;
+const RAIN_FLASH_DURATION_MS = 16;
 function getCameraShakeOffset(gameState, out) {
   const rawSpeed = gameState?.speed || 0;
   const speedKmh = rawSpeed * CAMERA_SHAKE_SPEED_KMH_SCALE;
@@ -107,6 +105,9 @@ class Renderer {
     this._worldZoom = ZOOM_BASE;
     
     this._skidLayer = null;
+    // Instance-scoped rain flash state to avoid leaking between renderer instances
+    this._nextRainFlashAt = 0;
+    this._rainFlashActive = false;
     this._screenRenderers = {
       [SCREENS.PREVIEW]: (ctx, w, h, gs, track) =>
         drawTrackPreviewScreen(ctx, w, h, track, gs),
@@ -116,6 +117,11 @@ class Renderer {
         drawLeaderboardScreen(ctx, w, h, gs, track),
       [SCREENS.GAME_OVER]: (ctx, w, h, gs) => drawGameOverScreen(ctx, w, h, gs),
     };
+    // Per-renderer trail state reused across frames to avoid module-level
+    // allocations in the car renderer's trail system.
+    // Per-renderer trail state reused across frames to avoid module-level
+    // allocations in the car renderer's trail system.
+    this._trailState = createTrailState();
   }
   draw(gameState, track, telemetry = null, dt = 1 / 60, stateManager = null) {
     const { ctx, canvas } = this;
@@ -155,7 +161,10 @@ class Renderer {
     } else this._skidLayer.resize(metrics.width, metrics.height, dpr);
 
     
-    const carTrackInfo = track.getTrackPoint(gameState.currentZ);
+    // Prefer reuse of provided currentTrackPoint (often cached on gameState),
+    // but accept an optional out object to avoid allocations when the track
+    // implementation supports it.
+    const carTrackInfo = gameState.currentTrackPoint || track.getTrackPoint(gameState.currentZ);
     const desiredCameraX =
       carTrackInfo.x + (gameState.lateralVelocity || 0) * CAMERA_LATERAL_VEL_LOOKAHEAD;
     this._cameraX += (desiredCameraX - this._cameraX) * Math.min(1, CAMERA_LERP * dt);
@@ -207,7 +216,9 @@ class Renderer {
     }
     drawObstacles(ctx, gameState, track, metrics);
     drawRivals(ctx, gameState, track, metrics);
-    drawCar(ctx, gameState, track, metrics);
+    // Pass the per-renderer trail state into drawCar to ensure trails are
+    // isolated per renderer instance.
+    drawCar(ctx, gameState, track, metrics, this._trailState);
     ctx.restore();
     ctx.save();
     if (scale !== 1) ctx.scale(scale, scale);
@@ -216,11 +227,11 @@ class Renderer {
 
     
     const now = performance.now();
-    if (now >= _nextRainFlashAt) {
-      _rainFlashActive = true;
-      _nextRainFlashAt = now + RAIN_FLASH_INTERVAL_MS + Math.random() * 1200;
+    if (now >= this._nextRainFlashAt) {
+      this._rainFlashActive = true;
+      this._nextRainFlashAt = now + RAIN_FLASH_INTERVAL_MS + Math.random() * 1200;
     }
-    if (_rainFlashActive) {
+    if (this._rainFlashActive) {
       
       const count = 4 + Math.floor(Math.random() * 5);
       for (let i = 0; i < count; i++) {
@@ -232,7 +243,7 @@ class Renderer {
         ctx.fillStyle = "rgba(255,255,255,0.55)";
         ctx.fill();
       }
-      _rainFlashActive = false;
+      this._rainFlashActive = false;
     }
 
     ctx.restore();

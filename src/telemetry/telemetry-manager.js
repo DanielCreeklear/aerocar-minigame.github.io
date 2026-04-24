@@ -3,17 +3,14 @@ const SAMPLE_INTERVAL_MS = 50;
 const MAX_SAMPLES = 600;
 const ACCEL_REF = 5;
 
+import { isIOS, isMobile, isDevMode } from '../utils/platform.js';
+
 function _isDevMode() {
   try {
     if (typeof window === 'undefined') return false;
     const host = window.location && window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') return true;
-    if (window.__AEROCAR_DEV__ === true) return true;
-    if (typeof URLSearchParams !== 'undefined') {
-      const p = new URLSearchParams(window.location.search || '');
-      const v = p.get('dev');
-      if (v === '1' || v === 'true') return true;
-    }
+    // delegate to the shared platform helper first (centralises logic)
+    if (typeof isDevMode === 'function' && isDevMode()) return true;
     return false;
   } catch (e) {
     return false;

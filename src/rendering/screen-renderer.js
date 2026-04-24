@@ -132,10 +132,11 @@ function topStripe(ctx, w, leftTxt, rightTxt) {
   ctx.fillText(rightTxt, w - 20, sh * 0.5);
   ctx.restore();
 }
-function drawRankList(ctx, x, y, w, rowH, rankings, slotCount) {
+// Unified rank list renderer: supports optional paging via `offset`
+function drawRankList(ctx, x, y, w, rowH, rankings, slotCount, offset = 0) {
   for (let i = 0; i < slotCount; i++) {
     const ry = y + i * (rowH + 4);
-    const entry = (rankings || [])[i];
+    const entry = (rankings || [])[offset + i];
     ctx.fillStyle = i % 2 === 0 ? "rgba(0,0,0,0.12)" : "rgba(0,0,0,0.04)";
     ctx.fillRect(x, ry, w, rowH);
     const mid = ry + rowH * 0.5;
@@ -145,7 +146,7 @@ function drawRankList(ctx, x, y, w, rowH, rankings, slotCount) {
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillStyle = R.textHeader;
-    ctx.fillText(`${(i + 1).toString().padStart(2, "0")}`, x + 6, mid);
+    ctx.fillText(`${(offset + i + 1).toString().padStart(2, "0")}`, x + 6, mid);
     if (entry) {
       ctx.fillText(entry.name.substring(0, 8), x + 34, mid);
       ctx.font = `700 ${sz}px monospace`;
@@ -616,35 +617,7 @@ function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
   ctx.restore();
 }
 
-function drawRankListPaged(ctx, x, y, w, rowH, rankings, slotCount, offset) {
-  for (let i = 0; i < slotCount; i++) {
-    const ry = y + i * (rowH + 4);
-    const entry = (rankings || [])[offset + i];
-    ctx.fillStyle = i % 2 === 0 ? "rgba(0,0,0,0.12)" : "rgba(0,0,0,0.04)";
-    ctx.fillRect(x, ry, w, rowH);
-    const mid = ry + rowH * 0.5;
-    const sz = Math.max(11, Math.min(16, rowH * 0.45));
-    ctx.save();
-    ctx.font = `700 ${sz}px ${R.font}`;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = R.textHeader;
-    ctx.fillText(`${(offset + i + 1).toString().padStart(2, "0")}`, x + 6, mid);
-    if (entry) {
-      ctx.fillText(entry.name.substring(0, 8), x + 34, mid);
-      ctx.font = `700 ${sz}px monospace`;
-      ctx.textAlign = "right";
-      ctx.fillText(formatTime(entry.time), x + w - 10, mid);
-    } else {
-      ctx.fillStyle = "rgba(0,0,0,0.35)";
-      ctx.fillText("---", x + 34, mid);
-      ctx.font = `700 ${sz}px monospace`;
-      ctx.textAlign = "right";
-      ctx.fillText("--:--.---", x + w - 10, mid);
-    }
-    ctx.restore();
-  }
-}
+// drawRankListPaged removed; use drawRankList(ctx, x, y, w, rowH, rankings, slotCount, offset)
 
 function drawLeaderboardScreen(ctx, w, h, gameState) {
   const isPortrait = h > w;
@@ -698,7 +671,7 @@ function drawLeaderboardScreen(ctx, w, h, gameState) {
   
   const rowH = Math.max(20, Math.min(48, availH / effectivePageSize - 4));
   const offset = curPage * effectivePageSize;
-  drawRankListPaged(ctx, pad, topY, w - pad * 2, rowH, rankings, effectivePageSize, offset);
+  drawRankList(ctx, pad, topY, w - pad * 2, rowH, rankings, effectivePageSize, offset);
 
   bottomBar(ctx, w, h, [{ icon: "✕", label: "VOLTAR" }]);
   ctx.restore();

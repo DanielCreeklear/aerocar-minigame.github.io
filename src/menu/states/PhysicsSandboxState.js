@@ -278,25 +278,63 @@ export default class PhysicsSandboxState extends GameState {
   }
 
   _makeSimState() {
-    
+    // The physics system expects a flat gameState object similar to the real one.
+    // Provide a minimal compatible shape so updateCarPhysics works correctly.
     return {
-      car: {
-        x: 0,
-        z: 0,
-        speed: 12,
-        lateralVelocity: 0,
-        lateralOffset: 0,
-        aeroMode: 'X',
-        isBoosting: false,
-        battery: 1.0,
-        isOffTrack: false,
-        spin: false,
-        slip: 0,
-      },
-      
+      // minimal fields used by physics
+      aeroMode: 'X',
+      isBoosting: false,
+      isBraking: false,
+      steerInput: 0,
+      steerTarget: 0,
+      speed: 12,
+      currentZ: 0,
+      trackType: 0,
+      isPenalized: false,
+      currentSlip: 0,
+      curveForce: 0,
+      currentSegmentIndex: 1,
+      carHeading: 0,
+      carVisualHeading: 0,
+      lateralOffset: 0,
+      lateralVelocity: 0,
+      centrifugalDrift: 0,
+      currentCurvature: 0,
+      previousCurvature: 0,
+      currentTrackPoint: null,
+      lastModeToggleAt: 0,
+      isOffTrack: false,
+      offTrackDustTimer: 0,
+      isSpinning: false,
+      spinRotation: 0,
+      rescueInProgress: false,
+      rescuePenaltySpeed: 0,
+      centrifugalSlideTimer: 0,
+      isDrifting: false,
+      driftTimer: 0,
+      brakeRamp: 0,
+      // tiny track shim used by the sandbox drawing logic
       track: {
-        sample: (z) => ({ curvature: Math.sin(z * 0.008) * 0.004 })
-      }
+        lapLength: 10000,
+        sample: (z) => ({ curvature: Math.sin(z * 0.008) * 0.004 }),
+        getTrackPoint: (z, out) => {
+          const wrapped = z % 10000;
+          if (out && typeof out === 'object') {
+            out.z = wrapped;
+            out.x = Math.sin(wrapped * 0.002) * 120;
+            out.yaw = 0;
+            out.curve = Math.sin(wrapped * 0.008) * 0.004;
+            out.rawCurve = out.curve;
+            out.type = 0;
+            out.marker = undefined;
+            out.isModeXZone = false;
+            return out;
+          }
+          return { z: wrapped, x: Math.sin(wrapped * 0.002) * 120, yaw: 0, curve: Math.sin(wrapped * 0.008) * 0.004 };
+        },
+        getSurfaceType: () => 0,
+        getTrackPosition: () => null,
+      },
     };
   }
 
@@ -305,14 +343,14 @@ export default class PhysicsSandboxState extends GameState {
     
     const dt = 1 / 60;
     const sim = this.simState;
-    const curv = sim.track.sample(sim.car.z).curvature;
-    
-    const { lapCompleted, physicsTelemetry } = updateCarPhysics(sim, sim.track, dt);
-    
+    // updateCarPhysics expects (gameState, track, dt, sampledTrackPoint?)
+    const sampled = sim.track.getTrackPoint(sim.currentZ || sim.currentZ === 0 ? sim.currentZ : 0);
+    const { lapCompleted, physicsTelemetry } = updateCarPhysics(sim, sim.track, dt, sampled);
+
     this._renderSim(sim, physicsTelemetry);
-    
-    sim.car.z += sim.car.speed * dt * 0.6;
-    if (sim.car.z > 10000) sim.car.z = 0;
+
+    sim.currentZ = (sim.currentZ || 0) + (sim.speed || 0) * dt * 0.6;
+    if (sim.currentZ > (sim.track && sim.track.lapLength ? sim.track.lapLength : 10000)) sim.currentZ = 0;
     requestAnimationFrame(this._tick);
   }
 
@@ -325,25 +363,24 @@ export default class PhysicsSandboxState extends GameState {
     c.fillStyle = '#333';
     c.fillRect(0, h / 2 - 80, w, 160);
     
-    const cx = w / 2 + sim.car.lateralOffset;
+    const cx = w / 2 + (sim.lateralOffset || 0);
     const cy = h / 2;
     c.fillStyle = '#ff4646';
     c.save();
-    const speed = Math.min(60, sim.car.speed * 3);
+    const speed = Math.min(60, (sim.speed || 0) * 3);
     c.translate(cx, cy);
     const ang = (telemetry?.drift || 0) * 0.3;
     c.rotate(ang);
     c.fillRect(-18, -32, 36, 64);
     c.restore();
 
-    
     c.fillStyle = '#fff';
     c.font = '12px monospace';
     const lines = [
-      `speed: ${sim.car.speed.toFixed(2)}`,
-      `vx: ${sim.car.lateralVelocity.toFixed(2)}`,
-      `slip: ${sim.car.slip.toFixed(3)}`,
-      `aero: ${sim.car.aeroMode}`,
+      `speed: ${(sim.speed || 0).toFixed(2)}`,
+      `vx: ${(sim.lateralVelocity || 0).toFixed(2)}`,
+      `slip: ${(sim.currentSlip || 0).toFixed(3)}`,
+      `aero: ${sim.aeroMode}`,
     ];
     lines.forEach((l, i) => c.fillText(l, 12, 18 + i * 16));
   }

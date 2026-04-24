@@ -516,11 +516,11 @@ class Track {
     const b = this.racingLineData[nextIndex];
     return a + (b - a) * t;
   }
-  getTrackPoint(z) {
+  // Optional `out` parameter can be passed to avoid allocations: getTrackPoint(z, out)
+  getTrackPoint(z, out) {
     const lap = this.lapLength || this.totalDistance;
     if (!lap || this.trackData.length === 0) {
-      if (arguments.length >= 2 && typeof arguments[1] === 'object' && arguments[1] !== null) {
-        const out = arguments[1];
+      if (out && typeof out === 'object') {
         out.z = 0;
         out.x = 0;
         out.yaw = 0;
@@ -541,8 +541,7 @@ class Track {
     const currentPoint = this.trackData[currentIndex];
     const nextPoint = this.trackData[nextIndex];
     const t = (wrappedZ - currentIndex * Z_RESOLUTION) / Z_RESOLUTION;
-    if (arguments.length >= 2 && typeof arguments[1] === 'object' && arguments[1] !== null) {
-      const out = arguments[1];
+    if (out && typeof out === 'object') {
       out.z = wrappedZ;
       out.x = currentPoint.x + (nextPoint.x - currentPoint.x) * t;
       out.yaw = currentPoint.yaw + (nextPoint.yaw - currentPoint.yaw) * t;

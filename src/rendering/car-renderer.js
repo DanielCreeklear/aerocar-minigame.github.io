@@ -21,32 +21,40 @@ const TRAIL_MAX = 10;
 const TRAIL_SPEED_THRESHOLD = 250 / 17; 
 const SPRAY_SPEED_THRESHOLD = 100 / 17; 
 
-const _trail = new Array(TRAIL_MAX);
-let _trailHead = 0; 
-let _trailLen = 0;
+// Trail state is now pluggable so it can be owned by the Renderer instance
+// and avoid module-level state leaking between renderers or simulations.
+function createTrailState() {
+  return { buf: new Array(TRAIL_MAX), head: 0, len: 0 };
+}
 
-function _pushTrail(x, y, angle) {
-  let slot = _trail[_trailHead];
+function _pushTrail(trailState, x, y, angle) {
+  const buf = trailState.buf;
+  let head = trailState.head;
+  let len = trailState.len;
+  let slot = buf[head];
   if (!slot) {
     slot = { x: 0, y: 0, angle: 0 };
-    _trail[_trailHead] = slot;
+    buf[head] = slot;
   }
   slot.x = x;
   slot.y = y;
   slot.angle = angle;
-  _trailHead = (_trailHead + 1) % TRAIL_MAX;
-  if (_trailLen < TRAIL_MAX) _trailLen++;
+  head = (head + 1) % TRAIL_MAX;
+  if (len < TRAIL_MAX) len++;
+  trailState.head = head;
+  trailState.len = len;
 }
 
-function _drawMotionTrail(ctx, carWidth, carHeight) {
+function _drawMotionTrail(ctx, trailState, carWidth, carHeight) {
   const bw = carWidth * 0.72;
   const bh = carHeight * 0.88;
-  
-  const len = _trailLen;
+  const len = trailState.len;
   if (len <= 0) return;
+  const head = trailState.head;
+  const buf = trailState.buf;
   for (let idx = 0; idx < len - 1; idx++) {
-    const i = (_trailHead + TRAIL_MAX - len + idx) % TRAIL_MAX;
-    const t = _trail[i];
+    const i = (head + TRAIL_MAX - len + idx) % TRAIL_MAX;
+    const t = buf[i];
     if (!t) continue;
     const alpha = ((idx + 1) / len) * 0.055;
     ctx.save();
@@ -240,7 +248,7 @@ function drawBoostFlame(ctx, gameState, metrics) {
   }
   ctx.restore();
 }
-function drawCar(ctx, gameState, track, metrics) {
+function drawCar(ctx, gameState, track, metrics, trailState) {
   const { width, height, carWidth, carHeight } = metrics;
   const carTrackInfo =
     gameState.currentTrackPoint || track.getTrackPoint(gameState.currentZ);
@@ -256,11 +264,20 @@ function drawCar(ctx, gameState, track, metrics) {
   const playerInfluence = 0.25 + 0.75 * steerFactor; 
   const totalAngle = roadAngle + visualHeading * playerInfluence + (gameState.spinRotation || 0);
 
+  // Ensure there is a trailState to use; if none provided fall back to a
+  // per-function default (preserves backward compatibility for callers that
+  // don't provide a trail), but primary usage should pass an owned state.
+  if (!trailState) {
+    if (!drawCar._defaultTrail) drawCar._defaultTrail = createTrailState();
+    trailState = drawCar._defaultTrail;
+  }
   if (speed >= TRAIL_SPEED_THRESHOLD) {
-    _pushTrail(drawX, drawY, totalAngle);
-    _drawMotionTrail(ctx, carWidth, carHeight);
-  } else if (_trail.length > 0) {
-    _trail.length = 0;
+    _pushTrail(trailState, drawX, drawY, totalAngle);
+    _drawMotionTrail(ctx, trailState, carWidth, carHeight);
+  } else if ((trailState.buf && trailState.buf.length > 0) || trailState.len > 0) {
+    trailState.buf.length = 0;
+    trailState.head = 0;
+    trailState.len = 0;
   }
 
   drawDustCloud(ctx, gameState, drawX, drawY, carWidth, carHeight);
@@ -281,4 +298,4 @@ function drawCar(ctx, gameState, track, metrics) {
   drawBoostFlame(ctx, gameState, { carWidth, carHeight });
   ctx.restore();
 }
-export { drawCar, computeCarDrawPosition };
+export { drawCar, computeCarDrawPosition, createTrailState };
