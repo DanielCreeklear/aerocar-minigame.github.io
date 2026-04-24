@@ -1,6 +1,16 @@
 import { GameState } from "../GameState.js";
 import { Button } from "../Button.js";
 import { drawStartScreen } from "../../rendering/screen-renderer.js";
+
+function _roundRect(ctx, x, y, w, h, r = 8) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
 export class StartMenuState extends GameState {
   constructor(deps) {
     super();
@@ -12,6 +22,7 @@ export class StartMenuState extends GameState {
     this._lastW = 0;
     this._lastH = 0;
     this._onKeyDown = this._onKeyDown.bind(this);
+    this._devRect = { x: 0, y: 0, w: 0, h: 0 };
   }
   render(ctx, w, h) {
     drawStartScreen(ctx, w, h, this._deps.getGameState(), this._deps.track);
@@ -43,15 +54,46 @@ export class StartMenuState extends GameState {
       this._rankingBtn.setRect(Math.round(hdrBtnX), Math.round(hdrBtnY), Math.round(hdrBtnW), Math.round(hdrBtnH));
     }
     this._rankingBtn.renderPressOverlay(ctx);
-    // dev button for localhost (hidden otherwise)
+    // dev badge for localhost (hidden otherwise) - made more visible and clickable
     try {
       const hostname = typeof window !== 'undefined' && window.location && window.location.hostname;
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        ctx.fillStyle = '#ffaa00';
+        const devW = Math.min(180, Math.max(110, w * 0.18));
+        const devH = 40;
+        const devX = 12;
+        const devY = Math.round(h - devH - 12);
+        // shadow
+        ctx.save();
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        _roundRect(ctx, devX + 2, devY + 4, devW, devH, 10);
+        ctx.fill();
+        // gradient pill
+        const g = ctx.createLinearGradient(devX, devY, devX + devW, devY);
+        g.addColorStop(0, '#ff8a3a');
+        g.addColorStop(1, '#ff5f2a');
+        ctx.fillStyle = g;
+        _roundRect(ctx, devX, devY, devW, devH, 10);
+        ctx.fill();
+        // border
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+        _roundRect(ctx, devX, devY, devW, devH, 10);
+        ctx.stroke();
+        // text
+        ctx.fillStyle = '#fff';
+        ctx.font = '700 14px monospace';
+        ctx.fillText('DEV', devX + 12, devY + devH / 2 + 5);
         ctx.font = '12px monospace';
-        ctx.fillText('[DEV]', 12, h - 12);
+        ctx.fillText('Sandbox (D)', devX + 58, devY + devH / 2 + 5);
+        ctx.restore();
+        // store hit rect
+        this._devRect = { x: devX, y: devY, w: devW, h: devH };
+      } else {
+        this._devRect = { x: 0, y: 0, w: 0, h: 0 };
       }
-    } catch (e) {}
+    } catch (e) {
+      this._devRect = { x: 0, y: 0, w: 0, h: 0 };
+    }
     const footerH = 40;
     this._settingsBtn.setRect(w * 0.5, h - footerH, w * 0.5, footerH);
     const gs = this._deps.getGameState();
@@ -116,13 +158,21 @@ export class StartMenuState extends GameState {
       this._ctaBtn.pressed = true;
       requestAnimationFrame(() => this._deps.callbacks.startRace());
     }
-    // small dev area: bottom-left corner to open physics sandbox when running on localhost
+    // Dev badge click handling (uses same rect drawn in render)
     try {
       const hostname = typeof window !== 'undefined' && window.location && window.location.hostname;
-      const hThreshold = this._lastH || (this._deps.canvas ? this._deps.canvas.height : 480);
-      if ((hostname === 'localhost' || hostname === '127.0.0.1') && x < 120 && y > (hThreshold - 80)) {
-        requestAnimationFrame(() => this._deps.callbacks.openPhysicsSandbox());
-        return;
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        const r = this._devRect || { x: 0, y: 0, w: 0, h: 0 };
+        if (r.w > 0 && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+          requestAnimationFrame(() => this._deps.callbacks.openPhysicsSandbox());
+          return;
+        }
+        // fallback to legacy hotspot for older renders
+        const hThreshold = this._lastH || (this._deps.canvas ? this._deps.canvas.height : 480);
+        if (x < 120 && y > hThreshold - 80) {
+          requestAnimationFrame(() => this._deps.callbacks.openPhysicsSandbox());
+          return;
+        }
       }
     } catch (e) {}
   }
