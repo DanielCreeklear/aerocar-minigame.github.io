@@ -102,12 +102,15 @@ function bottomBar(ctx, w, h, actions) {
   ctx.font = `700 ${sz}px ${R.font}`;
   ctx.textBaseline = "middle";
   const cy = by + bh * 0.5;
-  let curX = 20;
+  // layout actions left-to-right (consistent with original UI)
+  const startX = 20;
+  let curX = startX;
+  ctx.fillStyle = R.textHeader;
   for (const action of actions) {
-    ctx.fillStyle = R.textHeader;
+    const txt = `${action.icon} ${action.label}`;
     ctx.textAlign = "left";
-    ctx.fillText(`${action.icon} ${action.label}`, curX, cy);
-    curX += ctx.measureText(`${action.icon} ${action.label}`).width + 28;
+    ctx.fillText(txt, curX, cy);
+    curX += ctx.measureText(txt).width + 28;
   }
   ctx.restore();
 }

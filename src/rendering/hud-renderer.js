@@ -120,11 +120,23 @@ class HudRenderer {
     this.displayedSpeedKmh = 0;
     this._warningTick = 0;
     this._windState = createWindState();
+    // instance scoped caches for HUD drawing resources (gradients, bitmaps)
+    this._caches = {
+      aeroBadgeCache: new Map(),
+      gripWarningCache: new Map(),
+      windVignetteCache: {},
+      centrifugalGradCache: {},
+    };
   }
   reset() {
     this.displayedSpeedKmh = 0;
     this._warningTick = 0;
     this._windState = createWindState();
+    // clear instance caches
+    this._caches.aeroBadgeCache.clear();
+    this._caches.gripWarningCache.clear();
+    this._caches.windVignetteCache = {};
+    this._caches.centrifugalGradCache = {};
   }
   draw(ctx, gameState, width, height, dt = 1 / 60) {
     const rawSpeed = Math.max(0, gameState.speed || 0);
@@ -138,20 +150,21 @@ class HudRenderer {
     if (isPortrait) {
       drawInputBars(ctx, gameState, width, height);
     }
-    drawWindStreaks(ctx, gameState, width, height, this._windState, dt);
-    drawCentrifugalSlideEffect(ctx, gameState, width, height);
+    drawWindStreaks(ctx, gameState, width, height, this._windState, dt, this._caches);
+    drawCentrifugalSlideEffect(ctx, gameState, width, height, this._caches);
     this._warningTick = drawGripWarning(
       ctx,
       gameState,
       width,
       height,
       this._warningTick,
+      this._caches,
     );
     drawCurveIndicator(ctx, gameState, width);
     drawLapPanel(ctx, gameState, width, height);
     drawBatteryBar(ctx, gameState, width, height);
     drawSpeedometer(ctx, this.displayedSpeedKmh, width, height, isPortrait, 0);
-    drawAeroBadge(ctx, gameState, width, height, 0);
+    drawAeroBadge(ctx, gameState, width, height, 0, this._caches);
     drawRescueBanner(ctx, gameState, width, height);
     drawScanlines(ctx, width, height);
   }

@@ -67,9 +67,9 @@ function _drawBarrierSlice(ctx, barrierInnerX, dir, sliceZ, y, step) {
 
 
 const _barrierCache = new Map();
-function _getBarrierCanvas(step, barrierShadowW, beat, stripePhase, dir, dots) {
+function _getBarrierCanvas(bcache, step, barrierShadowW, beat, stripePhase, dir, dots) {
   const key = `${step}:${barrierShadowW}:${beat}:${stripePhase}:${dir}:${dots ? 1 : 0}`;
-  let c = _barrierCache.get(key);
+  let c = bcache.get(key);
   if (c) return c;
   const margin = 2;
   const width = GRAVEL_W + BARRIER_W + barrierShadowW + margin * 2;
@@ -119,16 +119,19 @@ function _getBarrierCanvas(step, barrierShadowW, beat, stripePhase, dir, dots) {
   cctx.fillStyle = "rgba(255,255,255,0.18)";
   cctx.fillRect(bodyLocalX, 0, 1, step);
 
-  _barrierCache.set(key, canvas);
+  bcache.set(key, canvas);
   return canvas;
 }
 
-function _drawBarrierCached(ctx, barrierInnerX, dir, sliceZ, y, step, metrics) {
+function _drawBarrierCached(ctx, barrierInnerX, dir, sliceZ, y, step, metrics, caches = null) {
   const beat = Math.floor(sliceZ / 6) % 3;
   const stripePhase = Math.floor(sliceZ / HAZARD_PERIOD) % 2;
   const dots = (y & 3) === 0;
   const barrierShadowW = Math.round(metrics.trackWidth * 0.07);
-  const canvas = _getBarrierCanvas(step, barrierShadowW, beat, stripePhase, dir, dots);
+  // prefer instance cache when provided
+  let bcache = _barrierCache;
+  if (caches && caches.barrierCache) bcache = caches.barrierCache;
+  const canvas = _getBarrierCanvas(bcache, step, barrierShadowW, beat, stripePhase, dir, dots);
   
   const margin = 2;
   if (dir > 0) {
@@ -143,7 +146,7 @@ function _drawBarrierCached(ctx, barrierInnerX, dir, sliceZ, y, step, metrics) {
   }
 }
 
-function drawTrack(ctx, gameState, track, metrics, cameraXOpt) {
+function drawTrack(ctx, gameState, track, metrics, cameraXOpt, caches = null) {
   const { width, height } = metrics;
   const carY = metrics.carY;
   const halfRoad = metrics.trackWidth * HALF_RATIO;
@@ -170,9 +173,9 @@ function drawTrack(ctx, gameState, track, metrics, cameraXOpt) {
     const info = track.getTrackPoint(sliceZ, _scanInfo);
 
     
-    const centerX = width * HALF_RATIO + (info.x - cameraX);
-    const left = Math.round(centerX - halfRoad);
-    const right = Math.round(centerX + halfRoad);
+    const centerX = Math.round(width * HALF_RATIO + (info.x - cameraX));
+    const left = centerX - halfRoad;
+    const right = centerX + halfRoad;
     const bw = metrics.borderWidth;
     const step = metrics.roadSampleStep;
 
@@ -186,8 +189,8 @@ function drawTrack(ctx, gameState, track, metrics, cameraXOpt) {
     
     const leftCurbOuter = left - bw;
     const rightCurbOuter = right + bw;
-    _drawBarrierCached(ctx, leftCurbOuter - runoffW, -1, sliceZ, y, step, metrics);
-    _drawBarrierCached(ctx, rightCurbOuter + runoffW, +1, sliceZ, y, step, metrics);
+    _drawBarrierCached(ctx, leftCurbOuter - runoffW, -1, sliceZ, y, step, metrics, caches);
+    _drawBarrierCached(ctx, rightCurbOuter + runoffW, +1, sliceZ, y, step, metrics, caches);
 
     
     ctx.fillStyle = RENDER_COLORS.runoff;

@@ -1,7 +1,6 @@
 import { drawTrack } from "./track-renderer.js";
 import { drawCar, computeCarDrawPosition, createTrailState } from "./car-renderer.js";
 import { createSkidLayer } from "./skid-layer.js";
-import { getAeroStrategy } from "../systems/aero.js";
 import { drawRivals } from "./rival-renderer.js";
 import { drawObstacles } from "./obstacle-renderer.js";
 import { HudRenderer } from "./hud-renderer.js";
@@ -26,8 +25,6 @@ import {
   CAMERA_LERP,
   ZOOM_BASE,
   ZOOM_MIN,
-  ZOOM_MAX,
-  ZOOM_RANGE,
   ZOOM_LERP,
   BRAKE_ZOOM_BONUS,
   SKID_LAYER_DPR,
@@ -122,6 +119,11 @@ class Renderer {
     // Per-renderer trail state reused across frames to avoid module-level
     // allocations in the car renderer's trail system.
     this._trailState = createTrailState();
+    // per-renderer caches for heavy bitmap/gradient reuse
+    this._renderCaches = {
+      barrierCache: new Map(),
+      boostGradCache: {},
+    };
   }
   draw(gameState, track, telemetry = null, dt = 1 / 60, stateManager = null) {
     const { ctx, canvas } = this;
@@ -151,6 +153,8 @@ class Renderer {
     
     if (!this._shake) this._shake = { x: 0, y: 0 };
     getCameraShakeOffset(gameState, this._shake);
+    this._shake.x = Math.round(this._shake.x);
+    this._shake.y = Math.round(this._shake.y);
     ctx.imageSmoothingEnabled = false; 
     
     const dpr = SKID_LAYER_DPR;
@@ -168,21 +172,13 @@ class Renderer {
     const desiredCameraX =
       carTrackInfo.x + (gameState.lateralVelocity || 0) * CAMERA_LATERAL_VEL_LOOKAHEAD;
     this._cameraX += (desiredCameraX - this._cameraX) * Math.min(1, CAMERA_LERP * dt);
+    const roundedCameraX = Math.round(this._cameraX);
 
-    
-    const strategy = getAeroStrategy(gameState.aeroMode);
-    const speed = gameState.speed || 0;
-    const speedRatio = strategy.maxVz > 0 ? speed / strategy.maxVz : 0;
+    // Zoom: brake zoom-in on mode Z only. Mode X keeps zoom stable at ZOOM_BASE.
     let targetZoom = ZOOM_BASE;
-    if (gameState.aeroMode === undefined || gameState.aeroMode === null) {
-      targetZoom = ZOOM_BASE;
-    } else if (gameState.aeroMode === AERO_MODES.X) {
-      
-      targetZoom = Math.max(ZOOM_MIN, ZOOM_MAX - speedRatio * ZOOM_RANGE);
-    } else {
-      
+    if (gameState.aeroMode === AERO_MODES.Z) {
       targetZoom = ZOOM_BASE - (gameState.isBraking ? BRAKE_ZOOM_BONUS : 0);
-      targetZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, targetZoom));
+      targetZoom = Math.max(ZOOM_MIN, targetZoom);
     }
     this._worldZoom += (targetZoom - this._worldZoom) * Math.min(1, ZOOM_LERP * dt);
 
@@ -205,11 +201,17 @@ class Renderer {
 
     
     ctx.save();
-    if (scale !== 1) ctx.scale(scale * this._worldZoom, scale * this._worldZoom);
+    if (scale !== 1) ctx.scale(scale, scale);
+    if (this._worldZoom !== ZOOM_BASE) {
+      // Anchor zoom to logical canvas center so zoom-in doesn't shift the track
+      ctx.translate(logW * 0.5, logH * 0.5);
+      ctx.scale(this._worldZoom, this._worldZoom);
+      ctx.translate(-logW * 0.5, -logH * 0.5);
+    }
     ctx.translate(this._shake.x, this._shake.y);
 
     
-    drawTrack(ctx, gameState, track, metrics, this._cameraX);
+    drawTrack(ctx, gameState, track, metrics, roundedCameraX, this._renderCaches);
     
     if (this._skidLayer) {
       this._skidLayer.drawTo(ctx);
@@ -218,7 +220,7 @@ class Renderer {
     drawRivals(ctx, gameState, track, metrics);
     // Pass the per-renderer trail state into drawCar to ensure trails are
     // isolated per renderer instance.
-    drawCar(ctx, gameState, track, metrics, this._trailState);
+    drawCar(ctx, gameState, track, metrics, this._trailState, this._renderCaches);
     ctx.restore();
     ctx.save();
     if (scale !== 1) ctx.scale(scale, scale);
@@ -247,6 +249,11 @@ class Renderer {
     }
 
     ctx.restore();
+
+    // If a tutorial is active, render its overlay on top of the race world
+    if (gameState.isTutorial && stateManager) {
+      stateManager.render(ctx, width, height);
+    }
   }
   resetHud() {
     this.hud.reset();

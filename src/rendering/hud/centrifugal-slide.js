@@ -3,7 +3,7 @@ import { HUD_COLORS, HUD_FONTS, CENTRIFUGAL_SLIDE_DURATION } from "../../constan
 const LABEL_TEXT = "SEM GRIP!";
 const VIGNETTE_WIDTH_RATIO = 0.38;
 const FLASH_PHASE = 0.85;
-function drawCentrifugalSlideEffect(ctx, gameState, width, height) {
+function drawCentrifugalSlideEffect(ctx, gameState, width, height, caches = null) {
   const timer = gameState.centrifugalSlideTimer || 0;
   if (timer <= 0 || gameState.isGameOver) return;
   const progress = clamp(timer / CENTRIFUGAL_SLIDE_DURATION, 0, 1);
@@ -20,16 +20,23 @@ function drawCentrifugalSlideEffect(ctx, gameState, width, height) {
   const baseAlpha = 0.15 + progress * 0.45 + flashIntensity * 0.25;
   ctx.save();
   
-  if (!drawCentrifugalSlideEffect._gradCache) drawCentrifugalSlideEffect._gradCache = {};
+  // Use instance-scoped cache when available, fall back to function-scoped cache
   const side = slideLeft ? "L" : "R";
-  const key = `${width}x${height}@${side}`;
-  let grad = drawCentrifugalSlideEffect._gradCache[key];
+  const alphaKey = Math.round(baseAlpha * 20); // quantize to 0.05 steps
+  const key = `${width}x${height}@${side}@${alphaKey}`;
+  let gcache = null;
+  if (caches && caches.centrifugalGradCache) gcache = caches.centrifugalGradCache;
+  else {
+    if (!drawCentrifugalSlideEffect._gradCache) drawCentrifugalSlideEffect._gradCache = {};
+    gcache = drawCentrifugalSlideEffect._gradCache;
+  }
+  let grad = gcache[key];
   if (!grad) {
     grad = ctx.createLinearGradient(edgeX, 0, innerX, 0);
     grad.addColorStop(0, `rgba(255,140,0,${clamp(baseAlpha, 0, 0.85)})`);
     grad.addColorStop(0.55, `rgba(255,100,0,${clamp(baseAlpha * 0.35, 0, 0.4)})`);
     grad.addColorStop(1, "rgba(255,100,0,0)");
-    drawCentrifugalSlideEffect._gradCache[key] = grad;
+    gcache[key] = grad;
   }
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, height);

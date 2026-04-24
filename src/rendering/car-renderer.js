@@ -93,7 +93,7 @@ function computeCarDrawPosition(gameState, width, height) {
     drawX += (Math.random() - 0.5) * 12 * shakeScale;
     drawY += (Math.random() - 0.5) * 5 * shakeScale;
   }
-  return { drawX, drawY };
+  return { drawX: Math.round(drawX), drawY: Math.round(drawY) };
 }
 function drawDustCloud(ctx, gameState, drawX, drawY, carWidth, carHeight) {
   if (
@@ -209,22 +209,27 @@ function drawCarBody(ctx, gameState, metrics) {
   ctx.stroke();
   ctx.restore();
 }
-function drawBoostFlame(ctx, gameState, metrics) {
+function drawBoostFlame(ctx, gameState, metrics, caches = null) {
   if (!gameState.isBoosting || gameState.battery <= 0) return;
   const { carWidth, carHeight } = metrics;
   const bodyW = carWidth * 0.72;
   const bodyH = carHeight * 0.88;
   const glowRadius = Math.round(bodyW * 0.62 + Math.random() * bodyW * 0.1);
-  
-  if (!drawBoostFlame._gradCache) drawBoostFlame._gradCache = {};
+  // prefer instance cache for gradients when available
+  let gcache = null;
+  if (caches && caches.boostGradCache) gcache = caches.boostGradCache;
+  else {
+    if (!drawBoostFlame._gradCache) drawBoostFlame._gradCache = {};
+    gcache = drawBoostFlame._gradCache;
+  }
   const cacheKey = `${glowRadius}@${ctx.canvas.width}x${ctx.canvas.height}`;
-  let grad = drawBoostFlame._gradCache[cacheKey];
+  let grad = gcache[cacheKey];
   if (!grad) {
     grad = ctx.createRadialGradient(0, 0, bodyW * 0.1, 0, 0, glowRadius);
     grad.addColorStop(0, `rgba(0,220,255,0.22)`);
     grad.addColorStop(0.5, `rgba(0,140,255,0.14)`);
     grad.addColorStop(1, `rgba(0,80,200,0)`);
-    drawBoostFlame._gradCache[cacheKey] = grad;
+    gcache[cacheKey] = grad;
   }
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
@@ -248,7 +253,7 @@ function drawBoostFlame(ctx, gameState, metrics) {
   }
   ctx.restore();
 }
-function drawCar(ctx, gameState, track, metrics, trailState) {
+function drawCar(ctx, gameState, track, metrics, trailState, caches = null) {
   const { width, height, carWidth, carHeight } = metrics;
   const carTrackInfo =
     gameState.currentTrackPoint || track.getTrackPoint(gameState.currentZ);
@@ -295,7 +300,7 @@ function drawCar(ctx, gameState, track, metrics, trailState) {
   ctx.rotate(totalAngle);
   drawCarBody(ctx, gameState, { carWidth, carHeight });
   ctx.globalAlpha = 1.0;
-  drawBoostFlame(ctx, gameState, { carWidth, carHeight });
+  drawBoostFlame(ctx, gameState, { carWidth, carHeight }, caches);
   ctx.restore();
 }
 export { drawCar, computeCarDrawPosition, createTrailState };

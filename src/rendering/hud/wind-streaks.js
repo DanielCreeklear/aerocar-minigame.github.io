@@ -41,9 +41,10 @@ function createWindState() {
     streaks: null,
     intensity: 0,
     tick: 0,
+    smoothAngle: 0,
   };
 }
-function drawWindStreaks(ctx, gameState, width, height, state, dt = 1 / 60) {
+function drawWindStreaks(ctx, gameState, width, height, state, dt = 1 / 60, caches = null) {
   const rawSpeed = gameState.speed || 0;
   const speedKmh = rawSpeed * SPEED_KMH_SCALE;
   const targetIntensity =
@@ -62,7 +63,11 @@ function drawWindStreaks(ctx, gameState, width, height, state, dt = 1 / 60) {
   }
   const diag = Math.hypot(width, height);
   const tp = gameState.currentTrackPoint;
-  const windAngle = Math.atan2(tp?.yaw ?? 0, Z_RESOLUTION);
+  const targetAngle = Math.atan2(tp?.yaw ?? 0, Z_RESOLUTION);
+  // Smooth the wind angle to avoid abrupt HUD rotation jumps at high speed
+  const ANGLE_LERP = 0.08;
+  state.smoothAngle += (targetAngle - state.smoothAngle) * Math.min(1, ANGLE_LERP * dt * 60);
+  const windAngle = state.smoothAngle;
   if (!state.streaks) {
     state.streaks = Array.from({ length: STREAK_COUNT }, () => {
       const s = {};
@@ -91,7 +96,7 @@ function drawWindStreaks(ctx, gameState, width, height, state, dt = 1 / 60) {
   _renderStreakLines(ctx, state, velY, width, height);
   ctx.restore();
   if (state.intensity > 0.25) {
-    _renderVignette(ctx, state.intensity, width, height, diag);
+    _renderVignette(ctx, state.intensity, width, height, diag, caches);
   }
 }
 function _updateStreakPositions(
@@ -156,20 +161,26 @@ function _renderStreakLines(ctx, state, velY, width, height) {
   }
   ctx.restore();
 }
-function _renderVignette(ctx, intensity, width, height, diag) {
+function _renderVignette(ctx, intensity, width, height, diag, caches = null) {
   const vigAlpha = (intensity - 0.25) * 0.18;
   const cx = width * 0.5;
   const cy = height * 0.5;
   
   const key = `${Math.round(diag)}@${width}x${height}@${Math.round(vigAlpha * 1000)}`;
-  if (!drawWindStreaks._vignetteCache) drawWindStreaks._vignetteCache = {};
-  let grad = drawWindStreaks._vignetteCache[key];
+  // prefer instance cache if provided
+  let vcache = null;
+  if (caches && caches.windVignetteCache) vcache = caches.windVignetteCache;
+  else {
+    if (!drawWindStreaks._vignetteCache) drawWindStreaks._vignetteCache = {};
+    vcache = drawWindStreaks._vignetteCache;
+  }
+  let grad = vcache[key];
   if (!grad) {
     grad = ctx.createRadialGradient(cx, cy, diag * 0.25, cx, cy, diag * 0.72);
     grad.addColorStop(0, "rgba(0,0,0,0)");
     const ai = Math.round(vigAlpha * (_alphaCache.length - 1));
     grad.addColorStop(1, `rgba(0,5,18,${_alphaCache[ai]})`);
-    drawWindStreaks._vignetteCache[key] = grad;
+    vcache[key] = grad;
   }
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, height);

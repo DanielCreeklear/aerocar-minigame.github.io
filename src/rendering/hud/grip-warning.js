@@ -1,7 +1,7 @@
 import { clamp } from "../../utils/math.js";
 import { HUD_COLORS, HUD_LAYOUT } from "../../constants/index.js";
 import { SLIP_PENALTY_THRESHOLD } from "../../constants/index.js";
-function drawGripWarning(ctx, gameState, width, height, warningTick) {
+function drawGripWarning(ctx, gameState, width, height, warningTick, caches = null) {
   const isOffTrack = gameState.isOffTrack;
   const slip = gameState.currentSlip || 0;
   const isPenalized = slip >= SLIP_PENALTY_THRESHOLD;
@@ -19,8 +19,14 @@ function drawGripWarning(ctx, gameState, width, height, warningTick) {
     : HUD_COLORS.warningGlow;
   
   const key = `${Math.round(width)}x${Math.round(height)}:${isOffTrack ? 1 : 0}`;
-  if (!drawGripWarning._cache) drawGripWarning._cache = new Map();
-  let bmp = drawGripWarning._cache.get(key);
+  // prefer instance-scoped cache if provided
+  let gcache = null;
+  if (caches && caches.gripWarningCache) gcache = caches.gripWarningCache;
+  else {
+    if (!drawGripWarning._cache) drawGripWarning._cache = new Map();
+    gcache = drawGripWarning._cache;
+  }
+  let bmp = gcache.get(key);
   if (!bmp) {
     let canvas;
     if (typeof OffscreenCanvas !== "undefined") {
@@ -40,7 +46,7 @@ function drawGripWarning(ctx, gameState, width, height, warningTick) {
     cctx.shadowBlur = 0;
     cctx.lineWidth = thickness;
     cctx.strokeRect(thickness * 0.5, thickness * 0.5, width - thickness, height - thickness);
-    drawGripWarning._cache.set(key, canvas);
+    gcache.set(key, canvas);
     bmp = canvas;
   }
   ctx.save();

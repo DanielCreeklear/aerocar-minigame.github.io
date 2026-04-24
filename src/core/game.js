@@ -263,7 +263,12 @@ class Game {
         this.gameState.leaderboardPage = next;
         },
         backToMenu: () => {
-          
+          // If returning from tutorial, restore the normal track then do a clean reset
+          if (this.gameState && this.gameState.isTutorial) {
+            this.track.init(this.totalSegments, this.trackSeed);
+            this.reset(SCREENS.START);
+            return;
+          }
           const target = this._prevScreenBeforeSandbox || SCREENS.START;
           this._prevScreenBeforeSandbox = null;
           this._setScreen(target);
@@ -510,7 +515,7 @@ class Game {
       0;
     this.telemetry.log(this.gameState, physicsTelemetry);
     updateRivals(this.gameState, this.track, dt);
-    if (!this.gameState.rescueInProgress) {
+    if (!this.gameState.rescueInProgress && !this.gameState.isTutorial) {
       const offScreenThreshold = this.canvas.width / 2 / LATERAL_RENDER_SCALE;
       if (Math.abs(this.gameState.lateralOffset || 0) >= offScreenThreshold) {
         this.gameState.rescueInProgress = true;
@@ -526,7 +531,7 @@ class Game {
     if (this.gameState.rescueInProgress) {
       this.gameState.centrifugalDrift = 0;
     }
-    if (lapCompleted) {
+    if (lapCompleted && !this.gameState.isTutorial) {
       const now = Date.now();
       const lapTime = now - this.gameState.lapStartTime;
       this.gameState.lapStartTime = now;

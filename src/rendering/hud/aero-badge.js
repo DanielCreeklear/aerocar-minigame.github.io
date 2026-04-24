@@ -12,7 +12,7 @@ const BADGE_BOTTOM_MARGIN_MAX = 22;
 const BADGE_RADIUS = 0;
 
 const _badgeCache = new Map();
-function drawAeroBadge(ctx, gameState, width, height, touchReserve = 0) {
+function drawAeroBadge(ctx, gameState, width, height, touchReserve = 0, caches = null) {
   const isX = gameState.aeroMode === AERO_MODES.X;
   const badgeW = Math.max(
     BADGE_MIN_WIDTH,
@@ -35,7 +35,11 @@ function drawAeroBadge(ctx, gameState, width, height, touchReserve = 0) {
   const glowColor = isX ? HUD_COLORS.badgeModeXGlow : HUD_COLORS.badgeModeZGlow;
   
   const key = `${Math.round(badgeW)}x${Math.round(badgeH)}:${isX ? 1 : 0}`;
-  let bmp = _badgeCache.get(key);
+  // prefer instance cache
+  let bcache = null;
+  if (caches && caches.aeroBadgeCache) bcache = caches.aeroBadgeCache;
+  else bcache = _badgeCache;
+  let bmp = bcache.get(key);
   if (!bmp) {
     
     let canvas;
@@ -68,7 +72,7 @@ function drawAeroBadge(ctx, gameState, width, height, touchReserve = 0) {
     cctx.shadowColor = "rgba(0,0,0,0.5)";
     cctx.shadowBlur = 3;
     cctx.fillText(isX ? "MODO X" : "MODO Z", badgeW * 0.5, badgeH * 0.5);
-    _badgeCache.set(key, canvas);
+    bcache.set(key, canvas);
     bmp = canvas;
   }
   ctx.drawImage(bmp, x, y);

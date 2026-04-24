@@ -17,7 +17,7 @@ export const TUTORIAL_STEPS = [
   {
     id: "welcome",
     title: "BEM-VINDO",
-    instruction: "Bem-vindo ao tutorial. Aprenda os controles básicos. Toque para continuar.",
+    instruction: "Bem-vindo ao tutorial. Aprenda os controles básicos do aerocar antes de sua primeira corrida.",
     highlight: null,
     autoAdvanceOnInput: true,
   },
@@ -65,8 +65,8 @@ export const TUTORIAL_STEPS = [
   {
     id: "complete",
     title: "PARABÉNS",
-    instruction: "Tutorial concluído. Você pode voltar ao menu para começar uma corrida.",
+    instruction: "Tutorial concluído! Você está pronto para sua primeira corrida. Toque em CONTINUAR para voltar ao menu.",
     highlight: null,
-    autoAdvanceOnInput: false,
+    autoAdvanceOnInput: true,
   },
 ];

@@ -1,19 +1,20 @@
 import { TUTORIAL_STEPS, TUTORIAL_KEYS } from "../constants/tutorial.js";
 
-// TutorialManager: gerencia o progresso do tutorial, avaliação de condições e persistência
 export class TutorialManager {
   constructor(gameState) {
-    this.gameState = gameState; // referência leve para leitura do estado do jogo
+    this.gameState = gameState;
     this.steps = TUTORIAL_STEPS;
     this.current = 0;
     this.startTime = Date.now();
     this.stepStartTime = Date.now();
+    // snapshot battery at construction so we detect a real drop, not a pre-existing value
+    this._batteryAtStepStart = typeof gameState?.battery === "number" ? gameState.battery : 100;
     this._flags = {
-      boostUsed: false,
-      brakedForCurve: false,
-      usedModeZInCurve: false,
+      boostUsed:          false,
+      brakedForCurve:     false,
+      usedModeZInCurve:   false,
       usedModeXOnStraight: false,
-      driftDetected: false,
+      driftDetected:      false,
     };
     this.finished = false;
   }
@@ -22,25 +23,28 @@ export class TutorialManager {
     return this.steps[this.current] || null;
   }
 
-  // marca tutorial como concluído e persiste
   markComplete() {
     this.finished = true;
-    try {
-      localStorage.setItem(TUTORIAL_KEYS.STORAGE_KEY, "1");
-    } catch (e) {}
+    try { localStorage.setItem(TUTORIAL_KEYS.STORAGE_KEY, "1"); } catch (e) {}
   }
 
-  // avança para próximo step
   advance() {
     if (this.current < this.steps.length - 1) {
       this.current += 1;
       this.stepStartTime = Date.now();
+      // snapshot battery when entering a new step so boost detection is relative
+      const gs = this.gameState;
+      this._batteryAtStepStart = typeof gs?.battery === "number" ? gs.battery : 100;
+      // reset the flag for the incoming step so it must be earned fresh
+      const incoming = this.steps[this.current];
+      if (incoming?.conditionName) {
+        this._flags[incoming.conditionName] = false;
+      }
     } else {
       this.markComplete();
     }
   }
 
-  // retrocede (se necessário)
   back() {
     if (this.current > 0) {
       this.current -= 1;
@@ -48,45 +52,62 @@ export class TutorialManager {
     }
   }
 
-  // atualiza flags com base no estado do jogo (chamado a cada frame)
   update(dt) {
     const gs = this.gameState;
-    if (!gs) return;
+    if (!gs || this.finished) return;
 
-    // Detect boost usage
-    if (!this._flags.boostUsed && typeof gs.battery === "number") {
-      // if battery decreased from max (rough heuristic)
-      if (gs.battery < 100) this._flags.boostUsed = true;
-    }
-
-    // Detect braking before a curve: if upcoming curvature and speed reduced
-    const upcomingCurv = gs.upcomingCurvature || 0;
-    if (!this._flags.brakedForCurve && Math.abs(upcomingCurv) > 1.5) {
-      // expected to brake: check speed drop below threshold when near curve
-      if (gs.speed < 12) this._flags.brakedForCurve = true;
-    }
-
-    // Mode Z used while in a curve
-    if (!this._flags.usedModeZInCurve && gs.aeroMode === "Z" && Math.abs(gs.currentCurvature || 0) > 2.5) {
-      this._flags.usedModeZInCurve = true;
-    }
-
-    // Mode X used in long straight (isInModeXZone)
-    if (!this._flags.usedModeXOnStraight && gs.aeroMode === "X" && gs.isInModeXZone) {
-      this._flags.usedModeXOnStraight = true;
-    }
-
-    // Drift detection (reuses game state's isDrifting if present)
-    if (!this._flags.driftDetected && (gs.isDrifting || false)) {
-      // require a small duration
-      const since = (Date.now() - this.stepStartTime) / 1000;
-      if (since >= 0.5) this._flags.driftDetected = true;
-    }
-
-    // evaluate completion for current step
     const step = this.getStep();
-    if (!step || this.finished) return;
+    if (!step) return;
 
+    // ── Detect the condition for the CURRENT step only ──────────────────────
+    // This prevents a flag earned early from skipping a later step instantly.
+    switch (step.conditionName) {
+      case "boostUsed":
+        // battery dropped at least 3 points from when this step started
+        if (!this._flags.boostUsed && typeof gs.battery === "number") {
+          if (gs.battery < this._batteryAtStepStart - 3) {
+            this._flags.boostUsed = true;
+          }
+        }
+        break;
+
+      case "brakedForCurve":
+        // player is near a curve AND speed is low (braking)
+        if (!this._flags.brakedForCurve) {
+          const upcomingCurv = gs.upcomingCurvature || 0;
+          if (Math.abs(upcomingCurv) > 1.5 && (gs.speed || 0) < 14) {
+            this._flags.brakedForCurve = true;
+          }
+        }
+        break;
+
+      case "usedModeZInCurve":
+        if (!this._flags.usedModeZInCurve &&
+            gs.aeroMode === "Z" &&
+            Math.abs(gs.currentCurvature || 0) > 2.0) {
+          this._flags.usedModeZInCurve = true;
+        }
+        break;
+
+      case "usedModeXOnStraight":
+        if (!this._flags.usedModeXOnStraight &&
+            gs.aeroMode === "X" &&
+            gs.isInModeXZone) {
+          this._flags.usedModeXOnStraight = true;
+        }
+        break;
+
+      case "driftDetected":
+        if (!this._flags.driftDetected && gs.isDrifting) {
+          const elapsed = (Date.now() - this.stepStartTime) / 1000;
+          if (elapsed >= 0.3) this._flags.driftDetected = true;
+        }
+        break;
+    }
+
+    // ── Evaluate advancement ─────────────────────────────────────────────────
+    // autoAdvanceOnInput is handled by TutorialState.onPointerDown directly,
+    // but keep the lastInputAt path as a fallback for keyboard users
     if (step.autoAdvanceOnInput && gs.lastInputAt && gs.lastInputAt > this.stepStartTime) {
       this.advance();
       return;
@@ -97,7 +118,7 @@ export class TutorialManager {
       return;
     }
 
-    // timeout fallback: after timeoutMs advance anyway (shows hint)
+    // timeout fallback
     if (step.timeoutMs) {
       const elapsed = Date.now() - this.stepStartTime;
       if (elapsed >= step.timeoutMs) {

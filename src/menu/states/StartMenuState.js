@@ -59,10 +59,19 @@ export class StartMenuState extends GameState {
     try {
       const hostname = typeof window !== 'undefined' && window.location && window.location.hostname;
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        const devW = Math.min(180, Math.max(110, w * 0.18));
-        const devH = 40;
-        const devX = 12;
-        const devY = Math.round(h - devH - 12);
+        // hide dev pill on small viewports to avoid blocking bottom controls on mobile
+        const cssW = (typeof window !== 'undefined' && window.devicePixelRatio)
+          ? Math.round(w / (window.devicePixelRatio || 1))
+          : w;
+        if (cssW < 420) {
+          this._devRect = { x: 0, y: 0, w: 0, h: 0 };
+        } else {
+          const devW = Math.min(180, Math.max(110, w * 0.18));
+          const devH = 40;
+          const devX = 12;
+          // ensure the dev pill sits above the footer so it doesn't block footer taps
+          const footerBh = 40;
+          const devY = Math.max(12, Math.round(h - devH - 12 - footerBh));
         
         ctx.save();
         ctx.fillStyle = 'rgba(0,0,0,0.45)';
@@ -88,7 +97,8 @@ export class StartMenuState extends GameState {
         ctx.fillText('Sandbox (D)', devX + 58, devY + devH / 2 + 5);
         ctx.restore();
         
-        this._devRect = { x: devX, y: devY, w: devW, h: devH };
+          this._devRect = { x: devX, y: devY, w: devW, h: devH };
+        }
       } else {
         this._devRect = { x: 0, y: 0, w: 0, h: 0 };
       }
@@ -134,36 +144,31 @@ export class StartMenuState extends GameState {
     } else {
       this._gyroBtn.setRect(0, 0, 0, 0);
     }
-    // Footer actions are rendered by drawStartScreen's bottomBar.
-    // Recompute the text metrics here to build hitboxes that match the bottomBar layout.
+    // Footer hitboxes: mirror exactly the bottomBar() logic in screen-renderer.js
+    // bottomBar: sz = max(12, min(15, w*0.032)), font = '700 {sz}px monospace',
+    //            startX = 20, curX += measureText(txt).width + 28
     const footerBh = 40;
     const footerBy = h - footerBh;
     const footerSz = Math.max(12, Math.min(15, w * 0.032));
     ctx.font = `700 ${footerSz}px monospace`;
-    const footerCy = footerBy + footerBh * 0.5;
-    let curX = 20;
-    const footerActions = [
-      { icon: "○", label: "INICIAR" },
-      { icon: "△", label: "CONFIG" },
-      { icon: "◉", label: "TUTORIAL" },
-    ];
-    // create or reuse footer buttons
+
     this._footerStartBtn = this._footerStartBtn || new Button();
     this._settingsBtn = this._settingsBtn || new Button();
     this._tutorialBtn = this._tutorialBtn || new Button();
-    // iterate and set rects
-    for (let i = 0; i < footerActions.length; i++) {
-      const a = footerActions[i];
+
+    const footerActions = [
+      { icon: "○", label: "INICIAR", btn: this._footerStartBtn },
+      { icon: "△", label: "CONFIG",  btn: this._settingsBtn },
+      { icon: "◉", label: "TUTORIAL", btn: this._tutorialBtn },
+    ];
+
+    let curX = 20;
+    for (const a of footerActions) {
       const txt = `${a.icon} ${a.label}`;
-      const wText = Math.ceil(ctx.measureText(txt).width);
-      const padX = 12; // clickable padding around label for better UX
-      const rx = Math.round(curX - padX);
-      const ry = Math.round(footerBy);
-      const rw = Math.round(wText + padX * 2);
-      const rh = Math.round(footerBh);
-      if (a.label === "INICIAR") this._footerStartBtn.setRect(rx, ry, rw, rh);
-      else if (a.label === "CONFIG") this._settingsBtn.setRect(rx, ry, rw, rh);
-      else if (a.label === "TUTORIAL") this._tutorialBtn.setRect(rx, ry, rw, rh);
+      const wText = ctx.measureText(txt).width;
+      // expand hit area horizontally by 10px on each side for easier tapping
+      const padX = 10;
+      a.btn.setRect(Math.round(curX - padX), Math.round(footerBy), Math.round(wText + padX * 2), footerBh);
       curX += wText + 28;
     }
   }
@@ -173,20 +178,23 @@ export class StartMenuState extends GameState {
       requestAnimationFrame(() => this._deps.callbacks.openLeaderboard());
       return;
     }
-    if (this._settingsBtn.isHit(x, y)) {
+    // Footer primary actions: START, SETTINGS, TUTORIAL (check in that order)
+    if (this._footerStartBtn && this._footerStartBtn.isHit(x, y)) {
+      this._footerStartBtn.pressed = true;
+      requestAnimationFrame(() => this._deps.callbacks.startRace());
+      return;
+    }
+    if (this._settingsBtn && this._settingsBtn.isHit(x, y)) {
       this._settingsBtn.pressed = true;
       requestAnimationFrame(() => this._deps.callbacks.openSettings());
       return;
     }
     if (this._tutorialBtn && this._tutorialBtn.isHit(x, y)) {
       this._tutorialBtn.pressed = true;
-      // open tutorial screen
       requestAnimationFrame(() => {
-        // Some deps may not have direct helper for tutorial; use backToMenu/openSettings as safe nav
         if (this._deps.callbacks && this._deps.callbacks.openTutorial) {
           this._deps.callbacks.openTutorial();
         } else if (this._deps.callbacks && this._deps.callbacks.backToMenu) {
-          // reuse backToMenu to navigate; actual mapping happens in Game
           this._deps.callbacks.backToMenu();
         }
       });
@@ -215,12 +223,6 @@ export class StartMenuState extends GameState {
           requestAnimationFrame(() => this._deps.callbacks.openPhysicsSandbox());
           return;
         }
-        
-        const hThreshold = this._lastH || (this._deps.canvas ? this._deps.canvas.height : 480);
-        if (x < 120 && y > hThreshold - 80) {
-          requestAnimationFrame(() => this._deps.callbacks.openPhysicsSandbox());
-          return;
-        }
       }
     } catch (e) {}
   }
@@ -231,6 +233,7 @@ export class StartMenuState extends GameState {
     this._rankingBtn.pressed = false;
     if (this._tutorialBtn) this._tutorialBtn.pressed = false;
     if (this._footerStartBtn) this._footerStartBtn.pressed = false;
+    if (this._settingsBtn) this._settingsBtn.pressed = false;
   }
 
   onEnter() {
