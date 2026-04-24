@@ -251,9 +251,20 @@ class Game {
           this._setScreen(SCREENS.LEADERBOARD);
         },
       changeLeaderboardPage: (delta) => {
-        
         if (!this.gameState) return;
-        const PAGE_SIZE = 10;
+        // Replica o mesmo cálculo de effectivePageSize do screen-renderer
+        const isPortrait = window.innerHeight > window.innerWidth;
+        const h = window.innerHeight;
+        const w = window.innerWidth;
+        const pad = Math.max(20, w * 0.05);
+        const titleSz = Math.max(18, Math.min(36, w * 0.06));
+        const ctrlBtnH = isPortrait ? 24 : 18;
+        const topY = pad + titleSz + ctrlBtnH + 18;
+        const availH = h - topY - 40 - pad;
+        const minRowH = isPortrait ? 22 : 20;
+        const maxRowH = isPortrait ? 44 : 40;
+        const rowH = Math.max(minRowH, Math.min(maxRowH, Math.round(availH / 8)));
+        const PAGE_SIZE = Math.max(1, Math.floor(availH / (rowH + 4)));
         const total = (this.gameState.rankings || []).length;
         const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
         const cur = typeof this.gameState.leaderboardPage === 'number' ? this.gameState.leaderboardPage : 0;

@@ -644,10 +644,6 @@ function drawLeaderboardScreen(ctx, w, h, gameState) {
   const fade = Math.min(1, age / 0.5);
   const rankings = (gameState && gameState.rankings) || [];
   const page = (gameState && typeof gameState.leaderboardPage === "number") ? gameState.leaderboardPage : 0;
-  const effectivePageSize = isPortrait ? 6 : 10;
-  const totalPages = Math.max(1, Math.ceil((rankings.length || 0) / effectivePageSize));
-  const curPage = Math.max(0, Math.min(page, totalPages - 1));
-
   ctx.save();
   ctx.globalAlpha = fade;
   ctx.fillStyle = R.bg;
@@ -666,29 +662,35 @@ function drawLeaderboardScreen(ctx, w, h, gameState) {
   ctx.lineTo(w - pad, pad + titleSz + 6);
   ctx.stroke();
 
-  
   const ctrlBtnW = Math.min(72, Math.round(w * 0.14));
   const ctrlBtnH = isPortrait ? 24 : 18;
   const gap = 6;
-  
+
   const lineY = pad + titleSz + 6;
   const nextBtnX = w - pad - ctrlBtnW;
   const prevBtnX = nextBtnX - (ctrlBtnW + gap);
   const ctrlBtnY = Math.round(lineY + 6);
-  const showPagingControls = (rankings && rankings.length) > 10;
+
+  // calcula área disponível para a lista
+  const topY = pad + titleSz + ctrlBtnH + 18;
+  const bottomH = 40;
+  const availH = h - topY - bottomH - pad;
+
+  // tamanho de linha e page size calculados pelo espaço real da tela
+  const minRowH = isPortrait ? 22 : 20;
+  const maxRowH = isPortrait ? 44 : 40;
+  const rowH = Math.max(minRowH, Math.min(maxRowH, Math.round(availH / 8)));
+  const effectivePageSize = Math.max(1, Math.floor(availH / (rowH + 4)));
+
+  const totalPages = Math.max(1, Math.ceil((rankings.length || 0) / effectivePageSize));
+  const curPage = Math.max(0, Math.min(page, totalPages - 1));
+
+  const showPagingControls = rankings.length > effectivePageSize;
   if (showPagingControls) {
     drawSmallButton(ctx, prevBtnX, ctrlBtnY, ctrlBtnW, ctrlBtnH, "ANT", false);
     drawSmallButton(ctx, nextBtnX, ctrlBtnY, ctrlBtnW, ctrlBtnH, "PROX", false);
   }
 
-  
-
-  
-  const topY = showPagingControls ? Math.max(pad + titleSz + 18, ctrlBtnY + ctrlBtnH + 6) : (pad + titleSz + 18);
-  const bottomH = 40;
-  const availH = h - topY - bottomH - pad;
-  
-  const rowH = Math.max(20, Math.min(48, availH / effectivePageSize - 4));
   const offset = curPage * effectivePageSize;
   drawRankList(ctx, pad, topY, w - pad * 2, rowH, rankings, effectivePageSize, offset);
 
