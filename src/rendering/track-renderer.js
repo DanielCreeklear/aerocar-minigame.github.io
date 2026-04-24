@@ -65,6 +65,84 @@ function _drawBarrierSlice(ctx, barrierInnerX, dir, sliceZ, y, step) {
   ctx.fillRect(bx, y, 1, step);
 }
 
+// Barrier pre-render cache to avoid re-drawing barrier primitives every scanline.
+const _barrierCache = new Map();
+function _getBarrierCanvas(step, barrierShadowW, beat, stripePhase, dir, dots) {
+  const key = `${step}:${barrierShadowW}:${beat}:${stripePhase}:${dir}:${dots ? 1 : 0}`;
+  let c = _barrierCache.get(key);
+  if (c) return c;
+  const margin = 2;
+  const width = GRAVEL_W + BARRIER_W + barrierShadowW + margin * 2;
+  let canvas;
+  if (typeof OffscreenCanvas !== "undefined") {
+    canvas = new OffscreenCanvas(width, step);
+  } else {
+    canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = step;
+  }
+  const cctx = canvas.getContext("2d");
+  // body local X depends on side: right barrier places body after gravel area
+  const bodyLocalX = dir > 0 ? GRAVEL_W + margin : margin;
+  const gravelLeftLocal = dir > 0 ? bodyLocalX - GRAVEL_W : bodyLocalX + BARRIER_W - GRAVEL_W;
+  const shadowLocalX = dir > 0 ? bodyLocalX - barrierShadowW : bodyLocalX + BARRIER_W;
+
+  // Gravel / escape area
+  cctx.fillStyle = "#8a9aac";
+  cctx.fillRect(gravelLeftLocal, 0, GRAVEL_W, step);
+  if (dots) {
+    cctx.fillStyle = "rgba(0,0,0,0.22)";
+    for (let dx = 1; dx < GRAVEL_W - 1; dx += 4) {
+      cctx.fillRect(gravelLeftLocal + dx, 0, 1, 1);
+    }
+    cctx.fillStyle = "rgba(255,255,255,0.12)";
+    for (let dx = 3; dx < GRAVEL_W - 1; dx += 6) {
+      cctx.fillRect(gravelLeftLocal + dx, 0, 1, 1);
+    }
+  }
+
+  // Barrier shadow on gravel
+  cctx.fillStyle = "rgba(0,0,0,0.28)";
+  cctx.fillRect(shadowLocalX, 0, barrierShadowW, step);
+
+  // Concrete wall body (beat variation)
+  const concreteBase = beat === 0 ? "#6a6a6a" : beat === 1 ? "#636363" : "#696969";
+  cctx.fillStyle = concreteBase;
+  cctx.fillRect(bodyLocalX, 0, BARRIER_W, step);
+
+  // Hazard stripe
+  if (stripePhase === 0) {
+    cctx.fillStyle = "rgba(253,184,11,0.80)";
+    cctx.fillRect(bodyLocalX, 0, BARRIER_W, 1);
+  }
+  // Barrier highlight
+  cctx.fillStyle = "rgba(255,255,255,0.18)";
+  cctx.fillRect(bodyLocalX, 0, 1, step);
+
+  _barrierCache.set(key, canvas);
+  return canvas;
+}
+
+function _drawBarrierCached(ctx, barrierInnerX, dir, sliceZ, y, step, metrics) {
+  const beat = Math.floor(sliceZ / 6) % 3;
+  const stripePhase = Math.floor(sliceZ / HAZARD_PERIOD) % 2;
+  const dots = (y & 3) === 0;
+  const barrierShadowW = Math.round(metrics.trackWidth * 0.07);
+  const canvas = _getBarrierCanvas(step, barrierShadowW, beat, stripePhase, dir, dots);
+  // local body offset matches creation: for right bodyLocalX = GRAVEL_W + margin, for left = margin
+  const margin = 2;
+  if (dir > 0) {
+    const localBodyOffset = GRAVEL_W + margin;
+    const drawX = Math.round(barrierInnerX - localBodyOffset);
+    ctx.drawImage(canvas, drawX, y);
+  } else {
+    const localBodyOffset = margin;
+    const bx = barrierInnerX - BARRIER_W; // original logic: bx = barrierInnerX - BARRIER_W for dir<0
+    const drawX = Math.round(bx - localBodyOffset);
+    ctx.drawImage(canvas, drawX, y);
+  }
+}
+
 function drawTrack(ctx, gameState, track, metrics) {
   const { width, height } = metrics;
   const carY = metrics.carY;
@@ -108,8 +186,8 @@ function drawTrack(ctx, gameState, track, metrics) {
     // ── R4 Concrete barriers (anchored to track — no fake horizontal parallax)
     const leftCurbOuter = left - bw;
     const rightCurbOuter = right + bw;
-    _drawBarrierSlice(ctx, leftCurbOuter - runoffW, -1, sliceZ, y, step);
-    _drawBarrierSlice(ctx, rightCurbOuter + runoffW, +1, sliceZ, y, step);
+    _drawBarrierCached(ctx, leftCurbOuter - runoffW, -1, sliceZ, y, step, metrics);
+    _drawBarrierCached(ctx, rightCurbOuter + runoffW, +1, sliceZ, y, step, metrics);
 
     // ── Runoff / gravel strip (between curb outer edge and barrier inner edge)
     ctx.fillStyle = RENDER_COLORS.runoff;

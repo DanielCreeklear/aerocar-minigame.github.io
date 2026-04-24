@@ -42,7 +42,11 @@ function updateHeadingAndLateral(
   gameState.carHeading = clamp(theta, -Math.PI / 2, Math.PI / 2);
   const vxDemand = (curvature + theta * 0.5) * vz * CENTRIFUGAL_FACTOR;
   const gripLimit = lateralFriction + (aeroGripFactor || 0) * vz;
-  const gripRatio = Math.abs(vxDemand) / Math.max(0.001, gripLimit);
+  // protect against divide-by-zero / NaN
+  const safeGripLimit = Math.max(0.001, Number.isFinite(gripLimit) ? gripLimit : 0.001);
+  const gripRatio = Number.isFinite(vxDemand)
+    ? Math.abs(vxDemand) / safeGripLimit
+    : 0;
   const overDriveFactor = Math.max(0, gripRatio - 1);
   gameState.overDriveFactor = overDriveFactor;
   const usf = understeerFactor ?? UNDERSTEER_FACTOR;
@@ -59,7 +63,19 @@ function updateHeadingAndLateral(
   gameState.centrifugalDrift = drift;
   const vx = vxSteer - drift;
   const x = (gameState.lateralOffset || 0) + vx * dt;
-  return { x, vx };
+  // return diagnostic information so callers (telemetry) can report it
+  return {
+    x,
+    vx,
+    diag: {
+      vxDemand,
+      gripLimit: safeGripLimit,
+      gripRatio,
+      overDriveFactor,
+      steerEffectiveness,
+      drift,
+    },
+  };
 }
 function applyOffTrackPenalties(gameState, x, vz, surfaceType, dt, curvature) {
   const isOffTrack = surfaceType === SURFACE_TYPES.GRASS;

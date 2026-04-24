@@ -49,7 +49,7 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
   const vz = computeForwardVelocity(gameState, dt, strategy);
   const worldX = currentTrackInfo.x + (gameState.lateralOffset || 0);
   const surfaceType = track.getSurfaceType(worldX, lapZ);
-  const { nextVz, forces } = integrateLateralState(
+  const lateralResult = integrateLateralState(
     gameState,
     effectiveCurvature,
     vz,
@@ -57,6 +57,7 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     strategy,
     surfaceType,
   );
+  const { nextVz, forces } = lateralResult;
   const _overDrive = gameState.overDriveFactor || 0;
   const _prevVisualOD = gameState.visualOverDrive || 0;
   const _buildRate = _overDrive > _prevVisualOD ? 1.2 : 4.0;
@@ -73,6 +74,10 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     centrifugalForce: forces.centrifugalForce,
     effectiveGrip: forces.effectiveGrip,
   });
+  // Attach lateral diagnostics if present
+  if (lateralResult && lateralResult.diag) {
+    physicsTelemetry.lateral = lateralResult.diag;
+  }
   gameState.speed = nextVz;
   gameState.previousCurvature = curvature;
   if (gameState.isSpinning) {

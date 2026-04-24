@@ -39,6 +39,8 @@ class TelemetryManager {
         ? physicsTelemetry.centrifugalForce
         : 0,
       effectiveGrip: physicsTelemetry ? physicsTelemetry.effectiveGrip : 0,
+      // lateral diagnostics (may be undefined)
+      lateral: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral : null,
       aeroMode: gameState.aeroMode,
       battery: gameState.battery,
       isOffTrack: gameState.isOffTrack ? 1 : 0,
@@ -437,4 +439,4 @@ function _sep(ctx, x1, x2, y) {
 function _sign(v) {
   return v >= 0 ? "+" : "";
 }
-export { TelemetryManager };
+export { TelemetryManager };
