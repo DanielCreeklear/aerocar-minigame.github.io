@@ -47,23 +47,24 @@ function drawButton(ctx, x, y, w, h, label, isSelected) {
   }
 }
 function drawSmallButton(ctx, x, y, w, h, label, isSelected) {
-  // Compact button used for headers (VER TUDO)
+  
   ctx.save();
   const shadow = 2;
-  // shadow
+  
   ctx.fillStyle = R.buttonShadow;
   ctx.fillRect(x + shadow, y + shadow, w, h);
-  // body
+  
   ctx.fillStyle = isSelected ? R.gold : R.buttonBody;
   ctx.fillRect(x, y, w, h);
-  // outline
+  
   ctx.strokeStyle = R.textHeader;
   ctx.lineWidth = 1;
   ctx.strokeRect(x, y, w, h);
-  // label
+  
   const sz = Math.max(10, Math.min(12, h * 0.45));
   ctx.font = `700 ${sz}px ${R.font}`;
-  ctx.fillStyle = isSelected ? R.buttonBody : R.textHeader;
+  
+  ctx.fillStyle = R.text;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(label, x + w * 0.5, y + h * 0.5);
@@ -101,12 +102,15 @@ function bottomBar(ctx, w, h, actions) {
   ctx.font = `700 ${sz}px ${R.font}`;
   ctx.textBaseline = "middle";
   const cy = by + bh * 0.5;
-  let curX = 20;
+  // layout actions left-to-right (consistent with original UI)
+  const startX = 20;
+  let curX = startX;
+  ctx.fillStyle = R.textHeader;
   for (const action of actions) {
-    ctx.fillStyle = R.textHeader;
+    const txt = `${action.icon} ${action.label}`;
     ctx.textAlign = "left";
-    ctx.fillText(`${action.icon} ${action.label}`, curX, cy);
-    curX += ctx.measureText(`${action.icon} ${action.label}`).width + 28;
+    ctx.fillText(txt, curX, cy);
+    curX += ctx.measureText(txt).width + 28;
   }
   ctx.restore();
 }
@@ -131,10 +135,11 @@ function topStripe(ctx, w, leftTxt, rightTxt) {
   ctx.fillText(rightTxt, w - 20, sh * 0.5);
   ctx.restore();
 }
-function drawRankList(ctx, x, y, w, rowH, rankings, slotCount) {
+// Unified rank list renderer: supports optional paging via `offset`
+function drawRankList(ctx, x, y, w, rowH, rankings, slotCount, offset = 0) {
   for (let i = 0; i < slotCount; i++) {
     const ry = y + i * (rowH + 4);
-    const entry = (rankings || [])[i];
+    const entry = (rankings || [])[offset + i];
     ctx.fillStyle = i % 2 === 0 ? "rgba(0,0,0,0.12)" : "rgba(0,0,0,0.04)";
     ctx.fillRect(x, ry, w, rowH);
     const mid = ry + rowH * 0.5;
@@ -144,7 +149,7 @@ function drawRankList(ctx, x, y, w, rowH, rankings, slotCount) {
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillStyle = R.textHeader;
-    ctx.fillText(`${(i + 1).toString().padStart(2, "0")}`, x + 6, mid);
+    ctx.fillText(`${(offset + i + 1).toString().padStart(2, "0")}`, x + 6, mid);
     if (entry) {
       ctx.fillText(entry.name.substring(0, 8), x + 34, mid);
       ctx.font = `700 ${sz}px monospace`;
@@ -166,11 +171,11 @@ function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
     const ry = y + i * (rowH + 4);
     const isHL = i === hlIdx;
     const entry = rankings && rankings[i];
-    // Always draw opaque background to prevent ghost frames bleeding through
+    
     if (isHL) {
       ctx.fillStyle = R.buttonBody;
       ctx.fillRect(x, ry, w, rowH);
-      // Yellow left accent strip for player highlight
+      
       ctx.fillStyle = R.gold;
       ctx.fillRect(x, ry, accentW, rowH);
     } else {
@@ -179,7 +184,7 @@ function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
     }
     const mid = ry + rowH * 0.5;
     const sz = Math.max(11, Math.min(16, rowH * 0.45));
-    // Reset font and alignment before drawing to prevent HUD state inheritance
+    
     ctx.save();
     ctx.font = `700 ${sz}px ${R.font}`;
     ctx.textAlign = "left";
@@ -365,20 +370,14 @@ function drawStartScreen(ctx, w, h, gameState, track) {
       drawGyroscopeWarning(ctx, pad, btnStartY + btnH + btnGap + 4, btnW);
     }
     const rkY = h * 0.63;
-    // Draw header and small "VER TUDO" button to access full leaderboard
+    
     sectionHeader(ctx, pad, rkY, w - pad * 2, "RANKING");
-    const hdrBtnW = 86;
-    const hdrBtnH = 26;
+    
+    const hdrBtnW = Math.min(72, Math.round(w * 0.14));
+    const hdrBtnH = 20;
     const hdrBtnX = w - pad - hdrBtnW;
     const hdrBtnY = rkY - hdrBtnH - 6;
-    // small right-aligned label
-    ctx.save();
-    ctx.font = `700 11px ${R.font}`;
-    ctx.fillStyle = R.textHeader;
-    ctx.textAlign = "right";
-    ctx.textBaseline = "top";
-    ctx.fillText("VER TUDO", hdrBtnX + hdrBtnW - 6, hdrBtnY + 6);
-    ctx.restore();
+    drawSmallButton(ctx, hdrBtnX, hdrBtnY, hdrBtnW, hdrBtnH, "VER TUDO", false);
     const rkAvail = h - 40 - (rkY + 14) - 8;
     const rowH = Math.max(24, Math.min(34, rkAvail / 5 - 4));
     drawRankList(ctx, pad, rkY + 14, w - pad * 2, rowH, rankings, 5);
@@ -425,18 +424,12 @@ function drawStartScreen(ctx, w, h, gameState, track) {
       drawGyroscopeWarning(ctx, pad, btnStartY + btnH + btnGap, leftW);
     }
     sectionHeader(ctx, rightX, pad + 8, rightW, "RANKING");
-    // small "VER TUDO" label on the top-right of the right column
-    const hdrBtnW = 86;
-    const hdrBtnH = 20;
+    
+    const hdrBtnW = Math.min(72, Math.round(w * 0.12));
+    const hdrBtnH = 18;
     const hdrBtnX = rightX + rightW - hdrBtnW;
     const hdrBtnY = pad + 8 - hdrBtnH - 4;
-    ctx.save();
-    ctx.font = `700 11px ${R.font}`;
-    ctx.fillStyle = R.textHeader;
-    ctx.textAlign = "right";
-    ctx.textBaseline = "top";
-    ctx.fillText("VER TUDO", hdrBtnX + hdrBtnW - 6, hdrBtnY + 6);
-    ctx.restore();
+    drawSmallButton(ctx, hdrBtnX, hdrBtnY, hdrBtnW, hdrBtnH, "VER TUDO", false);
     const rkAvail = h - 40 - (pad + 22) - 8;
     const rowH = Math.max(24, Math.min(42, rkAvail / 5 - 4));
     drawRankList(ctx, rightX, pad + 22, rightW, rowH, rankings, 5);
@@ -444,6 +437,7 @@ function drawStartScreen(ctx, w, h, gameState, track) {
   bottomBar(ctx, w, h, [
     { icon: "○", label: "INICIAR" },
     { icon: "△", label: "CONFIG" },
+    { icon: "◉", label: "TUTORIAL" },
   ]);
   ctx.restore();
 }
@@ -627,41 +621,18 @@ function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
   ctx.restore();
 }
 
-function drawRankListPaged(ctx, x, y, w, rowH, rankings, slotCount, offset) {
-  for (let i = 0; i < slotCount; i++) {
-    const ry = y + i * (rowH + 4);
-    const entry = (rankings || [])[offset + i];
-    ctx.fillStyle = i % 2 === 0 ? "rgba(0,0,0,0.12)" : "rgba(0,0,0,0.04)";
-    ctx.fillRect(x, ry, w, rowH);
-    const mid = ry + rowH * 0.5;
-    const sz = Math.max(11, Math.min(16, rowH * 0.45));
-    ctx.save();
-    ctx.font = `700 ${sz}px ${R.font}`;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = R.textHeader;
-    ctx.fillText(`${(offset + i + 1).toString().padStart(2, "0")}`, x + 6, mid);
-    if (entry) {
-      ctx.fillText(entry.name.substring(0, 8), x + 34, mid);
-      ctx.font = `700 ${sz}px monospace`;
-      ctx.textAlign = "right";
-      ctx.fillText(formatTime(entry.time), x + w - 10, mid);
-    } else {
-      ctx.fillStyle = "rgba(0,0,0,0.35)";
-      ctx.fillText("---", x + 34, mid);
-      ctx.font = `700 ${sz}px monospace`;
-      ctx.textAlign = "right";
-      ctx.fillText("--:--.---", x + w - 10, mid);
-    }
-    ctx.restore();
-  }
-}
+// drawRankListPaged removed; use drawRankList(ctx, x, y, w, rowH, rankings, slotCount, offset)
 
 function drawLeaderboardScreen(ctx, w, h, gameState) {
   const isPortrait = h > w;
   const age = gameState ? gameState.screenAge || 0 : 0;
   const fade = Math.min(1, age / 0.5);
   const rankings = (gameState && gameState.rankings) || [];
+  const page = (gameState && typeof gameState.leaderboardPage === "number") ? gameState.leaderboardPage : 0;
+  const effectivePageSize = isPortrait ? 6 : 10;
+  const totalPages = Math.max(1, Math.ceil((rankings.length || 0) / effectivePageSize));
+  const curPage = Math.max(0, Math.min(page, totalPages - 1));
+
   ctx.save();
   ctx.globalAlpha = fade;
   ctx.fillStyle = R.bg;
@@ -672,7 +643,7 @@ function drawLeaderboardScreen(ctx, w, h, gameState) {
   ctx.font = `700 ${titleSz}px ${R.font}`;
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
-  ctx.fillText("RANKING COMPLETO", pad, pad + titleSz);
+  ctx.fillText("RANKING", pad, pad + titleSz);
   ctx.strokeStyle = R.textHeader;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -680,11 +651,31 @@ function drawLeaderboardScreen(ctx, w, h, gameState) {
   ctx.lineTo(w - pad, pad + titleSz + 6);
   ctx.stroke();
 
-  const topY = pad + titleSz + 18;
+  
+  const ctrlBtnW = Math.min(72, Math.round(w * 0.14));
+  const ctrlBtnH = isPortrait ? 24 : 18;
+  const gap = 6;
+  
+  const lineY = pad + titleSz + 6;
+  const nextBtnX = w - pad - ctrlBtnW;
+  const prevBtnX = nextBtnX - (ctrlBtnW + gap);
+  const ctrlBtnY = Math.round(lineY + 6);
+  const showPagingControls = (rankings && rankings.length) > 10;
+  if (showPagingControls) {
+    drawSmallButton(ctx, prevBtnX, ctrlBtnY, ctrlBtnW, ctrlBtnH, "ANT", false);
+    drawSmallButton(ctx, nextBtnX, ctrlBtnY, ctrlBtnW, ctrlBtnH, "PROX", false);
+  }
+
+  
+
+  
+  const topY = showPagingControls ? Math.max(pad + titleSz + 18, ctrlBtnY + ctrlBtnH + 6) : (pad + titleSz + 18);
   const bottomH = 40;
   const availH = h - topY - bottomH - pad;
-  const rowH = Math.max(22, Math.min(48, availH / 10 - 4));
-  drawRankList(ctx, pad, topY, w - pad * 2, rowH, rankings, 10);
+  
+  const rowH = Math.max(20, Math.min(48, availH / effectivePageSize - 4));
+  const offset = curPage * effectivePageSize;
+  drawRankList(ctx, pad, topY, w - pad * 2, rowH, rankings, effectivePageSize, offset);
 
   bottomBar(ctx, w, h, [{ icon: "✕", label: "VOLTAR" }]);
   ctx.restore();
@@ -751,7 +742,7 @@ function drawSettingsScreen(ctx, w, h, gameState) {
 }
 export {
   drawStartScreen,
-  // full leaderboard screen (exported so states can call it)
+  
   drawLeaderboardScreen,
   drawGameOverScreen,
   drawTrackPreviewScreen,

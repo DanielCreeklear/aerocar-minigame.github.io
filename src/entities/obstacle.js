@@ -5,10 +5,11 @@ const CONE_SIDE_OFFSETS = [
 ];
 const MIN_STRAIGHT_LENGTH = 1500;
 const SEGMENT_MARGIN = 300;
-let _obstacleIdCounter = 0;
 function createObstacles(track) {
   const obstacles = [];
-  _obstacleIdCounter = 0;
+  // Per-call id counter to avoid module-level mutable state that can leak
+  // between runs or tests.
+  let obstacleIdCounter = 0;
   const straights = track.segments.filter(
     (s) => s.classification === "straight" && s.length >= MIN_STRAIGHT_LENGTH,
   );
@@ -33,7 +34,7 @@ function createObstacles(track) {
       clusterIndex++;
       for (const lateralOffset of sideOffsets) {
         obstacles.push({
-          id: _obstacleIdCounter++,
+          id: obstacleIdCounter++,
           lapZ: clusterZ,
           lateralOffset,
           hitTimer: 0, 
@@ -43,4 +44,4 @@ function createObstacles(track) {
   }
   return obstacles;
 }
-export { createObstacles };
+export { createObstacles };

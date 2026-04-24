@@ -1,7 +1,9 @@
 export const SCREENS = {
   PREVIEW: "preview",
   START: "start",
+  TUTORIAL: "tutorial",
   LEADERBOARD: "leaderboard",
+  PHYSICS_SANDBOX: "physics_sandbox",
   RACE: "race",
   GAME_OVER: "gameover",
   SETTINGS: "settings",

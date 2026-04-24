@@ -59,4 +59,21 @@ export const RENDER_COLORS = {
   headlight: "#FFD700",
   taillight: "#E60000",
   asphaltModeX: "#1A2838",
-};
+};
+
+
+export const CAMERA_LOOKAHEAD_Z = 300; 
+export const CAMERA_LOOKAHEAD_FACTOR = 0.4; 
+export const CAMERA_LATERAL_VEL_LOOKAHEAD = 0.12; 
+export const CAMERA_LERP = 8.0; 
+export const ZOOM_BASE = 1.0; 
+export const ZOOM_MIN = 0.90;
+export const ZOOM_MAX = 1.06;
+export const ZOOM_RANGE = 0.16; 
+export const ZOOM_LERP = 6.0;
+export const BRAKE_ZOOM_BONUS = 0.06; 
+
+
+export const SKID_LAYER_DPR = 1; 
+export const SKID_SLIP_THRESHOLD = 0.18; 
+export const SKID_LATERAL_VEL_THRESHOLD = 6; 

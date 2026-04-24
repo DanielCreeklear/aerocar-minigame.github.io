@@ -10,7 +10,9 @@ const BADGE_BOTTOM_MARGIN_RATIO = 0.025;
 const BADGE_BOTTOM_MARGIN_MIN = 8;
 const BADGE_BOTTOM_MARGIN_MAX = 22;
 const BADGE_RADIUS = 0;
-function drawAeroBadge(ctx, gameState, width, height, touchReserve = 0) {
+
+const _badgeCache = new Map();
+function drawAeroBadge(ctx, gameState, width, height, touchReserve = 0, caches = null) {
   const isX = gameState.aeroMode === AERO_MODES.X;
   const badgeW = Math.max(
     BADGE_MIN_WIDTH,
@@ -31,27 +33,57 @@ function drawAeroBadge(ctx, gameState, width, height, touchReserve = 0) {
     ? HUD_COLORS.badgeModeXBorder
     : HUD_COLORS.badgeModeZBorder;
   const glowColor = isX ? HUD_COLORS.badgeModeXGlow : HUD_COLORS.badgeModeZGlow;
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(x, y, badgeW, badgeH);
-  ctx.shadowColor = glowColor;
-  ctx.shadowBlur = 8;
-  ctx.fillStyle = fillColor;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = borderColor;
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.fillStyle = borderColor;
-  ctx.fillRect(x, y, badgeW, 3);
-  const fontSize = responsiveSize(width, HUD_FONTS.badgeMode);
-  ctx.fillStyle = HUD_COLORS.badgeText;
-  ctx.font = `${HUD_FONTS.bold} ${fontSize}px ${HUD_FONTS.family}`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.shadowColor = "rgba(0,0,0,0.5)";
-  ctx.shadowBlur = 3;
-  ctx.fillText(isX ? "MODO X" : "MODO Z", x + badgeW * 0.5, y + badgeH * 0.5);
-  ctx.restore();
+  
+  const key = `${Math.round(badgeW)}x${Math.round(badgeH)}:${isX ? 1 : 0}`;
+  // prefer instance cache
+  let bcache = null;
+  if (caches && caches.aeroBadgeCache) bcache = caches.aeroBadgeCache;
+  else bcache = _badgeCache;
+  let bmp = bcache.get(key);
+  if (!bmp) {
+    
+    let canvas;
+    if (typeof OffscreenCanvas !== "undefined") {
+      canvas = new OffscreenCanvas(Math.round(badgeW), Math.round(badgeH));
+    } else {
+      canvas = document.createElement("canvas");
+      canvas.width = Math.round(badgeW);
+      canvas.height = Math.round(badgeH);
+    }
+    const cctx = canvas.getContext("2d");
+    
+    cctx.beginPath();
+    cctx.rect(0, 0, badgeW, badgeH);
+    cctx.shadowColor = glowColor;
+    cctx.shadowBlur = 8;
+    cctx.fillStyle = fillColor;
+    cctx.fill();
+    cctx.shadowBlur = 0;
+    cctx.strokeStyle = borderColor;
+    cctx.lineWidth = 2;
+    cctx.stroke();
+    cctx.fillStyle = borderColor;
+    cctx.fillRect(0, 0, badgeW, 3);
+    const fontSize = responsiveSize(width, HUD_FONTS.badgeMode);
+    cctx.fillStyle = HUD_COLORS.badgeText;
+    cctx.font = `${HUD_FONTS.bold} ${fontSize}px ${HUD_FONTS.family}`;
+    cctx.textAlign = "center";
+    cctx.textBaseline = "middle";
+    cctx.shadowColor = "rgba(0,0,0,0.5)";
+    cctx.shadowBlur = 3;
+    cctx.fillText(isX ? "MODO X" : "MODO Z", badgeW * 0.5, badgeH * 0.5);
+    bcache.set(key, canvas);
+    bmp = canvas;
+  }
+  ctx.drawImage(bmp, x, y);
+  // tutorial highlight for aero-badge
+  if (gameState && gameState._tutorialHighlight === "aero-badge") {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    ctx.fillRect(x - 6, y - 6, badgeW + 12, badgeH + 12);
+    ctx.restore();
+    delete gameState._tutorialHighlight;
+  }
 }
-export { drawAeroBadge };
+export { drawAeroBadge };

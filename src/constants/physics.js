@@ -19,7 +19,9 @@ export const PASSIVE_REGEN_FACTOR = 0.4;
 export const HEADING_CURVE_FACTOR = 0.0008;
 export const STEER_YAW_RATE = 0.006;
 export const MAX_STEER_HEADING = 0.22;
-export const HEADING_ALIGNMENT_RATE = 0.25;
+// Increased alignment rate so the car heading recenters faster after input
+// (value multiplied by dt each frame). 1.5 gives ~0.6s recovery at 60fps.
+export const HEADING_ALIGNMENT_RATE = 1.5;
 export const CENTRIFUGAL_FACTOR = 0.01;
 export const VISUAL_HEADING_LERP = 0.45;
 export const OVERSPEED_DRAG = 0.92;
@@ -57,3 +59,18 @@ export const CENTRIFUGAL_SLIDE_CURVE_THRESHOLD = 1.5;
 export const CENTRIFUGAL_SLIDE_DURATION = 2.5;
 export const LATERAL_ACCEL_SCALE = 0.22;
 export const OFF_TRACK_LATERAL_FRICTION = 0.987;
+
+export const MAX_OVERDRIVE_FACTOR = 1.0;
+export const TELEMETRY_LATERAL_WARN_ENABLED = true;
+export const TELEMETRY_LATERAL_WARN_GRIP_RATIO = 1.5;
+export const TELEMETRY_LATERAL_WARN_OVERDRIVE = 0.5;
+export const LATERAL_WARN_THROTTLE_MS = 5000;
+
+export const DRIFT_MIN_FRICTION_FACTOR = 0.45;
+export const DRIFT_FRICTION_SCALE = 0.85;
+export const DRIFT_HEADING_AID = 2.0;
+export const DRIFT_VX_REDUCTION = 0.0;
+export const DRIFT_ERS_REGEN_RATE = 6.0; 
+export const DRIFT_ERS_MIN_SLIP = 0.18;
+export const DRIFT_ERS_MAX_SLIP = 0.65;
+export const DRIFT_REWARD_DELAY_S = 0.25;

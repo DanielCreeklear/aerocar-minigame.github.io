@@ -30,4 +30,21 @@ export const isIOSWithoutPermission =
   isIOS &&
   browserSupportsDeviceOrientation &&
   typeof DeviceOrientationEvent !== "undefined" &&
-  typeof DeviceOrientationEvent.requestPermission !== "function";
+  typeof DeviceOrientationEvent.requestPermission !== "function";
+
+export function isDevMode() {
+  try {
+    if (typeof window === 'undefined') return false;
+    const host = window.location && window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') return true;
+    if (window.__AEROCAR_DEV__ === true) return true;
+    if (typeof URLSearchParams !== 'undefined') {
+      const p = new URLSearchParams(window.location.search || '');
+      const v = p.get('dev');
+      if (v === '1' || v === 'true') return true;
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
+}

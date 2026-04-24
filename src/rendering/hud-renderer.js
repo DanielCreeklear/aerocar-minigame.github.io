@@ -15,18 +15,17 @@ const TOUCH_BOOST_RATIO = 0.65;
 const R4_FONT =
   "'Archivo Narrow','Barlow Condensed','Roboto Condensed',sans-serif";
 
-// --- R4 Scanline overlay (CRT effect) ---
+
 function drawScanlines(ctx, width, height) {
+  
   ctx.save();
-  ctx.globalAlpha = 0.05;
+  ctx.globalAlpha = 0.04;
   ctx.fillStyle = "#000000";
-  for (let y = 0; y < height; y += 2) {
-    ctx.fillRect(0, y, width, 1);
-  }
+  ctx.fillRect(0, 0, width, height);
   ctx.restore();
 }
 
-// --- BRK / BST input bars (bottom corners) ---
+
 function drawInputBars(ctx, gameState, width, height) {
   const { isBoosting, isBraking } = gameState;
   const barW = Math.max(6, Math.min(10, width * 0.015));
@@ -37,7 +36,7 @@ function drawInputBars(ctx, gameState, width, height) {
 
   ctx.save();
 
-  // BRK bar (left)
+  
   const brkX = margin;
   ctx.fillStyle = "rgba(40,0,0,0.60)";
   ctx.fillRect(brkX, barY, barW, barH);
@@ -57,7 +56,7 @@ function drawInputBars(ctx, gameState, width, height) {
   ctx.textBaseline = "top";
   ctx.fillText("BRK", brkX + barW / 2, barY + barH + 3);
 
-  // BST bar (right)
+  
   const bstX = width - margin - barW;
   ctx.fillStyle = "rgba(0,20,40,0.60)";
   ctx.fillRect(bstX, barY, barW, barH);
@@ -105,7 +104,7 @@ function drawRescueBanner(ctx, gameState, width, height) {
   const tx = width * 0.5;
   const ty = by + bh * 0.5;
   const msg = "!!  PENALIDADE — RESGATE  !!";
-  // Chromatic aberration: offset R and B channels
+  
   ctx.globalCompositeOperation = "source-over";
   ctx.fillStyle = "rgba(255,0,0,0.55)";
   ctx.fillText(msg, tx - 2, ty);
@@ -121,11 +120,23 @@ class HudRenderer {
     this.displayedSpeedKmh = 0;
     this._warningTick = 0;
     this._windState = createWindState();
+    // instance scoped caches for HUD drawing resources (gradients, bitmaps)
+    this._caches = {
+      aeroBadgeCache: new Map(),
+      gripWarningCache: new Map(),
+      windVignetteCache: {},
+      centrifugalGradCache: {},
+    };
   }
   reset() {
     this.displayedSpeedKmh = 0;
     this._warningTick = 0;
     this._windState = createWindState();
+    // clear instance caches
+    this._caches.aeroBadgeCache.clear();
+    this._caches.gripWarningCache.clear();
+    this._caches.windVignetteCache = {};
+    this._caches.centrifugalGradCache = {};
   }
   draw(ctx, gameState, width, height, dt = 1 / 60) {
     const rawSpeed = Math.max(0, gameState.speed || 0);
@@ -139,20 +150,21 @@ class HudRenderer {
     if (isPortrait) {
       drawInputBars(ctx, gameState, width, height);
     }
-    drawWindStreaks(ctx, gameState, width, height, this._windState, dt);
-    drawCentrifugalSlideEffect(ctx, gameState, width, height);
+    drawWindStreaks(ctx, gameState, width, height, this._windState, dt, this._caches);
+    drawCentrifugalSlideEffect(ctx, gameState, width, height, this._caches);
     this._warningTick = drawGripWarning(
       ctx,
       gameState,
       width,
       height,
       this._warningTick,
+      this._caches,
     );
     drawCurveIndicator(ctx, gameState, width);
     drawLapPanel(ctx, gameState, width, height);
     drawBatteryBar(ctx, gameState, width, height);
     drawSpeedometer(ctx, this.displayedSpeedKmh, width, height, isPortrait, 0);
-    drawAeroBadge(ctx, gameState, width, height, 0);
+    drawAeroBadge(ctx, gameState, width, height, 0, this._caches);
     drawRescueBanner(ctx, gameState, width, height);
     drawScanlines(ctx, width, height);
   }

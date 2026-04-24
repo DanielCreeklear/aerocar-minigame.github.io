@@ -16,23 +16,47 @@ import {
   Z_RESOLUTION,
 } from "../constants/index.js";
 
-// ─── Motion trail ring buffer ────────────────────────────────────────────────
-const TRAIL_MAX = 10;
-const TRAIL_SPEED_THRESHOLD = 250 / 17; // ~14.7 game-units  (250 km/h)
-const SPRAY_SPEED_THRESHOLD = 100 / 17; //  ~5.9 game-units  (100 km/h)
-const _trail = [];
 
-function _pushTrail(x, y, angle) {
-  _trail.push({ x, y, angle });
-  if (_trail.length > TRAIL_MAX) _trail.shift();
+const TRAIL_MAX = 10;
+const TRAIL_SPEED_THRESHOLD = 250 / 17; 
+const SPRAY_SPEED_THRESHOLD = 100 / 17; 
+
+// Trail state is now pluggable so it can be owned by the Renderer instance
+// and avoid module-level state leaking between renderers or simulations.
+function createTrailState() {
+  return { buf: new Array(TRAIL_MAX), head: 0, len: 0 };
 }
 
-function _drawMotionTrail(ctx, carWidth, carHeight) {
+function _pushTrail(trailState, x, y, angle) {
+  const buf = trailState.buf;
+  let head = trailState.head;
+  let len = trailState.len;
+  let slot = buf[head];
+  if (!slot) {
+    slot = { x: 0, y: 0, angle: 0 };
+    buf[head] = slot;
+  }
+  slot.x = x;
+  slot.y = y;
+  slot.angle = angle;
+  head = (head + 1) % TRAIL_MAX;
+  if (len < TRAIL_MAX) len++;
+  trailState.head = head;
+  trailState.len = len;
+}
+
+function _drawMotionTrail(ctx, trailState, carWidth, carHeight) {
   const bw = carWidth * 0.72;
   const bh = carHeight * 0.88;
-  for (let i = 0; i < _trail.length - 1; i++) {
-    const t = _trail[i];
-    const alpha = ((i + 1) / _trail.length) * 0.055;
+  const len = trailState.len;
+  if (len <= 0) return;
+  const head = trailState.head;
+  const buf = trailState.buf;
+  for (let idx = 0; idx < len - 1; idx++) {
+    const i = (head + TRAIL_MAX - len + idx) % TRAIL_MAX;
+    const t = buf[i];
+    if (!t) continue;
+    const alpha = ((idx + 1) / len) * 0.055;
     ctx.save();
     ctx.translate(t.x, t.y);
     ctx.rotate(t.angle);
@@ -69,7 +93,7 @@ function computeCarDrawPosition(gameState, width, height) {
     drawX += (Math.random() - 0.5) * 12 * shakeScale;
     drawY += (Math.random() - 0.5) * 5 * shakeScale;
   }
-  return { drawX, drawY };
+  return { drawX: Math.round(drawX), drawY: Math.round(drawY) };
 }
 function drawDustCloud(ctx, gameState, drawX, drawY, carWidth, carHeight) {
   if (
@@ -117,36 +141,36 @@ function drawCarBody(ctx, gameState, metrics) {
   const bodyW = w * 0.72;
   const bodyH = h * 0.88;
 
-  // ── Ground shadow ellipse ────────────────────────────────────────────────
+  
   ctx.fillStyle = "rgba(0,0,0,0.28)";
   ctx.beginPath();
   ctx.ellipse(0, h * 0.28, w * 0.46, 5, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // ── Body ─────────────────────────────────────────────────────────────────
+  
   ctx.fillStyle = bodyColor;
   ctx.beginPath();
   ctx.roundRect(-bodyW / 2, -bodyH / 2, bodyW, bodyH, 4);
   ctx.fill();
 
-  // ── Accent stripe (horizontal band across centre) ────────────────────────
+  
   const stripeH = bodyH * 0.25;
   ctx.fillStyle = accentColor;
   ctx.beginPath();
   ctx.roundRect(-bodyW * 0.35, -stripeH / 2, bodyW * 0.7, stripeH, 2);
   ctx.fill();
 
-  // ── Front wing ───────────────────────────────────────────────────────────
+  
   const wingW = w * 0.9;
   const wingH = h * 0.07;
   ctx.fillStyle = accentColor;
   ctx.fillRect(-wingW / 2, -bodyH / 2 - wingH, wingW, wingH);
 
-  // ── Rear wing ────────────────────────────────────────────────────────────
+  
   ctx.fillStyle = bodyColor;
   ctx.fillRect((-wingW / 2) * 0.85, bodyH / 2, wingW * 0.85, wingH);
 
-  // ── Wheels ───────────────────────────────────────────────────────────────
+  
   const wheelW = w * 0.2;
   const wheelH = h * 0.22;
   const wOffX = bodyW * 0.38;
@@ -163,7 +187,7 @@ function drawCarBody(ctx, gameState, metrics) {
     ctx.fill();
   }
 
-  // ── Cockpit (player identifier) ──────────────────────────────────────────
+  
   const cpW = bodyW * 0.38;
   const cpH = bodyH * 0.22;
   const cpX = -cpW / 2;
@@ -172,7 +196,7 @@ function drawCarBody(ctx, gameState, metrics) {
   ctx.beginPath();
   ctx.roundRect(cpX, cpY, cpW, cpH, 3);
   ctx.fill();
-  // Diagonal glare
+  
   ctx.save();
   ctx.beginPath();
   ctx.rect(cpX, cpY, cpW, cpH);
@@ -185,17 +209,28 @@ function drawCarBody(ctx, gameState, metrics) {
   ctx.stroke();
   ctx.restore();
 }
-function drawBoostFlame(ctx, gameState, metrics) {
+function drawBoostFlame(ctx, gameState, metrics, caches = null) {
   if (!gameState.isBoosting || gameState.battery <= 0) return;
   const { carWidth, carHeight } = metrics;
   const bodyW = carWidth * 0.72;
   const bodyH = carHeight * 0.88;
-
-  const glowRadius = bodyW * 0.62 + Math.random() * bodyW * 0.1;
-  const grad = ctx.createRadialGradient(0, 0, bodyW * 0.1, 0, 0, glowRadius);
-  grad.addColorStop(0, `rgba(0,220,255,${0.18 + Math.random() * 0.08})`);
-  grad.addColorStop(0.5, `rgba(0,140,255,${0.1 + Math.random() * 0.05})`);
-  grad.addColorStop(1, `rgba(0,80,200,0)`);
+  const glowRadius = Math.round(bodyW * 0.62 + Math.random() * bodyW * 0.1);
+  // prefer instance cache for gradients when available
+  let gcache = null;
+  if (caches && caches.boostGradCache) gcache = caches.boostGradCache;
+  else {
+    if (!drawBoostFlame._gradCache) drawBoostFlame._gradCache = {};
+    gcache = drawBoostFlame._gradCache;
+  }
+  const cacheKey = `${glowRadius}@${ctx.canvas.width}x${ctx.canvas.height}`;
+  let grad = gcache[cacheKey];
+  if (!grad) {
+    grad = ctx.createRadialGradient(0, 0, bodyW * 0.1, 0, 0, glowRadius);
+    grad.addColorStop(0, `rgba(0,220,255,0.22)`);
+    grad.addColorStop(0.5, `rgba(0,140,255,0.14)`);
+    grad.addColorStop(1, `rgba(0,80,200,0)`);
+    gcache[cacheKey] = grad;
+  }
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   ctx.fillStyle = grad;
@@ -218,24 +253,36 @@ function drawBoostFlame(ctx, gameState, metrics) {
   }
   ctx.restore();
 }
-function drawCar(ctx, gameState, track, metrics) {
+function drawCar(ctx, gameState, track, metrics, trailState, caches = null) {
   const { width, height, carWidth, carHeight } = metrics;
   const carTrackInfo =
     gameState.currentTrackPoint || track.getTrackPoint(gameState.currentZ);
   const { drawX, drawY } = computeCarDrawPosition(gameState, width, height);
 
   const speed = gameState.speed || 0;
+  
+  
+  
   const roadAngle = Math.atan2(carTrackInfo.yaw ?? 0, Z_RESOLUTION);
-  const totalAngle =
-    roadAngle +
-    (gameState.carVisualHeading || 0) * CAR_HEADING_VISUAL_SCALE +
-    (gameState.spinRotation || 0);
+  const visualHeading = (gameState.carVisualHeading || 0) * CAR_HEADING_VISUAL_SCALE;
+  const steerFactor = Math.min(1, Math.abs(gameState.steerInput || 0) * 1.8);
+  const playerInfluence = 0.25 + 0.75 * steerFactor; 
+  const totalAngle = roadAngle + visualHeading * playerInfluence + (gameState.spinRotation || 0);
 
+  // Ensure there is a trailState to use; if none provided fall back to a
+  // per-function default (preserves backward compatibility for callers that
+  // don't provide a trail), but primary usage should pass an owned state.
+  if (!trailState) {
+    if (!drawCar._defaultTrail) drawCar._defaultTrail = createTrailState();
+    trailState = drawCar._defaultTrail;
+  }
   if (speed >= TRAIL_SPEED_THRESHOLD) {
-    _pushTrail(drawX, drawY, totalAngle);
-    _drawMotionTrail(ctx, carWidth, carHeight);
-  } else if (_trail.length > 0) {
-    _trail.length = 0;
+    _pushTrail(trailState, drawX, drawY, totalAngle);
+    _drawMotionTrail(ctx, trailState, carWidth, carHeight);
+  } else if ((trailState.buf && trailState.buf.length > 0) || trailState.len > 0) {
+    trailState.buf.length = 0;
+    trailState.head = 0;
+    trailState.len = 0;
   }
 
   drawDustCloud(ctx, gameState, drawX, drawY, carWidth, carHeight);
@@ -253,7 +300,7 @@ function drawCar(ctx, gameState, track, metrics) {
   ctx.rotate(totalAngle);
   drawCarBody(ctx, gameState, { carWidth, carHeight });
   ctx.globalAlpha = 1.0;
-  drawBoostFlame(ctx, gameState, { carWidth, carHeight });
+  drawBoostFlame(ctx, gameState, { carWidth, carHeight }, caches);
   ctx.restore();
 }
-export { drawCar };
+export { drawCar, computeCarDrawPosition, createTrailState };

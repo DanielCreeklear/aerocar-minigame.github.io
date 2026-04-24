@@ -23,15 +23,15 @@ function drawObstacles(ctx, gameState, track, metrics) {
     if (obs.hitTimer > 0) continue;
     const dZ = wrapDelta(playerLapZ, obs.lapZ, lapLength);
     if (dZ <= 0 || dZ >= carY) continue; 
-    const screenY = carY - dZ;
+    const screenY = Math.round(carY - dZ);
     const baseScale = Math.max(SCALE_MIN, Math.min(SCALE_MAX, screenY / carY));
     const scale = Math.min(SCALE_MAX, baseScale * OBSTACLE_SCALE_BOOST);
     const alpha = Math.min(1, (screenY / carY) / FADE_NEAR_RATIO);
     const trackPt = track.getTrackPoint(obs.lapZ);
-    const screenX =
+    const screenX = Math.round(
       width * HALF_RATIO +
       (trackPt.x - cameraX) +
-      obs.lateralOffset * LATERAL_RENDER_SCALE;
+      obs.lateralOffset * LATERAL_RENDER_SCALE);
     visible.push({ obs, screenX, screenY, scale, alpha });
   }
   visible.sort((a, b) => a.screenY - b.screenY);

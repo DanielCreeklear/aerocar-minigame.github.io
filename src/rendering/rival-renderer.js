@@ -23,13 +23,13 @@ function drawRivals(ctx, gameState, track, metrics) {
   for (const rival of rivals) {
     const dZ = wrapDelta(playerLapZ, rival.currentZ, lapLength);
     if (dZ >= RIVAL_VISIBLE_DZ || dZ < -RIVAL_VISIBLE_DZ_BEHIND) continue;
-    const screenY = carY - dZ;
+    const screenY = Math.round(carY - dZ);
     const scale = Math.max(SCALE_MIN, Math.min(SCALE_MAX, screenY / carY));
     const trackPt = track.getTrackPoint(rival.currentZ);
-    const screenX =
+    const screenX = Math.round(
       width * HALF_RATIO +
       (trackPt.x - cameraX) +
-      rival.lateralOffset * LATERAL_RENDER_SCALE;
+      rival.lateralOffset * LATERAL_RENDER_SCALE);
     const roadAngle = Math.atan2(trackPt.yaw ?? 0, Z_RESOLUTION);
     const appearScreenY = carY - RIVAL_VISIBLE_DZ;
     const alpha = Math.min(1, (screenY - appearScreenY) / RIVAL_FADE_RANGE_PX);

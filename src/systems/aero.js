@@ -30,4 +30,4 @@ const HighDownforceMode = {
 function getAeroStrategy(aeroMode) {
   return aeroMode === AERO_MODES.X ? LowDragMode : HighDownforceMode;
 }
-export { LowDragMode, HighDownforceMode, getAeroStrategy };
+export { LowDragMode, HighDownforceMode, getAeroStrategy };

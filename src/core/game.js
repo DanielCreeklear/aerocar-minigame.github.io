@@ -35,10 +35,12 @@ import { RIVAL_COUNT } from "../constants/index.js";
 import { StateManager } from "../menu/StateManager.js";
 import { TrackPreviewState } from "../menu/states/TrackPreviewState.js";
 import { StartMenuState } from "../menu/states/StartMenuState.js";
+import { TutorialState } from "../menu/states/TutorialState.js";
 import { LeaderboardState } from "../menu/states/LeaderboardState.js";
 import { RaceState } from "../menu/states/RaceState.js";
 import { GameOverState } from "../menu/states/GameOverState.js";
 import { SettingsState } from "../menu/states/SettingsState.js";
+import PhysicsSandboxState from "../menu/states/PhysicsSandboxState.js";
 const ORIENTATION_POLL_INTERVAL = 50;
 const ORIENTATION_POLL_MAX_MS = 500;
 class Game {
@@ -50,6 +52,11 @@ class Game {
     this.energyManager = new EnergyManager();
     this.gameLoop = new GameLoop();
     this.telemetry = new TelemetryManager();
+    
+    window.__AEROCAR_GAME__ = this;
+    
+    
+    this._prevScreenBeforeSandbox = null;
     this.trackSeed = TRACK_SEED;
     this.totalSegments = TOTAL_SEGMENTS;
     this.track.init(this.totalSegments, this.trackSeed);
@@ -155,6 +162,7 @@ class Game {
         this.gameState.steerTarget = v;
       },
       onTelemetryExport: () => this.telemetry.exportJSON(),
+        onTelemetryExportCSV: () => this.telemetry.exportCSV(),
       onTelemetryHudToggle: () => this.telemetry.toggleHUD(),
       isRaceActive: () => this.gameState.currentScreen === SCREENS.RACE,
       onGyroscopeUnavailable: () => {
@@ -210,6 +218,13 @@ class Game {
     this._handleViewportResize();
     this.reset(SCREENS.START);
     this._initStateManager();
+    // auto-start tutorial on first run
+    try {
+      const seen = localStorage.getItem('aerocar_tutorial_done');
+      if (!seen) {
+        this._setScreen(SCREENS.TUTORIAL);
+      }
+    } catch (e) {}
   }
   _makeStateDeps() {
     return {
@@ -224,30 +239,58 @@ class Game {
         onRaceEnter: () => {},
         onRaceExit: () => {},
         openSettings: () => this._setScreen(SCREENS.SETTINGS),
-        openLeaderboard: () => this._setScreen(SCREENS.LEADERBOARD),
-        backToMenu: () => this._setScreen(SCREENS.START),
+        openTutorial: () => this._setScreen(SCREENS.TUTORIAL),
+        openPhysicsSandbox: () => {
+          
+          try { this._prevScreenBeforeSandbox = this.gameState ? this.gameState.currentScreen : null; } catch (e) {}
+          this._setScreen(SCREENS.PHYSICS_SANDBOX);
+        },
+        openLeaderboard: () => {
+          
+          if (this.gameState) this.gameState.leaderboardPage = 0;
+          this._setScreen(SCREENS.LEADERBOARD);
+        },
+      changeLeaderboardPage: (delta) => {
+        
+        if (!this.gameState) return;
+        const PAGE_SIZE = 10;
+        const total = (this.gameState.rankings || []).length;
+        const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        const cur = typeof this.gameState.leaderboardPage === 'number' ? this.gameState.leaderboardPage : 0;
+        let next = cur + (delta || 0);
+        if (next < 0) next = 0;
+        if (next >= totalPages) next = totalPages - 1;
+        this.gameState.leaderboardPage = next;
+        },
+        backToMenu: () => {
+          // If returning from tutorial, restore the normal track then do a clean reset
+          if (this.gameState && this.gameState.isTutorial) {
+            this.track.init(this.totalSegments, this.trackSeed);
+            this.reset(SCREENS.START);
+            return;
+          }
+          const target = this._prevScreenBeforeSandbox || SCREENS.START;
+          this._prevScreenBeforeSandbox = null;
+          this._setScreen(target);
+        },
         requestGyroPermission: () => this.input.requestOrientationPermission(),
       },
     };
   }
   _createState(screen) {
     const deps = this._makeStateDeps();
-    switch (screen) {
-      case SCREENS.PREVIEW:
-        return new TrackPreviewState(deps);
-      case SCREENS.START:
-        return new StartMenuState(deps);
-      case SCREENS.RACE:
-        return new RaceState(deps);
-      case SCREENS.GAME_OVER:
-        return new GameOverState(deps);
-      case SCREENS.LEADERBOARD:
-        return new LeaderboardState(deps);
-      case SCREENS.SETTINGS:
-        return new SettingsState(deps);
-      default:
-        return null;
-    }
+    const STATE_MAP = {
+      [SCREENS.PREVIEW]: TrackPreviewState,
+      [SCREENS.START]: StartMenuState,
+      [SCREENS.TUTORIAL]: TutorialState,
+      [SCREENS.RACE]: RaceState,
+      [SCREENS.GAME_OVER]: GameOverState,
+      [SCREENS.LEADERBOARD]: LeaderboardState,
+      [SCREENS.SETTINGS]: SettingsState,
+      [SCREENS.PHYSICS_SANDBOX]: PhysicsSandboxState,
+    };
+    const Cls = STATE_MAP[screen];
+    return Cls ? new Cls(deps) : null;
   }
   _initStateManager() {
     this.stateManager = new StateManager();
@@ -366,6 +409,7 @@ class Game {
       lapStartTime: Date.now(),
       rankingPhase: null,
       rankings: this.rankings,
+      leaderboardPage: 0,
       newEntryIndex: -1,
       screenAge: 0,
       pendingName: "",
@@ -401,6 +445,8 @@ class Game {
     this.gameState.pendingName = this._nameInput
       ? this._nameInput.value.toUpperCase()
       : "";
+    // Always update the active state (tutorial, menus, etc. need their update tick)
+    this.stateManager?.update(dt);
     if (this.gameState.currentScreen !== SCREENS.RACE) return;
     if (this.gameState.lastLapFlashTimer > 0) {
       this.gameState.lastLapFlashTimer -= dt;
@@ -410,11 +456,13 @@ class Game {
     }
     this.gameState.currentTime = Date.now() - this.gameState.startTime;
     this.energyManager.update(this.gameState, dt);
+    // EnergyManager is the authoritative owner of battery state; sync after update
     this.gameState.battery = this.energyManager.getCurrentCharge();
+    // cache the current track point onto gameState to allow renderers and
+    // physics to reuse the object and avoid repeated allocations
     const currentTrackPoint = this.track.getTrackPoint(this.gameState.currentZ);
     this.gameState.currentTrackPoint = currentTrackPoint;
-    this.gameState.currentCurvature =
-      currentTrackPoint.rawCurve ?? currentTrackPoint.curve ?? 0;
+    this.gameState.currentCurvature = currentTrackPoint.rawCurve ?? currentTrackPoint.curve ?? 0;
     this.gameState.isInModeXZone = currentTrackPoint.isModeXZone || false;
     const CURVE_LOOKAHEAD = 400;
     const upcomingFeatures = this.track.getUpcomingFeatures(
@@ -436,10 +484,15 @@ class Game {
       const current = this.gameState.steerInput || 0;
       const dir = Math.sign(target - current);
       this.gameState.steerInput = clamp(current + dir * STEER_RATE * dt, -1, 1);
+      // Snap to zero only when target is neutral AND the ramp has genuinely
+      // crossed zero (sign changed). Using a product-sign check is equivalent
+      // to the original Math.sign comparison but also handles the gyroscope
+      // case: _lastGyroSteer deduplication in input.js prevents repeated
+      // zero-events from re-triggering this guard every frame.
       if (
         target === 0 &&
-        Math.sign(this.gameState.steerInput) !== Math.sign(current) &&
-        current !== 0
+        current !== 0 &&
+        this.gameState.steerInput * current < 0
       ) {
         this.gameState.steerInput = 0;
       }
@@ -450,9 +503,19 @@ class Game {
       dt,
       currentTrackPoint,
     );
+    // updateCarPhysics may advance gameState.currentZ; refresh the cached
+    // track point so renderers and subsequent logic read the post-advance
+    // position (prevents camera/road scanline temporal mismatch).
+    this.gameState.currentTrackPoint = this.track.getTrackPoint(
+      this.gameState.currentZ,
+    );
+    this.gameState.currentCurvature =
+      this.gameState.currentTrackPoint.rawCurve ??
+      this.gameState.currentTrackPoint.curve ??
+      0;
     this.telemetry.log(this.gameState, physicsTelemetry);
     updateRivals(this.gameState, this.track, dt);
-    if (!this.gameState.rescueInProgress) {
+    if (!this.gameState.rescueInProgress && !this.gameState.isTutorial) {
       const offScreenThreshold = this.canvas.width / 2 / LATERAL_RENDER_SCALE;
       if (Math.abs(this.gameState.lateralOffset || 0) >= offScreenThreshold) {
         this.gameState.rescueInProgress = true;
@@ -462,7 +525,13 @@ class Game {
         this.gameState.rescueFlashTimer = OFF_TRACK_RESCUE_FLASH_DURATION;
       }
     }
-    if (lapCompleted) {
+
+    // Ensure centrifugal drift is cleared when rescue is requested from the
+    // general game-level check so both paths behave the same.
+    if (this.gameState.rescueInProgress) {
+      this.gameState.centrifugalDrift = 0;
+    }
+    if (lapCompleted && !this.gameState.isTutorial) {
       const now = Date.now();
       const lapTime = now - this.gameState.lapStartTime;
       this.gameState.lapStartTime = now;
@@ -506,7 +575,7 @@ class Game {
       entryY = rkStart + 4 * (rowH + 4);
       entryW = rightW - 34;
     }
-    // font-size >= 16px prevents iOS Safari from zooming on focus
+    
     const fs = Math.max(16, Math.min(22, cw * 0.022));
     Object.assign(this._nameInput.style, {
       left: `${Math.round(entryX)}px`,
@@ -527,7 +596,7 @@ class Game {
       this._nameInput.blur();
       this._nameInput.readOnly = true;
     }
-    // Release any CSS size lock that was applied while the keyboard was open.
+    
     this.canvas.style.width = "";
     this.canvas.style.height = "";
   }

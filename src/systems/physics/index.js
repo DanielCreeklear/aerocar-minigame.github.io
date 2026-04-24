@@ -9,10 +9,15 @@ import {
   MAX_DRIFT_VISUAL_ANGLE,
   DRIFT_ANGLE_LERP,
   UNDERSTEER_FACTOR,
+  TELEMETRY_LATERAL_WARN_ENABLED,
+  TELEMETRY_LATERAL_WARN_GRIP_RATIO,
+  TELEMETRY_LATERAL_WARN_OVERDRIVE,
 } from "../../constants/index.js";
 function resolveTrackState(gameState, currentTrackInfo) {
   gameState.trackType = currentTrackInfo.type;
-  gameState.currentSlip = 0;
+  // currentSlip is intentionally NOT reset here so that computeForwardVelocity
+  // can read the previous frame's slip value for boost penalty calculations.
+  // It will be overwritten by integrateLateralState later in the same frame.
   return {
     curvature: currentTrackInfo.rawCurve ?? currentTrackInfo.curve ?? 0,
   };
@@ -49,7 +54,7 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
   const vz = computeForwardVelocity(gameState, dt, strategy);
   const worldX = currentTrackInfo.x + (gameState.lateralOffset || 0);
   const surfaceType = track.getSurfaceType(worldX, lapZ);
-  const { nextVz, forces } = integrateLateralState(
+  const lateralResult = integrateLateralState(
     gameState,
     effectiveCurvature,
     vz,
@@ -57,13 +62,16 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     strategy,
     surfaceType,
   );
+  const { nextVz, forces } = lateralResult;
   const _overDrive = gameState.overDriveFactor || 0;
   const _prevVisualOD = gameState.visualOverDrive || 0;
   const _buildRate = _overDrive > _prevVisualOD ? 1.2 : 4.0;
   gameState.visualOverDrive =
     _prevVisualOD + (_overDrive - _prevVisualOD) * Math.min(1, _buildRate * dt);
   const _visualOD = gameState.visualOverDrive;
-  const _steerEff = clamp(1 - _visualOD * UNDERSTEER_FACTOR, 0, 1);
+  // Use the current aero strategy's understeerFactor (visual should reflect physics)
+  const visualUndersteer = strategy.understeerFactor ?? UNDERSTEER_FACTOR;
+  const _steerEff = clamp(1 - _visualOD * visualUndersteer, 0, 1);
   const _targetVisualHeading = (gameState.carHeading || 0) * _steerEff;
   gameState.carVisualHeading =
     (gameState.carVisualHeading || 0) +
@@ -73,6 +81,20 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     centrifugalForce: forces.centrifugalForce,
     effectiveGrip: forces.effectiveGrip,
   });
+  
+  if (lateralResult && lateralResult.diag) {
+    physicsTelemetry.lateral = lateralResult.diag;
+  }
+  
+  if (physicsTelemetry.lateral && TELEMETRY_LATERAL_WARN_ENABLED) {
+    const lr = physicsTelemetry.lateral;
+    if (
+      (lr.gripRatio || 0) >= TELEMETRY_LATERAL_WARN_GRIP_RATIO ||
+      (lr.overDriveFactor || 0) >= TELEMETRY_LATERAL_WARN_OVERDRIVE
+    ) {
+      physicsTelemetry.lateralWarning = `GR:${lr.gripRatio.toFixed(2)} OD:${lr.overDriveFactor.toFixed(2)}`;
+    }
+  }
   gameState.speed = nextVz;
   gameState.previousCurvature = curvature;
   if (gameState.isSpinning) {

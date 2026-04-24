@@ -1,36 +1,30 @@
 <!doctype html>
 <html lang="pt-BR">
   <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-    />
-    <title>AeroCarGame</title>
-    <meta
-      name="description"
-      content="F1 2026 aero-regulation minigame — race through corners managing Mode X and High Downforce to set the fastest lap."
-    />
-    <meta property="og:title" content="AeroCarGame" />
-    <meta
-      property="og:description"
-      content="F1 2026 aero-regulation minigame — race through corners managing Mode X and High Downforce to set the fastest lap."
-    />
-    <meta property="og:type" content="website" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23050416'/><text x='4' y='24' font-size='22'>🏎</text></svg>"
-    />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Apex Type Z</title>
+    <meta name="description" content="Apex Type Z — Simule Modo X e Modo Z da F1 2026." />
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230b1020'/><text x='6' y='22' font-size='14' fill='%23ff6a3d'>AC</text></svg>" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700&family=Press+Start+2P&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600&family=Inter:wght@300;400&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <canvas id="gameCanvas"></canvas>
-    <script type="module" src="./src/main.js"></script>
+    <main class="hero" role="main">
+      <h1 class="brand">Apex Type Z</h1>
+      <p class="tag">Simule Modo X &amp; Modo Z da F1 2026.</p>
+
+      <div class="actions">
+        <a id="play-btn" class="btn primary" href="/play/" aria-label="Jogar Apex Type Z">Jogar</a>
+        <a class="btn ghost" href="https://open.spotify.com/" target="_blank" rel="noopener">Ouvir podcast</a>
+      </div>
+
+      <footer class="foot"><small>UFABC</small></footer>
+    </main>
+
+    <script type="module" src="./src/landing.js"></script>
   </body>
-</html>
+</html>

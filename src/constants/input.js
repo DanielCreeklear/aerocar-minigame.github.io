@@ -28,6 +28,7 @@ export const ACTION_KEYS = {
   KEY_A: "KeyA",
   KEY_D: "KeyD",
   KEY_S: "KeyS",
+  KEY_C: "KeyC",
   KEY_Z: "KeyZ",
   KEY_X: "KeyX",
   KEY_T: "KeyT",

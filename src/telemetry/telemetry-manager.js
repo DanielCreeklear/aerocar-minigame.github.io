@@ -2,8 +2,34 @@ import { drawRoundedRect } from "../utils/canvas.js";
 const SAMPLE_INTERVAL_MS = 50;
 const MAX_SAMPLES = 600;
 const ACCEL_REF = 5;
+
+import { isIOS, isMobile, isDevMode } from '../utils/platform.js';
+
+function _isDevMode() {
+  try {
+    if (typeof window === 'undefined') return false;
+    const host = window.location && window.location.hostname;
+    // delegate to the shared platform helper first (centralises logic)
+    if (typeof isDevMode === 'function' && isDevMode()) return true;
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
 class TelemetryManager {
   constructor() {
+    this._enabled = _isDevMode();
+    if (!this._enabled) {
+      
+      this._buf = null;
+      this._head = 0;
+      this._count = 0;
+      this._lastSampleMs = -Infinity;
+      this._hudVisible = false;
+      return;
+    }
+    
     this._buf = new Array(MAX_SAMPLES).fill(null);
     this._head = 0;
     this._count = 0;
@@ -11,11 +37,13 @@ class TelemetryManager {
     this._hudVisible = true;
   }
   reset() {
+    if (!this._enabled) return;
     this._head = 0;
     this._count = 0;
     this._lastSampleMs = -Infinity;
   }
   log(gameState, physicsTelemetry = null) {
+    if (!this._enabled) return;
     const now = gameState.currentTime;
     if (now - this._lastSampleMs < SAMPLE_INTERVAL_MS) return;
     this._lastSampleMs = now;
@@ -27,69 +55,113 @@ class TelemetryManager {
       ? Math.max((now - prev.t) / 1000, 0.001)
       : SAMPLE_INTERVAL_MS / 1000;
     const accel = prev ? (gameState.speed - prev.vz) / sampleDt : 0;
+    const jerk = prev ? (accel - (prev.accel || 0)) / sampleDt : 0;
+    const headingRate = prev ? ((gameState.carHeading || 0) - (prev.heading || 0)) / sampleDt : 0;
+    const trackX = gameState.currentTrackPoint ? gameState.currentTrackPoint.x : 0;
+    const trackYaw = gameState.currentTrackPoint ? gameState.currentTrackPoint.yaw : 0;
     this._buf[this._head] = {
       t: now,
       z: gameState.currentZ,
       x: gameState.lateralOffset,
+      trackX,
+      trackYaw,
       vz: gameState.speed,
       vx: gameState.lateralVelocity,
       curvature: gameState.currentCurvature,
       slip: gameState.currentSlip,
-      centrifugalForce: physicsTelemetry
-        ? physicsTelemetry.centrifugalForce
-        : 0,
+      
+      vxDemand: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.vxDemand : 0,
+      gripLimit: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.gripLimit : 0,
+      gripRatio: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.gripRatio : 0,
+      overDrivePhysics: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.overDriveFactor : 0,
+      overDriveGame: gameState.overDriveFactor || 0,
+      steerEffectiveness: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.steerEffectiveness : 0,
+      driftValue: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.drift : 0,
+      centrifugalForce: physicsTelemetry ? physicsTelemetry.centrifugalForce : 0,
       effectiveGrip: physicsTelemetry ? physicsTelemetry.effectiveGrip : 0,
+      
+      lateral: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral : null,
+      
+      lateralWarning: physicsTelemetry && physicsTelemetry.lateralWarning ? physicsTelemetry.lateralWarning : null,
       aeroMode: gameState.aeroMode,
       battery: gameState.battery,
       isOffTrack: gameState.isOffTrack ? 1 : 0,
+      
       accel,
+      jerk,
+      headingRate,
       throttle: gameState.isBoosting ? 1 : 0,
       brake: gameState.isBraking ? 1 : 0,
       steer: gameState.steerInput ?? 0,
       steerTarget: gameState.steerTarget ?? 0,
       heading: gameState.carHeading ?? 0,
+      carVisualHeading: gameState.carVisualHeading || 0,
+      visualOverDrive: gameState.visualOverDrive || 0,
+      centrifugalDrift: gameState.centrifugalDrift || 0,
+      isSpinning: gameState.isSpinning ? 1 : 0,
+      rescueInProgress: gameState.rescueInProgress ? 1 : 0,
+      rescuePenaltySpeed: gameState.rescuePenaltySpeed || 0,
+      isDrifting: gameState.isDrifting ? 1 : 0,
+      segmentIndex: typeof gameState.currentSegmentIndex === 'number' ? gameState.currentSegmentIndex : -1,
+      segmentProgress: typeof gameState.segmentProgress === 'number' ? gameState.segmentProgress : 0,
+      trackPhase: gameState.trackPhase || null,
+      surfaceType: gameState.currentTrackPoint ? gameState.currentTrackPoint.type : null,
     };
     this._head = (this._head + 1) % MAX_SAMPLES;
     if (this._count < MAX_SAMPLES) this._count++;
   }
   exportJSON() {
+    if (!this._enabled) return;
     const samples = this._getSamples();
     if (samples.length === 0) return;
-    const blob = new Blob(
-      [
-        JSON.stringify(
-          {
-            exportedAt: new Date().toISOString(),
-            sampleCount: samples.length,
-            sampleIntervalMs: SAMPLE_INTERVAL_MS,
-            fields: [
-              "t",
-              "z",
-              "x",
-              "vz",
-              "vx",
-              "curvature",
-              "slip",
-              "centrifugalForce",
-              "effectiveGrip",
-              "aeroMode",
-              "battery",
-              "isOffTrack",
-              "accel",
-              "throttle",
-              "brake",
-              "steer",
-              "steerTarget",
-              "heading",
-            ],
-            samples,
-          },
-          null,
-          2,
-        ),
-      ],
-      { type: "application/json" },
-    );
+    const blob = new Blob([
+      JSON.stringify(
+        {
+          exportedAt: new Date().toISOString(),
+          sampleCount: samples.length,
+          sampleIntervalMs: SAMPLE_INTERVAL_MS,
+          fields: [
+            "t",
+            "z",
+            "x",
+            "trackX",
+            "trackYaw",
+            "vz",
+            "vx",
+            "curvature",
+            "slip",
+            "centrifugalForce",
+            "effectiveGrip",
+            "lateralWarning",
+            "aeroMode",
+            "battery",
+            "isOffTrack",
+            "accel",
+            "jerk",
+            "headingRate",
+            "throttle",
+            "brake",
+            "steer",
+            "steerTarget",
+            "heading",
+            "carVisualHeading",
+            "visualOverDrive",
+            "centrifugalDrift",
+            "isSpinning",
+            "rescueInProgress",
+            "rescuePenaltySpeed",
+            "isDrifting",
+            "segmentIndex",
+            "segmentProgress",
+            "trackPhase",
+            "surfaceType",
+          ],
+          samples,
+        },
+        null,
+        2,
+      ),
+    ], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -99,11 +171,73 @@ class TelemetryManager {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
+
+  exportCSV() {
+    const samples = this._getSamples();
+    if (samples.length === 0) return;
+    const fields = [
+      "t",
+      "z",
+      "x",
+      "trackX",
+      "trackYaw",
+      "vz",
+      "vx",
+      "curvature",
+      "slip",
+      "centrifugalForce",
+      "effectiveGrip",
+      "lateralWarning",
+      "aeroMode",
+      "battery",
+      "isOffTrack",
+      "accel",
+      "jerk",
+      "headingRate",
+      "throttle",
+      "brake",
+      "steer",
+      "steerTarget",
+      "heading",
+      "carVisualHeading",
+      "visualOverDrive",
+      "centrifugalDrift",
+      "isSpinning",
+      "rescueInProgress",
+      "rescuePenaltySpeed",
+      "isDrifting",
+      "segmentIndex",
+      "segmentProgress",
+      "trackPhase",
+      "surfaceType",
+    ];
+    const esc = (v) => (v === null || v === undefined ? "" : String(v));
+    const rows = [fields.join(",")];
+    for (const s of samples) {
+      const row = fields.map((f) => {
+        const v = s[f];
+        
+        const str = esc(v).replace(/"/g, '""');
+        return `"${str}"`;
+      });
+      rows.push(row.join(","));
+    }
+    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `telemetry_${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
   toggleHUD() {
+    if (!this._enabled) return;
     this._hudVisible = !this._hudVisible;
   }
   drawHUD(ctx, width, height, isMobile = false) {
-    if (!this._hudVisible || isMobile) return;
+    if (!this._enabled || !this._hudVisible || isMobile) return;
     const d = this._getLatest();
     if (!d) return;
     const PX = 10;
@@ -366,6 +500,74 @@ class TelemetryManager {
       ctx.fillStyle = "rgba(39, 174, 96, 0.85)";
       ctx.fillText("ERS", CX + 3, cy + 2);
       cy += CHART_H3 + 4;
+      // Additional diagnostics chart: gripRatio, vxDemand, visualOverDrive
+      const CHART_H4 = 40;
+      ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+      ctx.fillRect(CX, cy, CHART_W, CHART_H4);
+      if (n > 1) {
+        // compute normalization scales from visible window to keep plots readable
+        let maxVx = 0;
+        let maxGrip = 0;
+        let maxVOD = 0;
+        for (let i = 0; i < n; i++) {
+          const s = chartData[i];
+          maxVx = Math.max(maxVx, Math.abs(s.vxDemand || 0));
+          maxGrip = Math.max(maxGrip, Math.abs(s.gripRatio || 0));
+          maxVOD = Math.max(maxVOD, Math.abs(s.visualOverDrive || s.overDriveGame || 0));
+        }
+        maxVx = Math.max(1e-3, maxVx);
+        maxGrip = Math.max(1e-3, maxGrip);
+        maxVOD = Math.max(1e-3, maxVOD);
+        const midY4 = cy + CHART_H4 * 0.5;
+        // draw gripRatio line (yellow)
+        ctx.beginPath();
+        for (let i = 0; i < n; i++) {
+          const sx = CX + (i / (n - 1)) * CHART_W;
+          const v = (chartData[i].gripRatio || 0) / maxGrip;
+          const sy = midY4 - Math.max(-1, Math.min(1, v)) * (CHART_H4 * 0.45);
+          i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+        }
+        ctx.strokeStyle = "#f1c40f";
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+        // draw vxDemand line (blue)
+        ctx.beginPath();
+        for (let i = 0; i < n; i++) {
+          const sx = CX + (i / (n - 1)) * CHART_W;
+          const v = (chartData[i].vxDemand || 0) / maxVx;
+          const sy = midY4 - Math.max(-1, Math.min(1, v)) * (CHART_H4 * 0.45);
+          i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+        }
+        ctx.strokeStyle = "#3498db";
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        // draw visualOverDrive line (purple)
+        ctx.beginPath();
+        for (let i = 0; i < n; i++) {
+          const sx = CX + (i / (n - 1)) * CHART_W;
+          const v = (chartData[i].visualOverDrive || chartData[i].overDriveGame || 0) / maxVOD;
+          const sy = midY4 - Math.max(-1, Math.min(1, v)) * (CHART_H4 * 0.45);
+          i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+        }
+        ctx.strokeStyle = "#9b59b6";
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        // legend
+        ctx.fillStyle = "#f1c40f";
+        ctx.fillRect(CX + 4, cy + 4, 8, 8);
+        ctx.fillStyle = "#fff";
+        ctx.font = '10px monospace';
+        ctx.fillText('gripRatio', CX + 18, cy + 2);
+        ctx.fillStyle = "#3498db";
+        ctx.fillRect(CX + 86, cy + 4, 8, 8);
+        ctx.fillStyle = "#fff";
+        ctx.fillText('vxDemand', CX + 100, cy + 2);
+        ctx.fillStyle = "#9b59b6";
+        ctx.fillRect(CX + 160, cy + 4, 8, 8);
+        ctx.fillStyle = "#fff";
+        ctx.fillText('visualOD', CX + 174, cy + 2);
+      }
+      cy += CHART_H4 + 6;
       ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
       ctx.fillRect(CX, cy, CHART_W, CHART_H3);
       if (n > 1) {
@@ -397,15 +599,15 @@ class TelemetryManager {
       cy += CHART_H3 + 4;
     }
     ctx.fillStyle = "rgba(127, 140, 141, 0.65)";
-    ctx.fillText("[T] Export JSON", COL, cy);
+    ctx.fillText("[T] Export JSON  [C] Export CSV", COL, cy);
     ctx.restore();
   }
   _getLatest() {
-    if (this._count === 0) return null;
+    if (!this._enabled || this._count === 0) return null;
     return this._buf[(this._head - 1 + MAX_SAMPLES) % MAX_SAMPLES];
   }
   _getLastN(n) {
-    if (this._count === 0) return [];
+    if (!this._enabled || this._count === 0) return [];
     const count = Math.min(n, this._count);
     const oldest = (this._head - count + MAX_SAMPLES) % MAX_SAMPLES;
     const out = new Array(count);
@@ -415,7 +617,7 @@ class TelemetryManager {
     return out;
   }
   _getSamples() {
-    if (this._count === 0) return [];
+    if (!this._enabled || this._count === 0) return [];
     const oldest = this._count < MAX_SAMPLES ? 0 : this._head;
     const out = new Array(this._count);
     for (let i = 0; i < this._count; i++) {
@@ -437,4 +639,4 @@ function _sep(ctx, x1, x2, y) {
 function _sign(v) {
   return v >= 0 ? "+" : "";
 }
-export { TelemetryManager };
+export { TelemetryManager };
