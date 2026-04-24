@@ -39,6 +39,7 @@ import { LeaderboardState } from "../menu/states/LeaderboardState.js";
 import { RaceState } from "../menu/states/RaceState.js";
 import { GameOverState } from "../menu/states/GameOverState.js";
 import { SettingsState } from "../menu/states/SettingsState.js";
+import PhysicsSandboxState from "../menu/states/PhysicsSandboxState.js";
 const ORIENTATION_POLL_INTERVAL = 50;
 const ORIENTATION_POLL_MAX_MS = 500;
 class Game {
@@ -226,11 +227,12 @@ class Game {
         onRaceEnter: () => {},
         onRaceExit: () => {},
         openSettings: () => this._setScreen(SCREENS.SETTINGS),
-      openLeaderboard: () => {
-        // reset to first page when opening
-        if (this.gameState) this.gameState.leaderboardPage = 0;
-        this._setScreen(SCREENS.LEADERBOARD);
-      },
+        openPhysicsSandbox: () => this._setScreen(SCREENS.PHYSICS_SANDBOX),
+        openLeaderboard: () => {
+          // reset to first page when opening
+          if (this.gameState) this.gameState.leaderboardPage = 0;
+          this._setScreen(SCREENS.LEADERBOARD);
+        },
       changeLeaderboardPage: (delta) => {
         // delta: -1 or +1
         if (!this.gameState) return;
@@ -264,23 +266,7 @@ class Game {
       case SCREENS.SETTINGS:
         return new SettingsState(deps);
       case SCREENS.PHYSICS_SANDBOX:
-        // The PhysicsSandboxState expects deps shaped like other states
-        // but it's implemented as a minimal in-DOM UI that uses callbacks
-        // We import lazily to avoid bundling it into the main loop unless used
-        try {
-          const Sandbox = require('../menu/states/PhysicsSandboxState.js').default;
-          return new Sandbox(deps);
-        } catch (e) {
-          // if require isn't available (browser ESM), attempt dynamic import
-          try {
-            // eslint-disable-next-line no-undef
-            const mod = import('../menu/states/PhysicsSandboxState.js');
-            return new (mod.default)(deps);
-          } catch (err) {
-            console.warn('Failed to create PhysicsSandboxState', err);
-            return null;
-          }
-        }
+        return new PhysicsSandboxState(deps);
       default:
         return null;
     }
