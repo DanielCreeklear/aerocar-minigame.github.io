@@ -35,6 +35,7 @@ import { RIVAL_COUNT } from "../constants/index.js";
 import { StateManager } from "../menu/StateManager.js";
 import { TrackPreviewState } from "../menu/states/TrackPreviewState.js";
 import { StartMenuState } from "../menu/states/StartMenuState.js";
+import { TutorialState } from "../menu/states/TutorialState.js";
 import { LeaderboardState } from "../menu/states/LeaderboardState.js";
 import { RaceState } from "../menu/states/RaceState.js";
 import { GameOverState } from "../menu/states/GameOverState.js";
@@ -217,6 +218,13 @@ class Game {
     this._handleViewportResize();
     this.reset(SCREENS.START);
     this._initStateManager();
+    // auto-start tutorial on first run
+    try {
+      const seen = localStorage.getItem('aerocar_tutorial_done');
+      if (!seen) {
+        this._setScreen(SCREENS.TUTORIAL);
+      }
+    } catch (e) {}
   }
   _makeStateDeps() {
     return {
@@ -231,6 +239,7 @@ class Game {
         onRaceEnter: () => {},
         onRaceExit: () => {},
         openSettings: () => this._setScreen(SCREENS.SETTINGS),
+        openTutorial: () => this._setScreen(SCREENS.TUTORIAL),
         openPhysicsSandbox: () => {
           
           try { this._prevScreenBeforeSandbox = this.gameState ? this.gameState.currentScreen : null; } catch (e) {}
@@ -252,7 +261,7 @@ class Game {
         if (next < 0) next = 0;
         if (next >= totalPages) next = totalPages - 1;
         this.gameState.leaderboardPage = next;
-      },
+        },
         backToMenu: () => {
           
           const target = this._prevScreenBeforeSandbox || SCREENS.START;
@@ -268,6 +277,7 @@ class Game {
     const STATE_MAP = {
       [SCREENS.PREVIEW]: TrackPreviewState,
       [SCREENS.START]: StartMenuState,
+      [SCREENS.TUTORIAL]: TutorialState,
       [SCREENS.RACE]: RaceState,
       [SCREENS.GAME_OVER]: GameOverState,
       [SCREENS.LEADERBOARD]: LeaderboardState,
@@ -481,6 +491,16 @@ class Game {
       dt,
       currentTrackPoint,
     );
+    // updateCarPhysics may advance gameState.currentZ; refresh the cached
+    // track point so renderers and subsequent logic read the post-advance
+    // position (prevents camera/road scanline temporal mismatch).
+    this.gameState.currentTrackPoint = this.track.getTrackPoint(
+      this.gameState.currentZ,
+    );
+    this.gameState.currentCurvature =
+      this.gameState.currentTrackPoint.rawCurve ??
+      this.gameState.currentTrackPoint.curve ??
+      0;
     this.telemetry.log(this.gameState, physicsTelemetry);
     updateRivals(this.gameState, this.track, dt);
     if (!this.gameState.rescueInProgress) {
