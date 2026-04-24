@@ -27,42 +27,57 @@ class TelemetryManager {
       ? Math.max((now - prev.t) / 1000, 0.001)
       : SAMPLE_INTERVAL_MS / 1000;
     const accel = prev ? (gameState.speed - prev.vz) / sampleDt : 0;
+    const jerk = prev ? (accel - (prev.accel || 0)) / sampleDt : 0;
+    const headingRate = prev ? ((gameState.carHeading || 0) - (prev.heading || 0)) / sampleDt : 0;
+    const trackX = gameState.currentTrackPoint ? gameState.currentTrackPoint.x : 0;
+    const trackYaw = gameState.currentTrackPoint ? gameState.currentTrackPoint.yaw : 0;
     this._buf[this._head] = {
       t: now,
       z: gameState.currentZ,
       x: gameState.lateralOffset,
+      trackX,
+      trackYaw,
       vz: gameState.speed,
       vx: gameState.lateralVelocity,
       curvature: gameState.currentCurvature,
       slip: gameState.currentSlip,
-      // extra diagnostics for debugging physics
-      lateralVelocityDemand: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.vxDemand : 0,
+      // lateral diagnostics (flattened for quick inspection)
+      vxDemand: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.vxDemand : 0,
       gripLimit: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.gripLimit : 0,
-      overDriveFactor: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.overDriveFactor : 0,
+      gripRatio: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.gripRatio : 0,
+      overDrivePhysics: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.overDriveFactor : 0,
+      overDriveGame: gameState.overDriveFactor || 0,
       steerEffectiveness: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.steerEffectiveness : 0,
       driftValue: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.drift : 0,
-      centrifugalForce: physicsTelemetry
-        ? physicsTelemetry.centrifugalForce
-        : 0,
+      centrifugalForce: physicsTelemetry ? physicsTelemetry.centrifugalForce : 0,
       effectiveGrip: physicsTelemetry ? physicsTelemetry.effectiveGrip : 0,
-      // lateral diagnostics (may be undefined)
+      // raw lateral object if callers want full diagnostics
       lateral: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral : null,
-      gripRatio: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.gripRatio : 0,
-      steerEffectiveness: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.steerEffectiveness : 0,
-      overDriveFactor: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.overDriveFactor : 0,
-      drift: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.drift : 0,
       // transient lateral warning field (string or null)
       lateralWarning: physicsTelemetry && physicsTelemetry.lateralWarning ? physicsTelemetry.lateralWarning : null,
       aeroMode: gameState.aeroMode,
       battery: gameState.battery,
       isOffTrack: gameState.isOffTrack ? 1 : 0,
+      // longitudinal derivatives and rates
       accel,
+      jerk,
+      headingRate,
       throttle: gameState.isBoosting ? 1 : 0,
       brake: gameState.isBraking ? 1 : 0,
       steer: gameState.steerInput ?? 0,
       steerTarget: gameState.steerTarget ?? 0,
       heading: gameState.carHeading ?? 0,
+      carVisualHeading: gameState.carVisualHeading || 0,
+      visualOverDrive: gameState.visualOverDrive || 0,
+      centrifugalDrift: gameState.centrifugalDrift || 0,
+      isSpinning: gameState.isSpinning ? 1 : 0,
+      rescueInProgress: gameState.rescueInProgress ? 1 : 0,
+      rescuePenaltySpeed: gameState.rescuePenaltySpeed || 0,
       isDrifting: gameState.isDrifting ? 1 : 0,
+      segmentIndex: typeof gameState.currentSegmentIndex === 'number' ? gameState.currentSegmentIndex : -1,
+      segmentProgress: typeof gameState.segmentProgress === 'number' ? gameState.segmentProgress : 0,
+      trackPhase: gameState.trackPhase || null,
+      surfaceType: gameState.currentTrackPoint ? gameState.currentTrackPoint.type : null,
     };
     this._head = (this._head + 1) % MAX_SAMPLES;
     if (this._count < MAX_SAMPLES) this._count++;
@@ -81,6 +96,8 @@ class TelemetryManager {
               "t",
               "z",
               "x",
+              "trackX",
+              "trackYaw",
               "vz",
               "vx",
               "curvature",
@@ -92,12 +109,24 @@ class TelemetryManager {
               "battery",
               "isOffTrack",
               "accel",
+              "jerk",
+              "headingRate",
               "throttle",
               "brake",
               "steer",
               "steerTarget",
               "heading",
+              "carVisualHeading",
+              "visualOverDrive",
+              "centrifugalDrift",
+              "isSpinning",
+              "rescueInProgress",
+              "rescuePenaltySpeed",
               "isDrifting",
+              "segmentIndex",
+              "segmentProgress",
+              "trackPhase",
+              "surfaceType",
             ],
             samples,
           },

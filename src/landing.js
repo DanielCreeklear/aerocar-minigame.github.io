@@ -1,3 +1,6 @@
+// Ensure landing styles are bundled by Vite
+import './landing.css';
+
 // Keep landing JS tiny: only lazy-load embed if present
 document.addEventListener('DOMContentLoaded', () => {
   const el = document.getElementById('spotify-embed');
@@ -26,4 +29,18 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     load();
   }
+});
+
+// Ensure the "Jogar" button navigates even if default link is prevented
+document.addEventListener('DOMContentLoaded', () => {
+  const play = document.getElementById('play-btn');
+  if (!play) return;
+  play.addEventListener('click', (e) => {
+    // If some other handler prevented the default, force navigation
+    if (e.defaultPrevented) {
+      const href = play.getAttribute('href');
+      if (href) window.location.href = href;
+    }
+    // otherwise let the browser handle it
+  });
 });
