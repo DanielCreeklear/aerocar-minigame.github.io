@@ -53,6 +53,9 @@ class Game {
     this.telemetry = new TelemetryManager();
     // expose for sandbox plumbing when running locally
     window.__AEROCAR_GAME__ = this;
+    // remember previous screen when opening the physics sandbox so we can restore
+    // the user's context (race, start, etc.) on close
+    this._prevScreenBeforeSandbox = null;
     this.trackSeed = TRACK_SEED;
     this.totalSegments = TOTAL_SEGMENTS;
     this.track.init(this.totalSegments, this.trackSeed);
@@ -227,7 +230,11 @@ class Game {
         onRaceEnter: () => {},
         onRaceExit: () => {},
         openSettings: () => this._setScreen(SCREENS.SETTINGS),
-        openPhysicsSandbox: () => this._setScreen(SCREENS.PHYSICS_SANDBOX),
+        openPhysicsSandbox: () => {
+          // remember previous screen so Escape/back returns properly
+          try { this._prevScreenBeforeSandbox = this.gameState ? this.gameState.currentScreen : null; } catch (e) {}
+          this._setScreen(SCREENS.PHYSICS_SANDBOX);
+        },
         openLeaderboard: () => {
           // reset to first page when opening
           if (this.gameState) this.gameState.leaderboardPage = 0;
@@ -245,7 +252,12 @@ class Game {
         if (next >= totalPages) next = totalPages - 1;
         this.gameState.leaderboardPage = next;
       },
-        backToMenu: () => this._setScreen(SCREENS.START),
+        backToMenu: () => {
+          // if we opened the sandbox from another screen, restore it; otherwise go to START
+          const target = this._prevScreenBeforeSandbox || SCREENS.START;
+          this._prevScreenBeforeSandbox = null;
+          this._setScreen(target);
+        },
         requestGyroPermission: () => this.input.requestOrientationPermission(),
       },
     };
