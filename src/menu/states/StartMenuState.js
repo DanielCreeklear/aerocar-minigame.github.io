@@ -111,6 +111,14 @@ export class StartMenuState extends GameState {
       this._ctaBtn.pressed = true;
       requestAnimationFrame(() => this._deps.callbacks.startRace());
     }
+    // small dev area: bottom-left corner to open physics sandbox when running on localhost
+    try {
+      const hostname = typeof window !== 'undefined' && window.location && window.location.hostname;
+      if ((hostname === 'localhost' || hostname === '127.0.0.1') && x < 80 && y > (this._deps.canvas ? this._deps.canvas.height - 60 : 400)) {
+        requestAnimationFrame(() => this._deps.callbacks.openPhysicsSandbox());
+        return;
+      }
+    } catch (e) {}
   }
   onPointerUp(_x, _y) {
     this._ctaBtn.pressed = false;
