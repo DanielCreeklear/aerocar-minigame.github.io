@@ -1,6 +1,7 @@
 export const SCREENS = {
   PREVIEW: "preview",
   START: "start",
+  LEADERBOARD: "leaderboard",
   RACE: "race",
   GAME_OVER: "gameover",
   SETTINGS: "settings",
@@ -23,4 +24,4 @@ export const SURFACE_TYPES = {
   GRASS: 0,
   CURB: 1,
   TRACK: 2,
-};
+};

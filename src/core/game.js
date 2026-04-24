@@ -35,6 +35,7 @@ import { RIVAL_COUNT } from "../constants/index.js";
 import { StateManager } from "../menu/StateManager.js";
 import { TrackPreviewState } from "../menu/states/TrackPreviewState.js";
 import { StartMenuState } from "../menu/states/StartMenuState.js";
+import { LeaderboardState } from "../menu/states/LeaderboardState.js";
 import { RaceState } from "../menu/states/RaceState.js";
 import { GameOverState } from "../menu/states/GameOverState.js";
 import { SettingsState } from "../menu/states/SettingsState.js";
@@ -78,12 +79,12 @@ class Game {
       background: "transparent",
       border: "none",
       outline: "none",
-      color: "#F0EAE0",
+      color: "transparent",
       fontFamily: "'Barlow Condensed', 'Segoe UI', sans-serif",
       fontWeight: "700",
       letterSpacing: "4px",
       textTransform: "uppercase",
-      caretColor: "#CC001E",
+      caretColor: "transparent",
       display: "none",
       zIndex: "10",
       padding: "0",
@@ -223,6 +224,7 @@ class Game {
         onRaceEnter: () => {},
         onRaceExit: () => {},
         openSettings: () => this._setScreen(SCREENS.SETTINGS),
+        openLeaderboard: () => this._setScreen(SCREENS.LEADERBOARD),
         backToMenu: () => this._setScreen(SCREENS.START),
         requestGyroPermission: () => this.input.requestOrientationPermission(),
       },
@@ -239,6 +241,8 @@ class Game {
         return new RaceState(deps);
       case SCREENS.GAME_OVER:
         return new GameOverState(deps);
+      case SCREENS.LEADERBOARD:
+        return new LeaderboardState(deps);
       case SCREENS.SETTINGS:
         return new SettingsState(deps);
       default:
@@ -255,8 +259,14 @@ class Game {
     const vv = typeof window !== "undefined" && window.visualViewport;
     if (vv && this._nameInput && this._nameInput.style.display !== "none") {
       const keyboardVisible = window.innerHeight - vv.height > 100;
-      if (keyboardVisible) return;
+      if (keyboardVisible) {
+        this.canvas.style.width = `${this.canvas.width}px`;
+        this.canvas.style.height = `${this.canvas.height}px`;
+        return;
+      }
     }
+    this.canvas.style.width = "";
+    this.canvas.style.height = "";
     resizeCanvas(this.canvas);
     if (this._nameInput && this._nameInput.style.display !== "none") {
       this._showNameInput();
@@ -517,6 +527,9 @@ class Game {
       this._nameInput.blur();
       this._nameInput.readOnly = true;
     }
+    // Release any CSS size lock that was applied while the keyboard was open.
+    this.canvas.style.width = "";
+    this.canvas.style.height = "";
   }
   start() {
     this.gameLoop.start((dt) => {

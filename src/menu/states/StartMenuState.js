@@ -8,6 +8,7 @@ export class StartMenuState extends GameState {
     this._ctaBtn = new Button();
     this._settingsBtn = new Button();
     this._gyroBtn = new Button();
+    this._rankingBtn = new Button();
   }
   render(ctx, w, h) {
     drawStartScreen(ctx, w, h, this._deps.getGameState(), this._deps.track);
@@ -16,6 +17,27 @@ export class StartMenuState extends GameState {
     const btnH = Math.max(44, Math.round(h * 0.075));
     this._ctaBtn.setRect(0, btnStartY, w, btnH);
     this._ctaBtn.renderPressOverlay(ctx);
+    // ranking "VER TUDO" button hit area mirrors rendering in screen-renderer
+    const pad = Math.max(20, w * 0.05);
+    const rankings = (this._deps.getGameState() && this._deps.getGameState().rankings) || [];
+    if (isPortrait) {
+      const rkY = h * 0.63;
+      const hdrBtnW = 86;
+      const hdrBtnH = 26;
+      const hdrBtnX = w - pad - hdrBtnW;
+      const hdrBtnY = rkY - hdrBtnH - 6;
+      this._rankingBtn.setRect(Math.round(hdrBtnX), Math.round(hdrBtnY), Math.round(hdrBtnW), Math.round(hdrBtnH));
+    } else {
+      const divX = Math.round(w * 0.5);
+      const rightX = divX + 20;
+      const rightW = w - rightX - pad;
+      const hdrBtnW = 86;
+      const hdrBtnH = 20;
+      const hdrBtnX = rightX + rightW - hdrBtnW;
+      const hdrBtnY = pad + 8 - hdrBtnH - 4;
+      this._rankingBtn.setRect(Math.round(hdrBtnX), Math.round(hdrBtnY), Math.round(hdrBtnW), Math.round(hdrBtnH));
+    }
+    this._rankingBtn.renderPressOverlay(ctx);
     const footerH = 40;
     this._settingsBtn.setRect(w * 0.5, h - footerH, w * 0.5, footerH);
     const gs = this._deps.getGameState();
@@ -56,6 +78,11 @@ export class StartMenuState extends GameState {
     }
   }
   onPointerDown(x, y) {
+    if (this._rankingBtn.isHit(x, y)) {
+      this._rankingBtn.pressed = true;
+      requestAnimationFrame(() => this._deps.callbacks.openLeaderboard());
+      return;
+    }
     if (this._settingsBtn.isHit(x, y)) {
       this._settingsBtn.pressed = true;
       requestAnimationFrame(() => this._deps.callbacks.openSettings());
@@ -80,5 +107,6 @@ export class StartMenuState extends GameState {
     this._ctaBtn.pressed = false;
     this._settingsBtn.pressed = false;
     this._gyroBtn.pressed = false;
+    this._rankingBtn.pressed = false;
   }
 }
