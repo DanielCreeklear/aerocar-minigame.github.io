@@ -50,9 +50,6 @@ function updateHeadingAndLateral(
   
   
   const centrifugalFactorRuntime = getPhysicsValue("CENTRIFUGAL_FACTOR", CENTRIFUGAL_FACTOR);
-  // compute demanded lateral velocity from curvature only (steering already
-  // contributes via vxSteer = vz * sin(theta)). Removing theta*0.5 avoids
-  // double-counting steering input into the grip budget.
   const vxDemand = curvature * vz * centrifugalFactorRuntime;
   
   const baseGrip = lateralFriction + (aeroGripFactor || 0) * vz;
@@ -71,7 +68,7 @@ function updateHeadingAndLateral(
   gameState.overDriveFactor = overDriveFactor;
 
   
-  // cap overdrive for steering computations but preserve raw overdrive elsewhere
+  
   const usedOverDrive = Math.min(overDriveFactor, MAX_OVERDRIVE_FACTOR);
   const usf = understeerFactor ?? getPhysicsValue("UNDERSTEER_FACTOR", UNDERSTEER_FACTOR);
   const driftIntensity = overDriveFactor; // same metric, use the canonical name
@@ -87,7 +84,11 @@ function updateHeadingAndLateral(
   theta += (targetTheta - theta) * Math.min(1, alignmentRate * dt);
   gameState.carHeading = clamp(theta, -Math.PI / 2, Math.PI / 2);
   let drift = gameState.centrifugalDrift || 0;
-  if (gripRatio <= 1) {
+  // If there's effectively no curvature, clear residual centrifugal drift to
+  // avoid sliding on straights caused by previous corner buildup.
+  if (Math.abs(curvature) < 0.0005 && gripRatio <= 1) {
+    drift = 0;
+  } else if (gripRatio <= 1) {
     drift *= Math.pow(getPhysicsValue("DRIFT_RECOVERY_RATE", DRIFT_RECOVERY_RATE), dt);
   } else {
     const buildRate = getPhysicsValue("CENTRIFUGAL_DRIFT_BUILD_RATE", CENTRIFUGAL_DRIFT_BUILD_RATE) * overDriveFactor * dt;
@@ -189,7 +190,10 @@ function integrateLateralState(
     curvature,
   );
 
-  const overDrive = gameState.overDriveFactor || 0;
+  // Only apply longitudinal overdrive penalty when we're actually on a curve.
+  // Heading residual on a straight should not cause a speed penalty.
+  const effectiveCurvature = Math.abs(curvature) || 0;
+  const overDrive = effectiveCurvature > 0.0005 ? (gameState.overDriveFactor || 0) : 0;
   const nextVz = !offTrack && overDrive > 0
     ? vzAfterOffTrack * Math.pow(1 - clamp(overDrive * 0.008, 0, 0.008), dt)
     : vzAfterOffTrack;

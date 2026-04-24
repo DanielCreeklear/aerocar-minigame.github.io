@@ -19,7 +19,9 @@ export const PASSIVE_REGEN_FACTOR = 0.4;
 export const HEADING_CURVE_FACTOR = 0.0008;
 export const STEER_YAW_RATE = 0.006;
 export const MAX_STEER_HEADING = 0.22;
-export const HEADING_ALIGNMENT_RATE = 0.25;
+// Increased alignment rate so the car heading recenters faster after input
+// (value multiplied by dt each frame). 1.5 gives ~0.6s recovery at 60fps.
+export const HEADING_ALIGNMENT_RATE = 1.5;
 export const CENTRIFUGAL_FACTOR = 0.01;
 export const VISUAL_HEADING_LERP = 0.45;
 export const OVERSPEED_DRAG = 0.92;
