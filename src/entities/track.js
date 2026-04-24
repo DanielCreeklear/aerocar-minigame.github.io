@@ -62,7 +62,7 @@ class Track {
     this.gridCols = 0;
     this.gridRows = 0;
     this.gridMinX = 0;
-    // Pools to reduce per-frame allocations in hot paths
+    
     this._upcomingPool = [];
     this._upcomingResults = [];
   }

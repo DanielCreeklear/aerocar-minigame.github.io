@@ -33,7 +33,7 @@ export class StartMenuState extends GameState {
     const btnH = Math.max(44, Math.round(h * 0.075));
     this._ctaBtn.setRect(0, btnStartY, w, btnH);
     this._ctaBtn.renderPressOverlay(ctx);
-    // ranking "VER TUDO" button hit area mirrors rendering in screen-renderer
+    
     const pad = Math.max(20, w * 0.05);
     const rankings = (this._deps.getGameState() && this._deps.getGameState().rankings) || [];
     if (isPortrait) {
@@ -54,7 +54,7 @@ export class StartMenuState extends GameState {
       this._rankingBtn.setRect(Math.round(hdrBtnX), Math.round(hdrBtnY), Math.round(hdrBtnW), Math.round(hdrBtnH));
     }
     this._rankingBtn.renderPressOverlay(ctx);
-    // dev badge for localhost (hidden otherwise) - made more visible and clickable
+    
     try {
       const hostname = typeof window !== 'undefined' && window.location && window.location.hostname;
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
@@ -62,31 +62,31 @@ export class StartMenuState extends GameState {
         const devH = 40;
         const devX = 12;
         const devY = Math.round(h - devH - 12);
-        // shadow
+        
         ctx.save();
         ctx.fillStyle = 'rgba(0,0,0,0.45)';
         _roundRect(ctx, devX + 2, devY + 4, devW, devH, 10);
         ctx.fill();
-        // gradient pill
+        
         const g = ctx.createLinearGradient(devX, devY, devX + devW, devY);
         g.addColorStop(0, '#ff8a3a');
         g.addColorStop(1, '#ff5f2a');
         ctx.fillStyle = g;
         _roundRect(ctx, devX, devY, devW, devH, 10);
         ctx.fill();
-        // border
+        
         ctx.lineWidth = 1;
         ctx.strokeStyle = 'rgba(0,0,0,0.35)';
         _roundRect(ctx, devX, devY, devW, devH, 10);
         ctx.stroke();
-        // text
+        
         ctx.fillStyle = '#fff';
         ctx.font = '700 14px monospace';
         ctx.fillText('DEV', devX + 12, devY + devH / 2 + 5);
         ctx.font = '12px monospace';
         ctx.fillText('Sandbox (D)', devX + 58, devY + devH / 2 + 5);
         ctx.restore();
-        // store hit rect
+        
         this._devRect = { x: devX, y: devY, w: devW, h: devH };
       } else {
         this._devRect = { x: 0, y: 0, w: 0, h: 0 };
@@ -158,7 +158,7 @@ export class StartMenuState extends GameState {
       this._ctaBtn.pressed = true;
       requestAnimationFrame(() => this._deps.callbacks.startRace());
     }
-    // Dev badge click handling (uses same rect drawn in render)
+    
     try {
       const hostname = typeof window !== 'undefined' && window.location && window.location.hostname;
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
@@ -167,7 +167,7 @@ export class StartMenuState extends GameState {
           requestAnimationFrame(() => this._deps.callbacks.openPhysicsSandbox());
           return;
         }
-        // fallback to legacy hotspot for older renders
+        
         const hThreshold = this._lastH || (this._deps.canvas ? this._deps.canvas.height : 480);
         if (x < 120 && y > hThreshold - 80) {
           requestAnimationFrame(() => this._deps.callbacks.openPhysicsSandbox());

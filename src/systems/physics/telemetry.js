@@ -13,7 +13,7 @@ function buildPhysicsTelemetry(data) {
       drift: data.lateral.drift,
     };
   } else if (data.diag) {
-    // Backwards-compatible: allow callers to pass diag directly
+    
     out.lateral = {
       vxDemand: data.diag.vxDemand,
       gripLimit: data.diag.gripLimit,

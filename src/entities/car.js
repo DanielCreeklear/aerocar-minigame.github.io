@@ -29,7 +29,7 @@ function createCarStateFields() {
     rescueInProgress: false,
     rescuePenaltySpeed: 0,
     centrifugalSlideTimer: 0,
-    // drift tracking
+    
     isDrifting: false,
     driftTimer: 0,
   };

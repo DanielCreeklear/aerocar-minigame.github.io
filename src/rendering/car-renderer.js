@@ -16,13 +16,13 @@ import {
   Z_RESOLUTION,
 } from "../constants/index.js";
 
-// ─── Motion trail ring buffer ────────────────────────────────────────────────
+
 const TRAIL_MAX = 10;
-const TRAIL_SPEED_THRESHOLD = 250 / 17; // ~14.7 game-units  (250 km/h)
-const SPRAY_SPEED_THRESHOLD = 100 / 17; //  ~5.9 game-units  (100 km/h)
-// Ring buffer for motion trail to avoid push/shift allocations
+const TRAIL_SPEED_THRESHOLD = 250 / 17; 
+const SPRAY_SPEED_THRESHOLD = 100 / 17; 
+
 const _trail = new Array(TRAIL_MAX);
-let _trailHead = 0; // next write index
+let _trailHead = 0; 
 let _trailLen = 0;
 
 function _pushTrail(x, y, angle) {
@@ -41,7 +41,7 @@ function _pushTrail(x, y, angle) {
 function _drawMotionTrail(ctx, carWidth, carHeight) {
   const bw = carWidth * 0.72;
   const bh = carHeight * 0.88;
-  // iterate ring buffer oldest-first
+  
   const len = _trailLen;
   if (len <= 0) return;
   for (let idx = 0; idx < len - 1; idx++) {
@@ -133,36 +133,36 @@ function drawCarBody(ctx, gameState, metrics) {
   const bodyW = w * 0.72;
   const bodyH = h * 0.88;
 
-  // ── Ground shadow ellipse ────────────────────────────────────────────────
+  
   ctx.fillStyle = "rgba(0,0,0,0.28)";
   ctx.beginPath();
   ctx.ellipse(0, h * 0.28, w * 0.46, 5, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // ── Body ─────────────────────────────────────────────────────────────────
+  
   ctx.fillStyle = bodyColor;
   ctx.beginPath();
   ctx.roundRect(-bodyW / 2, -bodyH / 2, bodyW, bodyH, 4);
   ctx.fill();
 
-  // ── Accent stripe (horizontal band across centre) ────────────────────────
+  
   const stripeH = bodyH * 0.25;
   ctx.fillStyle = accentColor;
   ctx.beginPath();
   ctx.roundRect(-bodyW * 0.35, -stripeH / 2, bodyW * 0.7, stripeH, 2);
   ctx.fill();
 
-  // ── Front wing ───────────────────────────────────────────────────────────
+  
   const wingW = w * 0.9;
   const wingH = h * 0.07;
   ctx.fillStyle = accentColor;
   ctx.fillRect(-wingW / 2, -bodyH / 2 - wingH, wingW, wingH);
 
-  // ── Rear wing ────────────────────────────────────────────────────────────
+  
   ctx.fillStyle = bodyColor;
   ctx.fillRect((-wingW / 2) * 0.85, bodyH / 2, wingW * 0.85, wingH);
 
-  // ── Wheels ───────────────────────────────────────────────────────────────
+  
   const wheelW = w * 0.2;
   const wheelH = h * 0.22;
   const wOffX = bodyW * 0.38;
@@ -179,7 +179,7 @@ function drawCarBody(ctx, gameState, metrics) {
     ctx.fill();
   }
 
-  // ── Cockpit (player identifier) ──────────────────────────────────────────
+  
   const cpW = bodyW * 0.38;
   const cpH = bodyH * 0.22;
   const cpX = -cpW / 2;
@@ -188,7 +188,7 @@ function drawCarBody(ctx, gameState, metrics) {
   ctx.beginPath();
   ctx.roundRect(cpX, cpY, cpW, cpH, 3);
   ctx.fill();
-  // Diagonal glare
+  
   ctx.save();
   ctx.beginPath();
   ctx.rect(cpX, cpY, cpW, cpH);
@@ -207,7 +207,7 @@ function drawBoostFlame(ctx, gameState, metrics) {
   const bodyW = carWidth * 0.72;
   const bodyH = carHeight * 0.88;
   const glowRadius = Math.round(bodyW * 0.62 + Math.random() * bodyW * 0.1);
-  // simple per-ctx per-radius gradient cache
+  
   if (!drawBoostFlame._gradCache) drawBoostFlame._gradCache = {};
   const cacheKey = `${glowRadius}@${ctx.canvas.width}x${ctx.canvas.height}`;
   let grad = drawBoostFlame._gradCache[cacheKey];
@@ -247,13 +247,13 @@ function drawCar(ctx, gameState, track, metrics) {
   const { drawX, drawY } = computeCarDrawPosition(gameState, width, height);
 
   const speed = gameState.speed || 0;
-  // Reintroduce roadAngle as a baseline so the car visually follows the track
-  // when the player is neutral, but allow the player's visual heading to
-  // override progressively based on steer input for responsiveness.
+  
+  
+  
   const roadAngle = Math.atan2(carTrackInfo.yaw ?? 0, Z_RESOLUTION);
   const visualHeading = (gameState.carVisualHeading || 0) * CAR_HEADING_VISUAL_SCALE;
   const steerFactor = Math.min(1, Math.abs(gameState.steerInput || 0) * 1.8);
-  const playerInfluence = 0.25 + 0.75 * steerFactor; // 0.25 when neutral -> up to 1.0 with steer
+  const playerInfluence = 0.25 + 0.75 * steerFactor; 
   const totalAngle = roadAngle + visualHeading * playerInfluence + (gameState.spinRotation || 0);
 
   if (speed >= TRAIL_SPEED_THRESHOLD) {

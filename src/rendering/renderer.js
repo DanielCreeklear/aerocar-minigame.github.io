@@ -43,9 +43,9 @@ const CAMERA_SHAKE_SPEED_MIN = 325;
 const CAMERA_SHAKE_SPEED_MAX = 375;
 const CAMERA_SHAKE_MAX_PX = 2.8;
 
-// ─── Rain camera-flash state ────────────────────────────────────────────────
+
 const RAIN_FLASH_INTERVAL_MS = 1800;
-const RAIN_FLASH_DURATION_MS = 16; // ~1 frame
+const RAIN_FLASH_DURATION_MS = 16; 
 let _nextRainFlashAt = 0;
 let _rainFlashActive = false;
 function getCameraShakeOffset(gameState, out) {
@@ -65,7 +65,7 @@ function getCameraShakeOffset(gameState, out) {
   return out;
 }
 function buildRenderMetrics(width, height) {
-  // Keep this function pure but lightweight — caller can cache the result when needed
+  
   const profile = getViewportProfile(width, height);
   if (!profile.isPortrait) {
     return {
@@ -102,10 +102,10 @@ class Renderer {
     this.canvas = canvas;
     this.ctx = ctx;
     this.hud = new HudRenderer();
-    // Camera state
+    
     this._cameraX = 0;
     this._worldZoom = ZOOM_BASE;
-    // Skid layer
+    
     this._skidLayer = null;
     this._screenRenderers = {
       [SCREENS.PREVIEW]: (ctx, w, h, gs, track) =>
@@ -130,7 +130,7 @@ class Renderer {
       }
       return;
     }
-    // Cache render metrics per canvas size to avoid allocating every frame
+    
     if (!this._metricsCache || this._metricsCache.w !== width || this._metricsCache.h !== height) {
       this._metricsCache = {
         w: width,
@@ -142,25 +142,25 @@ class Renderer {
     const { scale } = metrics;
     const logW = metrics.width;
     const logH = metrics.height;
-    // Reuse a small object for camera shake offsets
+    
     if (!this._shake) this._shake = { x: 0, y: 0 };
     getCameraShakeOffset(gameState, this._shake);
-    ctx.imageSmoothingEnabled = false; // safe to keep; minimal cost
-    // Prepare skid layer for current canvas size
+    ctx.imageSmoothingEnabled = false; 
+    
     const dpr = SKID_LAYER_DPR;
     if (!this._skidLayer) {
       this._skidLayer = createSkidLayer(metrics.width, metrics.height, dpr);
-      // ensure internal canvas is allocated
+      
       this._skidLayer.resize(metrics.width, metrics.height, dpr);
     } else this._skidLayer.resize(metrics.width, metrics.height, dpr);
 
-    // Camera player-oriented lookahead: shift camera in direction of lateral velocity
+    
     const carTrackInfo = track.getTrackPoint(gameState.currentZ);
     const desiredCameraX =
       carTrackInfo.x + (gameState.lateralVelocity || 0) * CAMERA_LATERAL_VEL_LOOKAHEAD;
     this._cameraX += (desiredCameraX - this._cameraX) * Math.min(1, CAMERA_LERP * dt);
 
-    // Zoom target based on aero mode and speed (player oriented: speed influences zoom)
+    
     const strategy = getAeroStrategy(gameState.aeroMode);
     const speed = gameState.speed || 0;
     const speedRatio = strategy.maxVz > 0 ? speed / strategy.maxVz : 0;
@@ -168,20 +168,20 @@ class Renderer {
     if (gameState.aeroMode === undefined || gameState.aeroMode === null) {
       targetZoom = ZOOM_BASE;
     } else if (gameState.aeroMode === AERO_MODES.X) {
-      // Mode X: zoom out with speed
+      
       targetZoom = Math.max(ZOOM_MIN, ZOOM_MAX - speedRatio * ZOOM_RANGE);
     } else {
-      // Mode Z: slight zoom in when braking for precision
+      
       targetZoom = ZOOM_BASE - (gameState.isBraking ? BRAKE_ZOOM_BONUS : 0);
       targetZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, targetZoom));
     }
     this._worldZoom += (targetZoom - this._worldZoom) * Math.min(1, ZOOM_LERP * dt);
 
-    // Precompute car draw position (world coords) for skid emission
+    
     const carDrawPos = computeCarDrawPosition(gameState, metrics.width, metrics.height);
     const prevCar = this._prevCarDraw || null;
 
-    // Emit skid mark when slip/lat vel thresholds crossed
+    
     const slipVal = gameState.currentSlip || 0;
     const latV = Math.abs(gameState.lateralVelocity || 0);
     if (prevCar && this._skidLayer) {
@@ -194,14 +194,14 @@ class Renderer {
     }
     this._prevCarDraw = carDrawPos;
 
-    // Apply world transform (scale by metrics.scale * worldZoom). HUD will be drawn separately
+    
     ctx.save();
     if (scale !== 1) ctx.scale(scale * this._worldZoom, scale * this._worldZoom);
     ctx.translate(this._shake.x, this._shake.y);
 
-    // Draw world layers (track, skid layer, obstacles, rivals, car)
+    
     drawTrack(ctx, gameState, track, metrics, this._cameraX);
-    // draw skid marks (persistent)
+    
     if (this._skidLayer) {
       this._skidLayer.drawTo(ctx);
     }
@@ -214,14 +214,14 @@ class Renderer {
     this.hud.draw(ctx, gameState, logW, logH);
     if (telemetry) telemetry.drawHUD(ctx, logW, logH, metrics.isPortrait);
 
-    // ── Rain camera-flash VFX ──────────────────────────────────────────────
+    
     const now = performance.now();
     if (now >= _nextRainFlashAt) {
       _rainFlashActive = true;
       _nextRainFlashAt = now + RAIN_FLASH_INTERVAL_MS + Math.random() * 1200;
     }
     if (_rainFlashActive) {
-      // Scatter 4-8 bright white spots to simulate raindrops hitting lens
+      
       const count = 4 + Math.floor(Math.random() * 5);
       for (let i = 0; i < count; i++) {
         const fx = Math.random() * logW;

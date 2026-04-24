@@ -1,5 +1,5 @@
-// Runtime physics overrides for tuning in-session.
-// Values live only for the current page session and do not persist.
+
+
 const overrides = new Map();
 
 export function setPhysicsValue(key, value) {

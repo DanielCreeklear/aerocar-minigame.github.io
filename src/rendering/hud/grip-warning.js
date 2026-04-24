@@ -17,7 +17,7 @@ function drawGripWarning(ctx, gameState, width, height, warningTick) {
   const glowColor = isOffTrack
     ? HUD_COLORS.offTrackGlow
     : HUD_COLORS.warningGlow;
-  // Pre-render a blurred border into an offscreen canvas and blit it
+  
   const key = `${Math.round(width)}x${Math.round(height)}:${isOffTrack ? 1 : 0}`;
   if (!drawGripWarning._cache) drawGripWarning._cache = new Map();
   let bmp = drawGripWarning._cache.get(key);

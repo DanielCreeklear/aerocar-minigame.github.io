@@ -28,7 +28,7 @@ class EnergyManager {
       const passiveRegen = decelDelta * PASSIVE_REGEN_FACTOR * dt;
       this.battery = Math.min(BATTERY_MAX, this.battery + passiveRegen);
     } else if (!isBoosting && gameState.isDrifting) {
-      // grant a small ERS regen while sustaining a controlled drift
+      
       this.battery = Math.min(BATTERY_MAX, this.battery + DRIFT_ERS_REGEN_RATE * dt);
     }
     this._prevSpeed = speed;

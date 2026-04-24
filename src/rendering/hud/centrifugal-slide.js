@@ -19,7 +19,7 @@ function drawCentrifugalSlideEffect(ctx, gameState, width, height) {
       : 0;
   const baseAlpha = 0.15 + progress * 0.45 + flashIntensity * 0.25;
   ctx.save();
-  // Cache gradient per dimensions and side to avoid reallocation
+  
   if (!drawCentrifugalSlideEffect._gradCache) drawCentrifugalSlideEffect._gradCache = {};
   const side = slideLeft ? "L" : "R";
   const key = `${width}x${height}@${side}`;

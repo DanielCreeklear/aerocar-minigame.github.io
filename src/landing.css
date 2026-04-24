@@ -1,5 +1,5 @@
 
-/* Minimal, mobile-first landing styles */
+
 :root{--bg:#07111a;--accent:#ff6a3d;--muted:#98a0b3}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:#fff}

@@ -77,11 +77,11 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
     centrifugalForce: forces.centrifugalForce,
     effectiveGrip: forces.effectiveGrip,
   });
-  // Attach lateral diagnostics if present
+  
   if (lateralResult && lateralResult.diag) {
     physicsTelemetry.lateral = lateralResult.diag;
   }
-  // Emit a simple lateral warning into telemetry buffer when configured.
+  
   if (physicsTelemetry.lateral && TELEMETRY_LATERAL_WARN_ENABLED) {
     const lr = physicsTelemetry.lateral;
     if (

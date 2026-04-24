@@ -3,7 +3,7 @@ import { resetAllOverrides, setPhysicsValue, getAllOverrides } from "../../const
 import { GameState } from "../GameState.js";
 import { updateCarPhysics } from "../../systems/physics/index.js";
 
-// Minimal UI helpers (no external libs)
+
 function el(tag, attrs = {}, children = []) {
   const d = document.createElement(tag);
   Object.entries(attrs).forEach(([k, v]) => {
@@ -20,22 +20,22 @@ function el(tag, attrs = {}, children = []) {
 export default class PhysicsSandboxState extends GameState {
   constructor(deps) {
     super();
-    // deps: { getGameState, canvas, track, callbacks }
+    
     this._deps = deps;
     this.container = null;
     this.sliders = [];
     this.running = false;
-    this.simState = null; // lightweight sim state
+    this.simState = null; 
   }
 
   onEnter() {
-    // build container (floating panel positioned relative to game canvas)
+    
     this.container = el('div', {});
-    // reposition logic bound for events
+    
     this._repositionBound = this._reposition.bind(this);
 
     const panel = el('div', { style: { width: '360px', background: 'rgba(0,0,0,0.8)', color: '#fff', padding: '12px', borderRadius: '6px', fontFamily: 'monospace', fontSize: '13px' } });
-    // header with drag handle and auto-position control
+    
     const header = el('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'grab', marginBottom: '8px', userSelect: 'none' } });
     const title = el('div', { style: { fontWeight: 'bold', fontSize: '14px' } }, ['Physics Sandbox']);
     const hdrControls = el('div', { style: { display: 'flex', gap: '6px', alignItems: 'center' } });
@@ -91,18 +91,18 @@ export default class PhysicsSandboxState extends GameState {
     this.container.appendChild(simCanvas);
     document.body.appendChild(this.container);
 
-    // initial positioning and sizing based on game canvas
+    
     try {
       window.requestAnimationFrame(this._repositionBound);
       window.addEventListener('resize', this._repositionBound);
       window.addEventListener('scroll', this._repositionBound, true);
     } catch (e) {
-      // ignore if environment doesn't support
+      
     }
 
-    // ESC key should close the sandbox and go back to menu
+    
     this._onKeyDownBound = (e) => {
-      // capture phase listener; log for debugging if key isn't being received
+      
       try {
         if (e.key === 'Escape' || e.key === 'Esc') {
           console.debug && console.debug('[Sandbox] ESC pressed');
@@ -110,7 +110,7 @@ export default class PhysicsSandboxState extends GameState {
           this.onExit();
           return;
         }
-        // alternate shortcut: Shift + D (useful when ESC is captured elsewhere)
+        
         if (e.shiftKey && e.code === 'KeyD') {
           console.debug && console.debug('[Sandbox] Shift+D pressed (alternate close)');
           try { this._deps.callbacks.backToMenu(); } catch (err) {}
@@ -118,13 +118,13 @@ export default class PhysicsSandboxState extends GameState {
           return;
         }
       } catch (err) {
-        // swallow
+        
       }
     };
-    // Use capture to ensure we receive the key event even if other elements call stopPropagation
+    
     window.addEventListener('keydown', this._onKeyDownBound, true);
 
-    // drag handlers for header
+    
     this._dragState = null;
     this._manualPosition = false;
     this._onPointerMoveBound = this._onPointerMove.bind(this);
@@ -136,7 +136,7 @@ export default class PhysicsSandboxState extends GameState {
       window.requestAnimationFrame(this._repositionBound);
     });
 
-    // sim state: shallow copy of a car with minimal fields
+    
     this.simState = this._makeSimState();
     this.running = true;
     this._tick = this._tick.bind(this);
@@ -145,8 +145,8 @@ export default class PhysicsSandboxState extends GameState {
 
   _reposition() {
     if (this._manualPosition) {
-      // If user manually positioned the panel, don't override it, but ensure
-      // it stays within the viewport.
+      
+      
       try {
         const winW = window.innerWidth;
         const winH = window.innerHeight;
@@ -168,12 +168,12 @@ export default class PhysicsSandboxState extends GameState {
     if (canvas && canvas.getBoundingClientRect) {
       rect = canvas.getBoundingClientRect();
     }
-    // desired sim canvas width is up to half of the game canvas width
+    
     const simWidth = Math.max(320, Math.min(900, Math.round(rect.width * 0.5)));
     const totalW = panelWidth + simWidth + pad * 2;
     const totalH = Math.max(360, Math.min(winH - 24, Math.round(rect.height - pad * 2)));
 
-    // prefer placing to the right of the game canvas if space allows, otherwise left, otherwise top-right overlay
+    
     const spaceRight = Math.max(0, winW - rect.right - pad);
     const spaceLeft = Math.max(0, rect.left - pad);
     let left;
@@ -183,7 +183,7 @@ export default class PhysicsSandboxState extends GameState {
     } else if (spaceLeft >= totalW) {
       left = rect.left - totalW - pad;
     } else {
-      // overlay near top-right of canvas but constrained within viewport
+      
       left = Math.max(pad, Math.min(winW - totalW - pad, rect.right - totalW));
       top = Math.max(pad, rect.top + pad);
     }
@@ -202,7 +202,7 @@ export default class PhysicsSandboxState extends GameState {
       background: 'rgba(0,0,0,0.0)'
     });
 
-    // style panel and sim canvas sizes
+    
     const panel = this.container.children[0];
     const sim = this.simCanvas;
     if (panel) Object.assign(panel.style, { width: `${panelWidth}px`, height: `${totalH - pad * 2}px`, overflow: 'auto' });
@@ -214,7 +214,7 @@ export default class PhysicsSandboxState extends GameState {
   }
 
   _onHeaderPointerDown(e) {
-    // start drag
+    
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch (err) {}
@@ -228,7 +228,7 @@ export default class PhysicsSandboxState extends GameState {
     };
     window.addEventListener('pointermove', this._onPointerMoveBound);
     window.addEventListener('pointerup', this._onPointerUpBound);
-    // change cursor
+    
     try { e.currentTarget.style.cursor = 'grabbing'; } catch (err) {}
   }
 
@@ -278,7 +278,7 @@ export default class PhysicsSandboxState extends GameState {
   }
 
   _makeSimState() {
-    // minimal hull for physics functions
+    
     return {
       car: {
         x: 0,
@@ -293,7 +293,7 @@ export default class PhysicsSandboxState extends GameState {
         spin: false,
         slip: 0,
       },
-      // provide a fake track curvature that alternates
+      
       track: {
         sample: (z) => ({ curvature: Math.sin(z * 0.008) * 0.004 })
       }
@@ -302,15 +302,15 @@ export default class PhysicsSandboxState extends GameState {
 
   _tick(ts) {
     if (!this.running) return;
-    // advance sim a fixed dt for stability
+    
     const dt = 1 / 60;
     const sim = this.simState;
     const curv = sim.track.sample(sim.car.z).curvature;
-    // compute longitudinal
+    
     const { lapCompleted, physicsTelemetry } = updateCarPhysics(sim, sim.track, dt);
-    // render simple view
+    
     this._renderSim(sim, physicsTelemetry);
-    // advance z for loop
+    
     sim.car.z += sim.car.speed * dt * 0.6;
     if (sim.car.z > 10000) sim.car.z = 0;
     requestAnimationFrame(this._tick);
@@ -321,10 +321,10 @@ export default class PhysicsSandboxState extends GameState {
     const w = this.simCanvas.width || Math.max(640, window.innerWidth - 420);
     const h = this.simCanvas.height || Math.max(360, window.innerHeight - 120);
     c.clearRect(0, 0, w, h);
-    // draw track center line
+    
     c.fillStyle = '#333';
     c.fillRect(0, h / 2 - 80, w, 160);
-    // draw car
+    
     const cx = w / 2 + sim.car.lateralOffset;
     const cy = h / 2;
     c.fillStyle = '#ff4646';
@@ -336,7 +336,7 @@ export default class PhysicsSandboxState extends GameState {
     c.fillRect(-18, -32, 36, 64);
     c.restore();
 
-    // telemetry text
+    
     c.fillStyle = '#fff';
     c.font = '12px monospace';
     const lines = [
@@ -360,7 +360,7 @@ export default class PhysicsSandboxState extends GameState {
       window.removeEventListener('keydown', this._onKeyDownBound, true);
     } catch (e) {}
     try {
-      // remove any drag listeners and header pointerdown
+      
       window.removeEventListener('pointermove', this._onPointerMoveBound);
       window.removeEventListener('pointerup', this._onPointerUpBound);
       const header = this.container?.children?.[0]?.children?.[0];

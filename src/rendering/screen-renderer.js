@@ -47,23 +47,23 @@ function drawButton(ctx, x, y, w, h, label, isSelected) {
   }
 }
 function drawSmallButton(ctx, x, y, w, h, label, isSelected) {
-  // Compact button used for headers (VER TUDO)
+  
   ctx.save();
   const shadow = 2;
-  // shadow
+  
   ctx.fillStyle = R.buttonShadow;
   ctx.fillRect(x + shadow, y + shadow, w, h);
-  // body
+  
   ctx.fillStyle = isSelected ? R.gold : R.buttonBody;
   ctx.fillRect(x, y, w, h);
-  // outline
+  
   ctx.strokeStyle = R.textHeader;
   ctx.lineWidth = 1;
   ctx.strokeRect(x, y, w, h);
-  // label
+  
   const sz = Math.max(10, Math.min(12, h * 0.45));
   ctx.font = `700 ${sz}px ${R.font}`;
-  // Use white text for small buttons
+  
   ctx.fillStyle = R.text;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -167,11 +167,11 @@ function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
     const ry = y + i * (rowH + 4);
     const isHL = i === hlIdx;
     const entry = rankings && rankings[i];
-    // Always draw opaque background to prevent ghost frames bleeding through
+    
     if (isHL) {
       ctx.fillStyle = R.buttonBody;
       ctx.fillRect(x, ry, w, rowH);
-      // Yellow left accent strip for player highlight
+      
       ctx.fillStyle = R.gold;
       ctx.fillRect(x, ry, accentW, rowH);
     } else {
@@ -180,7 +180,7 @@ function drawResultRows(ctx, x, y, w, rowH, rankings, slotCount, hlIdx) {
     }
     const mid = ry + rowH * 0.5;
     const sz = Math.max(11, Math.min(16, rowH * 0.45));
-    // Reset font and alignment before drawing to prevent HUD state inheritance
+    
     ctx.save();
     ctx.font = `700 ${sz}px ${R.font}`;
     ctx.textAlign = "left";
@@ -366,9 +366,9 @@ function drawStartScreen(ctx, w, h, gameState, track) {
       drawGyroscopeWarning(ctx, pad, btnStartY + btnH + btnGap + 4, btnW);
     }
     const rkY = h * 0.63;
-    // Draw header and small "VER TUDO" button to access full leaderboard
+    
     sectionHeader(ctx, pad, rkY, w - pad * 2, "RANKING");
-    // compact responsive header button for "VER TUDO"
+    
     const hdrBtnW = Math.min(72, Math.round(w * 0.14));
     const hdrBtnH = 20;
     const hdrBtnX = w - pad - hdrBtnW;
@@ -420,7 +420,7 @@ function drawStartScreen(ctx, w, h, gameState, track) {
       drawGyroscopeWarning(ctx, pad, btnStartY + btnH + btnGap, leftW);
     }
     sectionHeader(ctx, rightX, pad + 8, rightW, "RANKING");
-    // small "VER TUDO" visual button on the top-right of the right column
+    
     const hdrBtnW = Math.min(72, Math.round(w * 0.12));
     const hdrBtnH = 18;
     const hdrBtnX = rightX + rightW - hdrBtnW;
@@ -674,11 +674,11 @@ function drawLeaderboardScreen(ctx, w, h, gameState) {
   ctx.lineTo(w - pad, pad + titleSz + 6);
   ctx.stroke();
 
-  // Prev / Next controls on the right. Use smaller, responsive sizing for mobile
+  
   const ctrlBtnW = Math.min(72, Math.round(w * 0.14));
   const ctrlBtnH = isPortrait ? 24 : 18;
   const gap = 6;
-  // Place controls just below the title divider to avoid overlap
+  
   const lineY = pad + titleSz + 6;
   const nextBtnX = w - pad - ctrlBtnW;
   const prevBtnX = nextBtnX - (ctrlBtnW + gap);
@@ -689,13 +689,13 @@ function drawLeaderboardScreen(ctx, w, h, gameState) {
     drawSmallButton(ctx, nextBtnX, ctrlBtnY, ctrlBtnW, ctrlBtnH, "PROX", false);
   }
 
-  // page label removed per user request
+  
 
-  // Ensure the rank list starts below the controls and title
+  
   const topY = showPagingControls ? Math.max(pad + titleSz + 18, ctrlBtnY + ctrlBtnH + 6) : (pad + titleSz + 18);
   const bottomH = 40;
   const availH = h - topY - bottomH - pad;
-  // reduce page size on narrow screens so rows don't overlap and remain tappable
+  
   const rowH = Math.max(20, Math.min(48, availH / effectivePageSize - 4));
   const offset = curPage * effectivePageSize;
   drawRankListPaged(ctx, pad, topY, w - pad * 2, rowH, rankings, effectivePageSize, offset);
@@ -765,7 +765,7 @@ function drawSettingsScreen(ctx, w, h, gameState) {
 }
 export {
   drawStartScreen,
-  // full leaderboard screen (exported so states can call it)
+  
   drawLeaderboardScreen,
   drawGameOverScreen,
   drawTrackPreviewScreen,

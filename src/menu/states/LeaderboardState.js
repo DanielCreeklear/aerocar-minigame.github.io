@@ -13,12 +13,12 @@ export class LeaderboardState extends GameState {
 
   render(ctx, w, h) {
     drawLeaderboardScreen(ctx, w, h, this._deps.getGameState(), this._deps.track);
-    // Back button occupies left half of footer for easy tap
+    
     const footerH = 40;
     this._backBtn.setRect(0, h - footerH, w * 0.5, footerH);
     this._backBtn.renderPressOverlay(ctx);
 
-    // Prev/Next controls are drawn in the renderer on the top-right; we need matching hit areas
+    
     const pad = Math.max(20, w * 0.05);
     const titleSz = Math.max(18, Math.min(36, w * 0.06));
     const ctrlBtnW = Math.min(72, Math.round(w * 0.14));

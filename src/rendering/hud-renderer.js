@@ -15,9 +15,9 @@ const TOUCH_BOOST_RATIO = 0.65;
 const R4_FONT =
   "'Archivo Narrow','Barlow Condensed','Roboto Condensed',sans-serif";
 
-// --- R4 Scanline overlay (CRT effect) ---
+
 function drawScanlines(ctx, width, height) {
-  // Lightweight scanline overlay: single semi-transparent rectangle
+  
   ctx.save();
   ctx.globalAlpha = 0.04;
   ctx.fillStyle = "#000000";
@@ -25,7 +25,7 @@ function drawScanlines(ctx, width, height) {
   ctx.restore();
 }
 
-// --- BRK / BST input bars (bottom corners) ---
+
 function drawInputBars(ctx, gameState, width, height) {
   const { isBoosting, isBraking } = gameState;
   const barW = Math.max(6, Math.min(10, width * 0.015));
@@ -36,7 +36,7 @@ function drawInputBars(ctx, gameState, width, height) {
 
   ctx.save();
 
-  // BRK bar (left)
+  
   const brkX = margin;
   ctx.fillStyle = "rgba(40,0,0,0.60)";
   ctx.fillRect(brkX, barY, barW, barH);
@@ -56,7 +56,7 @@ function drawInputBars(ctx, gameState, width, height) {
   ctx.textBaseline = "top";
   ctx.fillText("BRK", brkX + barW / 2, barY + barH + 3);
 
-  // BST bar (right)
+  
   const bstX = width - margin - barW;
   ctx.fillStyle = "rgba(0,20,40,0.60)";
   ctx.fillRect(bstX, barY, barW, barH);
@@ -104,7 +104,7 @@ function drawRescueBanner(ctx, gameState, width, height) {
   const tx = width * 0.5;
   const ty = by + bh * 0.5;
   const msg = "!!  PENALIDADE — RESGATE  !!";
-  // Chromatic aberration: offset R and B channels
+  
   ctx.globalCompositeOperation = "source-over";
   ctx.fillStyle = "rgba(255,0,0,0.55)";
   ctx.fillText(msg, tx - 2, ty);

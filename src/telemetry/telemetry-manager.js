@@ -24,7 +24,7 @@ class TelemetryManager {
   constructor() {
     this._enabled = _isDevMode();
     if (!this._enabled) {
-      // keep very small memory footprint and make all methods no-op
+      
       this._buf = null;
       this._head = 0;
       this._count = 0;
@@ -32,7 +32,7 @@ class TelemetryManager {
       this._hudVisible = false;
       return;
     }
-    // enabled: allocate buffers
+    
     this._buf = new Array(MAX_SAMPLES).fill(null);
     this._head = 0;
     this._count = 0;
@@ -72,7 +72,7 @@ class TelemetryManager {
       vx: gameState.lateralVelocity,
       curvature: gameState.currentCurvature,
       slip: gameState.currentSlip,
-      // lateral diagnostics (flattened for quick inspection)
+      
       vxDemand: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.vxDemand : 0,
       gripLimit: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.gripLimit : 0,
       gripRatio: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.gripRatio : 0,
@@ -82,14 +82,14 @@ class TelemetryManager {
       driftValue: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.drift : 0,
       centrifugalForce: physicsTelemetry ? physicsTelemetry.centrifugalForce : 0,
       effectiveGrip: physicsTelemetry ? physicsTelemetry.effectiveGrip : 0,
-      // raw lateral object if callers want full diagnostics
+      
       lateral: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral : null,
-      // transient lateral warning field (string or null)
+      
       lateralWarning: physicsTelemetry && physicsTelemetry.lateralWarning ? physicsTelemetry.lateralWarning : null,
       aeroMode: gameState.aeroMode,
       battery: gameState.battery,
       isOffTrack: gameState.isOffTrack ? 1 : 0,
-      // longitudinal derivatives and rates
+      
       accel,
       jerk,
       headingRate,
@@ -219,7 +219,7 @@ class TelemetryManager {
     for (const s of samples) {
       const row = fields.map((f) => {
         const v = s[f];
-        // escape quotes
+        
         const str = esc(v).replace(/"/g, '""');
         return `"${str}"`;
       });

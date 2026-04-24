@@ -10,7 +10,7 @@ const BADGE_BOTTOM_MARGIN_RATIO = 0.025;
 const BADGE_BOTTOM_MARGIN_MIN = 8;
 const BADGE_BOTTOM_MARGIN_MAX = 22;
 const BADGE_RADIUS = 0;
-// cache rendered badge canvases by size+mode to avoid shadowBlur draw per-frame
+
 const _badgeCache = new Map();
 function drawAeroBadge(ctx, gameState, width, height, touchReserve = 0) {
   const isX = gameState.aeroMode === AERO_MODES.X;
@@ -33,11 +33,11 @@ function drawAeroBadge(ctx, gameState, width, height, touchReserve = 0) {
     ? HUD_COLORS.badgeModeXBorder
     : HUD_COLORS.badgeModeZBorder;
   const glowColor = isX ? HUD_COLORS.badgeModeXGlow : HUD_COLORS.badgeModeZGlow;
-  // try cache
+  
   const key = `${Math.round(badgeW)}x${Math.round(badgeH)}:${isX ? 1 : 0}`;
   let bmp = _badgeCache.get(key);
   if (!bmp) {
-    // create offscreen canvas
+    
     let canvas;
     if (typeof OffscreenCanvas !== "undefined") {
       canvas = new OffscreenCanvas(Math.round(badgeW), Math.round(badgeH));
@@ -47,7 +47,7 @@ function drawAeroBadge(ctx, gameState, width, height, touchReserve = 0) {
       canvas.height = Math.round(badgeH);
     }
     const cctx = canvas.getContext("2d");
-    // draw badge at 0,0 on offscreen
+    
     cctx.beginPath();
     cctx.rect(0, 0, badgeW, badgeH);
     cctx.shadowColor = glowColor;

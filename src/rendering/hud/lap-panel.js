@@ -1,4 +1,4 @@
-// Neo-Retro R4 — Telemetry Block (top-right)
+
 import { formatTime } from "../../utils/math.js";
 
 const R4_ACCENT = "#FDB80B";
@@ -17,22 +17,22 @@ function drawLapPanel(ctx, gameState, width, height) {
 
   ctx.save();
 
-  // 1. Solid shadow
+  
   ctx.fillStyle = R4_SHADOW;
   ctx.fillRect(x + 4, y + 4, panelW, panelH);
 
-  // 2. Card body
+  
   ctx.fillStyle = R4_BG;
   ctx.fillRect(x, y, panelW, panelH);
 
-  // 3. Left accent stripe
+  
   ctx.fillStyle = R4_ACCENT;
   ctx.fillRect(x, y, 3, panelH);
 
   const padX = x + 10;
   const right = x + panelW - 8;
 
-  // 4. LAP label + count
+  
   const lapLabelSz = Math.max(8, Math.min(11, width * 0.018));
   ctx.font = `italic bold ${lapLabelSz}px ${R4_FONT}`;
   ctx.fillStyle = R4_ACCENT;
@@ -50,7 +50,7 @@ function drawLapPanel(ctx, gameState, width, height) {
     y + 5,
   );
 
-  // 5. Current time (monospace)
+  
   const timeSz = Math.max(18, Math.min(28, panelH * 0.32));
   ctx.font = `italic bold ${timeSz}px ${R4_MONO}`;
   ctx.fillStyle = "#FFFFFF";
@@ -62,7 +62,7 @@ function drawLapPanel(ctx, gameState, width, height) {
     y + 6 + lapLabelSz + 4,
   );
 
-  // Separator line
+  
   const divY = y + 6 + lapLabelSz + 4 + timeSz + 4;
   ctx.strokeStyle = "rgba(253,184,11,0.25)";
   ctx.lineWidth = 1;
@@ -71,7 +71,7 @@ function drawLapPanel(ctx, gameState, width, height) {
   ctx.lineTo(x + panelW - 6, divY);
   ctx.stroke();
 
-  // 6. RECORD row
+  
   const recLabelSz = Math.max(7, Math.min(9, width * 0.015));
   const recTimeSz = Math.max(10, Math.min(14, panelH * 0.15));
   const recY = divY + 3;
@@ -94,7 +94,7 @@ function drawLapPanel(ctx, gameState, width, height) {
   ctx.textAlign = "right";
   ctx.fillText(bestTxt, right, recY);
 
-  // 7. Last lap flash
+  
   if (gameState.lastLapFlashTimer > 0 && gameState.lastLapTime != null) {
     const alpha = Math.min(1, gameState.lastLapFlashTimer / 2.0);
     const flashH = 20;

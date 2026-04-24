@@ -1,11 +1,15 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
 
-// Use a relative base so the built site works from GitHub Pages subpaths
-// and when opening files locally. This ensures asset URLs in dist are
-// relative (./assets/...) instead of absolute (/assets/...).
+
+
+
+
+const base =
+  process.env.NODE_ENV === "production" ? "/f1-2026-minigame/" : "/";
+
 export default defineConfig({
-  base: "./",
+  base,
   build: {
     rollupOptions: {
       input: {

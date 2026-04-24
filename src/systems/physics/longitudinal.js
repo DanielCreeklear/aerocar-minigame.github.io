@@ -13,7 +13,7 @@ import {
 import { getPhysicsValue } from "../../constants/physics-overrides.js";
 let _brakeRamp = 0;
 function computeForwardVelocity(gameState, dt, strategy) {
-  // allow runtime overrides for key longitudinal constants
+  
   const accelX = getPhysicsValue("VZ_ACCEL_MODE_X", strategy.name === 'X' ? strategy.accel : undefined);
   const accelZ = getPhysicsValue("VZ_ACCEL_MODE_Z", strategy.name === 'Z' ? strategy.accel : undefined);
   const dragX = getPhysicsValue("VZ_DRAG_MODE_X", strategy.name === 'X' ? strategy.drag : undefined);
@@ -30,7 +30,7 @@ function computeForwardVelocity(gameState, dt, strategy) {
   let vz = gameState.speed || 0;
   if (!gameState.isSpinning) {
     const accelFactor = gameState.isOffTrack ? offTrackAccelFactor : 1;
-    // determine accel/drag/max based on strategy name or fall back to strategy values
+    
     const maxVz = strategy.name === 'X' ? maxX ?? strategy.maxVz : maxZ ?? strategy.maxVz;
     const accel = strategy.name === 'X' ? accelX ?? strategy.accel : accelZ ?? strategy.accel;
     const drag = strategy.name === 'X' ? dragX ?? strategy.drag : dragZ ?? strategy.drag;
@@ -62,7 +62,7 @@ function computeForwardVelocity(gameState, dt, strategy) {
   } else {
     _brakeRamp = 0;
   }
-  // overspeed handling
+  
   const maxVzActive = strategy.name === 'X' ? (maxX ?? strategy.maxVz) : (maxZ ?? strategy.maxVz);
   if (vz > maxVzActive) {
     vz = maxVzActive + (vz - maxVzActive) * Math.pow(overspeedDrag, dt);

@@ -1,5 +1,5 @@
-// Persistent skid marks layer using an offscreen canvas.
-// Skids persist for the whole session (per user's choice).
+
+
 function createSkidLayer(width, height, dpr = 1) {
   let canvas = null;
   let ctx = null;
@@ -22,7 +22,7 @@ function createSkidLayer(width, height, dpr = 1) {
       ctx = canvas.getContext('2d');
     }
     ctx.setTransform(_dpr, 0, 0, _dpr, 0, 0);
-    // start clear
+    
     ctx.clearRect(0, 0, w, h);
   }
 
@@ -30,7 +30,7 @@ function createSkidLayer(width, height, dpr = 1) {
     _ensure(wReq, hReq, dprReq);
   }
 
-  // Add a skid line between two world coordinates (already in world pixels)
+  
   function addSkid(x1, y1, x2, y2, intensity = 1, color = 'rgba(20,20,20,0.9)') {
     if (!ctx) return;
     ctx.save();
@@ -47,11 +47,11 @@ function createSkidLayer(width, height, dpr = 1) {
 
   function drawTo(targetCtx) {
     if (!canvas) return;
-    // targetCtx is already scaled to world units when called
+    
     try {
       targetCtx.drawImage(canvas, 0, 0, canvas.width / _dpr, canvas.height / _dpr);
     } catch (e) {
-      // fallback: try drawing via bitmap
+      
       if (canvas instanceof OffscreenCanvas && canvas.convertToBlob) {
         canvas.convertToBlob().then((b) => {
           const img = new Image();

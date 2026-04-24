@@ -51,10 +51,10 @@ class Game {
     this.energyManager = new EnergyManager();
     this.gameLoop = new GameLoop();
     this.telemetry = new TelemetryManager();
-    // expose for sandbox plumbing when running locally
+    
     window.__AEROCAR_GAME__ = this;
-    // remember previous screen when opening the physics sandbox so we can restore
-    // the user's context (race, start, etc.) on close
+    
+    
     this._prevScreenBeforeSandbox = null;
     this.trackSeed = TRACK_SEED;
     this.totalSegments = TOTAL_SEGMENTS;
@@ -232,17 +232,17 @@ class Game {
         onRaceExit: () => {},
         openSettings: () => this._setScreen(SCREENS.SETTINGS),
         openPhysicsSandbox: () => {
-          // remember previous screen so Escape/back returns properly
+          
           try { this._prevScreenBeforeSandbox = this.gameState ? this.gameState.currentScreen : null; } catch (e) {}
           this._setScreen(SCREENS.PHYSICS_SANDBOX);
         },
         openLeaderboard: () => {
-          // reset to first page when opening
+          
           if (this.gameState) this.gameState.leaderboardPage = 0;
           this._setScreen(SCREENS.LEADERBOARD);
         },
       changeLeaderboardPage: (delta) => {
-        // delta: -1 or +1
+        
         if (!this.gameState) return;
         const PAGE_SIZE = 10;
         const total = (this.gameState.rankings || []).length;
@@ -254,7 +254,7 @@ class Game {
         this.gameState.leaderboardPage = next;
       },
         backToMenu: () => {
-          // if we opened the sandbox from another screen, restore it; otherwise go to START
+          
           const target = this._prevScreenBeforeSandbox || SCREENS.START;
           this._prevScreenBeforeSandbox = null;
           this._setScreen(target);
@@ -542,7 +542,7 @@ class Game {
       entryY = rkStart + 4 * (rowH + 4);
       entryW = rightW - 34;
     }
-    // font-size >= 16px prevents iOS Safari from zooming on focus
+    
     const fs = Math.max(16, Math.min(22, cw * 0.022));
     Object.assign(this._nameInput.style, {
       left: `${Math.round(entryX)}px`,
@@ -563,7 +563,7 @@ class Game {
       this._nameInput.blur();
       this._nameInput.readOnly = true;
     }
-    // Release any CSS size lock that was applied while the keyboard was open.
+    
     this.canvas.style.width = "";
     this.canvas.style.height = "";
   }
