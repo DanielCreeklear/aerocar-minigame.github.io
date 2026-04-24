@@ -1,4 +1,3 @@
-import { MAX_RANKINGS } from "./firebase-config.js";
 function _validateEntry(e) {
   return e && typeof e.time === "number" && typeof e.name === "string";
 }
@@ -11,7 +10,7 @@ function _sanitizeName(raw) {
   );
 }
 function _sortAndTrim(entries) {
-  return [...entries].sort((a, b) => a.time - b.time).slice(0, MAX_RANKINGS);
+  return [...entries].sort((a, b) => a.time - b.time);
 }
 export class RankingService {
   constructor(repository) {

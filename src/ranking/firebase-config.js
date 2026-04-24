@@ -9,4 +9,4 @@ export const firebaseConfig = {
 };
 export const RANKINGS_COLLECTION = "rankings";
 export const RANKINGS_DOC = "leaderboard";
-export const MAX_RANKINGS = 10;
+
