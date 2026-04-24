@@ -3,6 +3,7 @@ import {
   RIVAL_SPEED_MIN,
   RIVAL_SPEED_MAX,
 } from "../constants/index.js";
+import { getPhysicsValue } from "../constants/physics-overrides.js";
 const RIVAL_LIVERIES = [
   { body: "#C0C0C0", accent: "#1A1A1A" }, 
   { body: "#1E3A8A", accent: "#CC0000" }, 
@@ -14,13 +15,15 @@ function createRivals(count = RIVAL_COUNT, track) {
   const rivals = [];
   const n = count;
   const lapLength = track.lapLength;
-  const speedRange = RIVAL_SPEED_MAX - RIVAL_SPEED_MIN;
+  const speedMin = getPhysicsValue("RIVAL_SPEED_MIN", RIVAL_SPEED_MIN);
+  const speedMax = getPhysicsValue("RIVAL_SPEED_MAX", RIVAL_SPEED_MAX);
+  const speedRange = speedMax - speedMin;
   for (let i = 0; i < n; i++) {
     const rank = i + 1; 
     const startFraction = (i + 0.5) / n;
     const startZ = lapLength * startFraction;
     const speed =
-      n === 1 ? RIVAL_SPEED_MAX : RIVAL_SPEED_MAX - (speedRange * i) / (n - 1);
+      n === 1 ? speedMax : speedMax - (speedRange * i) / (n - 1);
     rivals.push({
       id: i,
       rank,
