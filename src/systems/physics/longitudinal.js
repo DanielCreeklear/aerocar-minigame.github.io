@@ -9,9 +9,9 @@ import {
   BRAKE_RAMP_RATE,
   OFF_TRACK_ACCEL_FACTOR,
   OVERSPEED_DRAG,
+  BOOST_BATTERY_DRAIN,
 } from "../../constants/index.js";
 import { getPhysicsValue } from "../../constants/physics-overrides.js";
-let _brakeRamp = 0;
 function computeForwardVelocity(gameState, dt, strategy) {
   
   const accelX = getPhysicsValue("VZ_ACCEL_MODE_X", strategy.name === 'X' ? strategy.accel : undefined);
@@ -21,7 +21,8 @@ function computeForwardVelocity(gameState, dt, strategy) {
   const maxX = getPhysicsValue("VZ_MAX_MODE_X", strategy.name === 'X' ? strategy.maxVz : undefined);
   const maxZ = getPhysicsValue("VZ_MAX_MODE_Z", strategy.name === 'Z' ? strategy.maxVz : undefined);
   const boostGain = getPhysicsValue("BOOST_BASE_GAIN", BOOST_BASE_GAIN);
-  const boostDrain = getPhysicsValue("BOOST_BATTERY_DRAIN", BOOST_BASE_GAIN === undefined ? 0.4 : BOOST_BASE_GAIN);
+  // use the proper default BOOST_BATTERY_DRAIN constant (not BOOST_BASE_GAIN)
+  const boostDrain = getPhysicsValue("BOOST_BATTERY_DRAIN", undefined);
   const boostMin = getPhysicsValue("BOOST_MIN_EFFECT", BOOST_MIN_EFFECT);
   const boostSlipFactor = getPhysicsValue("BOOST_SLIP_EFFECT_FACTOR", BOOST_SLIP_EFFECT_FACTOR);
   const offTrackAccelFactor = getPhysicsValue("OFF_TRACK_ACCEL_FACTOR", OFF_TRACK_ACCEL_FACTOR);
@@ -51,16 +52,19 @@ function computeForwardVelocity(gameState, dt, strategy) {
       const boostTaper = Math.max(0, 1 - boostRatio * boostRatio);
       vz = Math.min(maxBoostVz, vz + boostAccel * boostTaper * dt);
     }
-    gameState.battery = Math.max(0, gameState.battery - boostDrain * (gameState.boostThrottle || 1) * dt);
+    // EnergyManager owns battery state; do not mutate gameState.battery here.
+    // The EnergyManager will handle drain and sync back to gameState each frame.
   }
   if (gameState.isBraking && vz > 0) {
-    _brakeRamp = Math.min(1, _brakeRamp + dt * BRAKE_RAMP_RATE);
-    const expRamp = _brakeRamp * _brakeRamp;
+    // brake ramp is now stored on the gameState so multiple simulations
+    // running in parallel don't share module-level state.
+    gameState.brakeRamp = Math.min(1, (gameState.brakeRamp || 0) + dt * BRAKE_RAMP_RATE);
+    const expRamp = (gameState.brakeRamp || 0) * (gameState.brakeRamp || 0);
     const effectiveDecel =
       MANUAL_BRAKE_DECEL_SOFT + (MANUAL_BRAKE_DECEL - MANUAL_BRAKE_DECEL_SOFT) * expRamp;
     vz *= Math.pow(effectiveDecel, dt);
   } else {
-    _brakeRamp = 0;
+    gameState.brakeRamp = 0;
   }
   
   const maxVzActive = strategy.name === 'X' ? (maxX ?? strategy.maxVz) : (maxZ ?? strategy.maxVz);

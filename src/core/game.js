@@ -265,24 +265,17 @@ class Game {
   }
   _createState(screen) {
     const deps = this._makeStateDeps();
-    switch (screen) {
-      case SCREENS.PREVIEW:
-        return new TrackPreviewState(deps);
-      case SCREENS.START:
-        return new StartMenuState(deps);
-      case SCREENS.RACE:
-        return new RaceState(deps);
-      case SCREENS.GAME_OVER:
-        return new GameOverState(deps);
-      case SCREENS.LEADERBOARD:
-        return new LeaderboardState(deps);
-      case SCREENS.SETTINGS:
-        return new SettingsState(deps);
-      case SCREENS.PHYSICS_SANDBOX:
-        return new PhysicsSandboxState(deps);
-      default:
-        return null;
-    }
+    const STATE_MAP = {
+      [SCREENS.PREVIEW]: TrackPreviewState,
+      [SCREENS.START]: StartMenuState,
+      [SCREENS.RACE]: RaceState,
+      [SCREENS.GAME_OVER]: GameOverState,
+      [SCREENS.LEADERBOARD]: LeaderboardState,
+      [SCREENS.SETTINGS]: SettingsState,
+      [SCREENS.PHYSICS_SANDBOX]: PhysicsSandboxState,
+    };
+    const Cls = STATE_MAP[screen];
+    return Cls ? new Cls(deps) : null;
   }
   _initStateManager() {
     this.stateManager = new StateManager();
@@ -446,11 +439,13 @@ class Game {
     }
     this.gameState.currentTime = Date.now() - this.gameState.startTime;
     this.energyManager.update(this.gameState, dt);
+    // EnergyManager is the authoritative owner of battery state; sync after update
     this.gameState.battery = this.energyManager.getCurrentCharge();
+    // cache the current track point onto gameState to allow renderers and
+    // physics to reuse the object and avoid repeated allocations
     const currentTrackPoint = this.track.getTrackPoint(this.gameState.currentZ);
     this.gameState.currentTrackPoint = currentTrackPoint;
-    this.gameState.currentCurvature =
-      currentTrackPoint.rawCurve ?? currentTrackPoint.curve ?? 0;
+    this.gameState.currentCurvature = currentTrackPoint.rawCurve ?? currentTrackPoint.curve ?? 0;
     this.gameState.isInModeXZone = currentTrackPoint.isModeXZone || false;
     const CURVE_LOOKAHEAD = 400;
     const upcomingFeatures = this.track.getUpcomingFeatures(

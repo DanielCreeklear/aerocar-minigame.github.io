@@ -53,7 +53,10 @@ function updateHeadingAndLateral(
   
   
   const centrifugalFactorRuntime = getPhysicsValue("CENTRIFUGAL_FACTOR", CENTRIFUGAL_FACTOR);
-  const vxDemand = (curvature + theta * 0.5) * vz * centrifugalFactorRuntime;
+  // compute demanded lateral velocity from curvature only (steering already
+  // contributes via vxSteer = vz * sin(theta)). Removing theta*0.5 avoids
+  // double-counting steering input into the grip budget.
+  const vxDemand = curvature * vz * centrifugalFactorRuntime;
   
   const baseGrip = lateralFriction + (aeroGripFactor || 0) * vz;
   const safeBaseGrip = Math.max(0.001, Number.isFinite(baseGrip) ? baseGrip : 0.001);
