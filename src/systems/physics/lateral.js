@@ -86,7 +86,7 @@ function updateHeadingAndLateral(
   let drift = gameState.centrifugalDrift || 0;
   // If there's effectively no curvature, clear residual centrifugal drift to
   // avoid sliding on straights caused by previous corner buildup.
-  if (Math.abs(curvature) < 0.0005 && gripRatio <= 1) {
+  if (Math.abs(curvature) < 0.001 && gripRatio <= 1) {
     drift = 0;
   } else if (gripRatio <= 1) {
     drift *= Math.pow(getPhysicsValue("DRIFT_RECOVERY_RATE", DRIFT_RECOVERY_RATE), dt);

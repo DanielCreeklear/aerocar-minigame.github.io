@@ -440,6 +440,8 @@ class Game {
     this.gameState.pendingName = this._nameInput
       ? this._nameInput.value.toUpperCase()
       : "";
+    // Always update the active state (tutorial, menus, etc. need their update tick)
+    this.stateManager?.update(dt);
     if (this.gameState.currentScreen !== SCREENS.RACE) return;
     if (this.gameState.lastLapFlashTimer > 0) {
       this.gameState.lastLapFlashTimer -= dt;
@@ -477,10 +479,15 @@ class Game {
       const current = this.gameState.steerInput || 0;
       const dir = Math.sign(target - current);
       this.gameState.steerInput = clamp(current + dir * STEER_RATE * dt, -1, 1);
+      // Snap to zero only when target is neutral AND the ramp has genuinely
+      // crossed zero (sign changed). Using a product-sign check is equivalent
+      // to the original Math.sign comparison but also handles the gyroscope
+      // case: _lastGyroSteer deduplication in input.js prevents repeated
+      // zero-events from re-triggering this guard every frame.
       if (
         target === 0 &&
-        Math.sign(this.gameState.steerInput) !== Math.sign(current) &&
-        current !== 0
+        current !== 0 &&
+        this.gameState.steerInput * current < 0
       ) {
         this.gameState.steerInput = 0;
       }

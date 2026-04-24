@@ -48,6 +48,7 @@ class InputController {
     this.handlers = handlers;
     this.isKeyBraking = false;
     this.isKeyBoosting = false;
+    this._lastGyroSteer = null; // track last emitted value to avoid redundant zero-spam
     this._activePointers = new Map();
     this._iosPermissionRequested = false;
     this._orientationBound = false;
@@ -71,6 +72,9 @@ class InputController {
     };
   }
   isInModeButton(x, y) {
+    // Mode button only exists during an active race; ignore outside RACE to
+    // avoid swallowing taps on menu footer buttons (CONFIG, TUTORIAL, etc.)
+    if (!this.handlers.isRaceActive?.()) return false;
     return (
       x >= this.canvas.width * MODE_BUTTON_X_MIN_RATIO &&
       x <= this.canvas.width * MODE_BUTTON_X_MAX_RATIO &&
@@ -111,7 +115,13 @@ class InputController {
         raw = e.gamma;
       }
       if (raw === null || raw === undefined) return;
-      this.handlers.onSteerChange(normalizeTilt(raw));
+      const steerValue = normalizeTilt(raw);
+      // Only emit if value changed, preventing repeated zero-events from the
+      // deadzone from continuously resetting steerTarget mid-race.
+      if (steerValue !== this._lastGyroSteer) {
+        this._lastGyroSteer = steerValue;
+        this.handlers.onSteerChange(steerValue);
+      }
     });
   }
   _bindDeviceMotionEvent() {
@@ -141,7 +151,13 @@ class InputController {
       } else {
         raw = ag.x != null ? ag.x : 0;
       }
-      this.handlers.onSteerChange(normalizeTiltMs2(raw));
+      const steerValue = normalizeTiltMs2(raw);
+      // Only emit if value changed, preventing repeated zero-events from the
+      // deadzone from continuously resetting steerTarget mid-race.
+      if (steerValue !== this._lastGyroSteer) {
+        this._lastGyroSteer = steerValue;
+        this.handlers.onSteerChange(steerValue);
+      }
     });
   }
   _requestIOSOrientationPermission() {

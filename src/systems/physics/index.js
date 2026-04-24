@@ -15,7 +15,9 @@ import {
 } from "../../constants/index.js";
 function resolveTrackState(gameState, currentTrackInfo) {
   gameState.trackType = currentTrackInfo.type;
-  gameState.currentSlip = 0;
+  // currentSlip is intentionally NOT reset here so that computeForwardVelocity
+  // can read the previous frame's slip value for boost penalty calculations.
+  // It will be overwritten by integrateLateralState later in the same frame.
   return {
     curvature: currentTrackInfo.rawCurve ?? currentTrackInfo.curve ?? 0,
   };
