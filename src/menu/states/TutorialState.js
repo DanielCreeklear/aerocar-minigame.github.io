@@ -154,6 +154,10 @@ export class TutorialState extends GameState {
     }
     // tap anywhere else also advances autoAdvanceOnInput steps
     if (this._tm?.getStep()?.autoAdvanceOnInput) {
+      const step = this._tm.getStep();
+      if (step.id === "enable-gyro") {
+        this._deps.callbacks?.requestGyroPermission?.();
+      }
       this._tm.advance();
     }
   }
