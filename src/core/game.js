@@ -35,6 +35,7 @@ import { RIVAL_COUNT } from "../constants/index.js";
 import { StateManager } from "../menu/StateManager.js";
 import { TrackPreviewState } from "../menu/states/TrackPreviewState.js";
 import { StartMenuState } from "../menu/states/StartMenuState.js";
+import { LeaderboardState } from "../menu/states/LeaderboardState.js";
 import { RaceState } from "../menu/states/RaceState.js";
 import { GameOverState } from "../menu/states/GameOverState.js";
 import { SettingsState } from "../menu/states/SettingsState.js";
@@ -223,6 +224,7 @@ class Game {
         onRaceEnter: () => {},
         onRaceExit: () => {},
         openSettings: () => this._setScreen(SCREENS.SETTINGS),
+        openLeaderboard: () => this._setScreen(SCREENS.LEADERBOARD),
         backToMenu: () => this._setScreen(SCREENS.START),
         requestGyroPermission: () => this.input.requestOrientationPermission(),
       },
@@ -239,6 +241,8 @@ class Game {
         return new RaceState(deps);
       case SCREENS.GAME_OVER:
         return new GameOverState(deps);
+      case SCREENS.LEADERBOARD:
+        return new LeaderboardState(deps);
       case SCREENS.SETTINGS:
         return new SettingsState(deps);
       default:

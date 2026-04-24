@@ -6,6 +6,7 @@ import { HudRenderer } from "./hud-renderer.js";
 import {
   drawStartScreen,
   drawGameOverScreen,
+  drawLeaderboardScreen,
   drawTrackPreviewScreen,
 } from "./screen-renderer.js";
 import {
@@ -94,6 +95,8 @@ class Renderer {
         drawTrackPreviewScreen(ctx, w, h, track, gs),
       [SCREENS.START]: (ctx, w, h, gs, track) =>
         drawStartScreen(ctx, w, h, gs, track),
+      [SCREENS.LEADERBOARD]: (ctx, w, h, gs, track) =>
+        drawLeaderboardScreen(ctx, w, h, gs, track),
       [SCREENS.GAME_OVER]: (ctx, w, h, gs) => drawGameOverScreen(ctx, w, h, gs),
     };
   }

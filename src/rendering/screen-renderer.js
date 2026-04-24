@@ -46,6 +46,29 @@ function drawButton(ctx, x, y, w, h, label, isSelected) {
     ctx.fillRect(cbX + 3, cbY + 3, cbSize - 6, cbSize - 6);
   }
 }
+function drawSmallButton(ctx, x, y, w, h, label, isSelected) {
+  // Compact button used for headers (VER TUDO)
+  ctx.save();
+  const shadow = 2;
+  // shadow
+  ctx.fillStyle = R.buttonShadow;
+  ctx.fillRect(x + shadow, y + shadow, w, h);
+  // body
+  ctx.fillStyle = isSelected ? R.gold : R.buttonBody;
+  ctx.fillRect(x, y, w, h);
+  // outline
+  ctx.strokeStyle = R.textHeader;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, w, h);
+  // label
+  const sz = Math.max(10, Math.min(12, h * 0.45));
+  ctx.font = `700 ${sz}px ${R.font}`;
+  ctx.fillStyle = isSelected ? R.buttonBody : R.textHeader;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(label, x + w * 0.5, y + h * 0.5);
+  ctx.restore();
+}
 function sectionHeader(ctx, x, y, w, text, color) {
   const sz = Math.max(11, Math.min(15, w * 0.038));
   ctx.save();
@@ -342,7 +365,20 @@ function drawStartScreen(ctx, w, h, gameState, track) {
       drawGyroscopeWarning(ctx, pad, btnStartY + btnH + btnGap + 4, btnW);
     }
     const rkY = h * 0.63;
+    // Draw header and small "VER TUDO" button to access full leaderboard
     sectionHeader(ctx, pad, rkY, w - pad * 2, "RANKING");
+    const hdrBtnW = 86;
+    const hdrBtnH = 26;
+    const hdrBtnX = w - pad - hdrBtnW;
+    const hdrBtnY = rkY - hdrBtnH - 6;
+    // small right-aligned label
+    ctx.save();
+    ctx.font = `700 11px ${R.font}`;
+    ctx.fillStyle = R.textHeader;
+    ctx.textAlign = "right";
+    ctx.textBaseline = "top";
+    ctx.fillText("VER TUDO", hdrBtnX + hdrBtnW - 6, hdrBtnY + 6);
+    ctx.restore();
     const rkAvail = h - 40 - (rkY + 14) - 8;
     const rowH = Math.max(24, Math.min(34, rkAvail / 5 - 4));
     drawRankList(ctx, pad, rkY + 14, w - pad * 2, rowH, rankings, 5);
@@ -389,6 +425,18 @@ function drawStartScreen(ctx, w, h, gameState, track) {
       drawGyroscopeWarning(ctx, pad, btnStartY + btnH + btnGap, leftW);
     }
     sectionHeader(ctx, rightX, pad + 8, rightW, "RANKING");
+    // small "VER TUDO" label on the top-right of the right column
+    const hdrBtnW = 86;
+    const hdrBtnH = 20;
+    const hdrBtnX = rightX + rightW - hdrBtnW;
+    const hdrBtnY = pad + 8 - hdrBtnH - 4;
+    ctx.save();
+    ctx.font = `700 11px ${R.font}`;
+    ctx.fillStyle = R.textHeader;
+    ctx.textAlign = "right";
+    ctx.textBaseline = "top";
+    ctx.fillText("VER TUDO", hdrBtnX + hdrBtnW - 6, hdrBtnY + 6);
+    ctx.restore();
     const rkAvail = h - 40 - (pad + 22) - 8;
     const rowH = Math.max(24, Math.min(42, rkAvail / 5 - 4));
     drawRankList(ctx, rightX, pad + 22, rightW, rowH, rankings, 5);
@@ -578,6 +626,69 @@ function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
   bottomBar(ctx, w, h, [{ icon: "○", label: "CONTINUAR" }]);
   ctx.restore();
 }
+
+function drawRankListPaged(ctx, x, y, w, rowH, rankings, slotCount, offset) {
+  for (let i = 0; i < slotCount; i++) {
+    const ry = y + i * (rowH + 4);
+    const entry = (rankings || [])[offset + i];
+    ctx.fillStyle = i % 2 === 0 ? "rgba(0,0,0,0.12)" : "rgba(0,0,0,0.04)";
+    ctx.fillRect(x, ry, w, rowH);
+    const mid = ry + rowH * 0.5;
+    const sz = Math.max(11, Math.min(16, rowH * 0.45));
+    ctx.save();
+    ctx.font = `700 ${sz}px ${R.font}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = R.textHeader;
+    ctx.fillText(`${(offset + i + 1).toString().padStart(2, "0")}`, x + 6, mid);
+    if (entry) {
+      ctx.fillText(entry.name.substring(0, 8), x + 34, mid);
+      ctx.font = `700 ${sz}px monospace`;
+      ctx.textAlign = "right";
+      ctx.fillText(formatTime(entry.time), x + w - 10, mid);
+    } else {
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.fillText("---", x + 34, mid);
+      ctx.font = `700 ${sz}px monospace`;
+      ctx.textAlign = "right";
+      ctx.fillText("--:--.---", x + w - 10, mid);
+    }
+    ctx.restore();
+  }
+}
+
+function drawLeaderboardScreen(ctx, w, h, gameState) {
+  const isPortrait = h > w;
+  const age = gameState ? gameState.screenAge || 0 : 0;
+  const fade = Math.min(1, age / 0.5);
+  const rankings = (gameState && gameState.rankings) || [];
+  ctx.save();
+  ctx.globalAlpha = fade;
+  ctx.fillStyle = R.bg;
+  ctx.fillRect(0, 0, w, h);
+  const pad = Math.max(20, w * 0.05);
+  const titleSz = csz(w, 0.06, 18, 36);
+  ctx.fillStyle = R.textHeader;
+  ctx.font = `700 ${titleSz}px ${R.font}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText("RANKING COMPLETO", pad, pad + titleSz);
+  ctx.strokeStyle = R.textHeader;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(pad, pad + titleSz + 6);
+  ctx.lineTo(w - pad, pad + titleSz + 6);
+  ctx.stroke();
+
+  const topY = pad + titleSz + 18;
+  const bottomH = 40;
+  const availH = h - topY - bottomH - pad;
+  const rowH = Math.max(22, Math.min(48, availH / 10 - 4));
+  drawRankList(ctx, pad, topY, w - pad * 2, rowH, rankings, 10);
+
+  bottomBar(ctx, w, h, [{ icon: "✕", label: "VOLTAR" }]);
+  ctx.restore();
+}
 function drawSettingsScreen(ctx, w, h, gameState) {
   const age = gameState ? gameState.screenAge || 0 : 0;
   const fade = Math.min(1, age / 0.5);
@@ -640,6 +751,8 @@ function drawSettingsScreen(ctx, w, h, gameState) {
 }
 export {
   drawStartScreen,
+  // full leaderboard screen (exported so states can call it)
+  drawLeaderboardScreen,
   drawGameOverScreen,
   drawTrackPreviewScreen,
   drawSettingsScreen,
