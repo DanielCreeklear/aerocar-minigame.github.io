@@ -72,5 +72,14 @@ function drawAeroBadge(ctx, gameState, width, height, touchReserve = 0) {
     bmp = canvas;
   }
   ctx.drawImage(bmp, x, y);
+  // tutorial highlight for aero-badge
+  if (gameState && gameState._tutorialHighlight === "aero-badge") {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    ctx.fillRect(x - 6, y - 6, badgeW + 12, badgeH + 12);
+    ctx.restore();
+    delete gameState._tutorialHighlight;
+  }
 }
 export { drawAeroBadge };

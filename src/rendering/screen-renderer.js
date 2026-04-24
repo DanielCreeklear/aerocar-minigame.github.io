@@ -434,6 +434,7 @@ function drawStartScreen(ctx, w, h, gameState, track) {
   bottomBar(ctx, w, h, [
     { icon: "○", label: "INICIAR" },
     { icon: "△", label: "CONFIG" },
+    { icon: "◉", label: "TUTORIAL" },
   ]);
   ctx.restore();
 }

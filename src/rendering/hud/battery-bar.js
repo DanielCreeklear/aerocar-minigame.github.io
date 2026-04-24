@@ -5,6 +5,7 @@ const R4_FONT =
   "'Archivo Narrow','Barlow Condensed','Roboto Condensed',sans-serif";
 const ERS_SEGMENTS = 10;
 function drawBatteryBar(ctx, gameState, width, height) {
+  const tutorialHighlight = gameState && gameState._tutorialHighlight;
   const battery = Math.max(0, Math.min(100, gameState.battery || 0));
   const { isBoosting, isBraking } = gameState;
   const rank = gameState.rank != null ? gameState.rank : 1;
@@ -13,6 +14,11 @@ function drawBatteryBar(ctx, gameState, width, height) {
   const rx = margin;
   const ry = margin;
   ctx.save();
+  // if tutorial requests highlight for the battery, add glow
+  if (tutorialHighlight === "battery-bar") {
+    ctx.shadowColor = "rgba(255,200,80,0.9)";
+    ctx.shadowBlur = 14;
+  }
   ctx.fillStyle = R4_SHADOW;
   ctx.fillRect(rx + 4, ry + 4, rankSz, rankSz);
   ctx.fillStyle = R4_ACCENT;
@@ -79,5 +85,8 @@ function drawBatteryBar(ctx, gameState, width, height) {
         : `ERS  ${Math.floor(battery)}%`;
   ctx.fillText(tag, ersX + 4, ersY + ersBarH + 3);
   ctx.restore();
+
+  // clear transient tutorial highlight so it doesn't persist next frame
+  if (gameState && gameState._tutorialHighlight) delete gameState._tutorialHighlight;
 }
 export { drawBatteryBar };

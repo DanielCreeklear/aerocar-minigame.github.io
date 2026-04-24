@@ -1,18 +1,18 @@
-// Tutorial configuration and step definitions
+ 
 export const TUTORIAL_SEED = 20260101;
 
 export const TUTORIAL_KEYS = {
   STORAGE_KEY: "aerocar_tutorial_done",
 };
 
-// Highlight targets that overlay can ask HUD to flash
+ 
 export const TUTORIAL_HIGHLIGHTS = {
   BATTERY: "battery-bar",
   CURVE: "curve-indicator",
   AERO_BADGE: "aero-badge",
 };
 
-// Tutorial steps are data-driven so adding/removing steps does not change logic
+ 
 export const TUTORIAL_STEPS = [
   {
     id: "welcome",
@@ -26,7 +26,7 @@ export const TUTORIAL_STEPS = [
     title: "USO DO BOOST",
     instruction: "Segure BOOST para acelerar. Observe a barra de bateria no canto superior esquerdo.",
     highlight: TUTORIAL_HIGHLIGHTS.BATTERY,
-    // completion condition will be evaluated by TutorialManager
+    
     conditionName: "boostUsed",
     timeoutMs: 10000,
   },

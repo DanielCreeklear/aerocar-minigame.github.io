@@ -19,6 +19,7 @@ export class StartMenuState extends GameState {
     this._settingsBtn = new Button();
     this._gyroBtn = new Button();
     this._rankingBtn = new Button();
+    this._tutorialBtn = new Button();
     this._lastW = 0;
     this._lastH = 0;
     this._onKeyDown = this._onKeyDown.bind(this);
@@ -95,7 +96,8 @@ export class StartMenuState extends GameState {
       this._devRect = { x: 0, y: 0, w: 0, h: 0 };
     }
     const footerH = 40;
-    this._settingsBtn.setRect(w * 0.5, h - footerH, w * 0.5, footerH);
+    // footer buttons hitboxes are computed below to match renderer.bottomBar
+    this._settingsBtn.setRect(0, 0, 0, 0);
     const gs = this._deps.getGameState();
     if (gs && gs.iosPermissionStatus === "prompt") {
       const isPortrait = h > w;
@@ -122,7 +124,7 @@ export class StartMenuState extends GameState {
         const sz = Math.max(11, Math.min(15, leftW * 0.034));
         const btnH = sz + 16;
         const btnW = leftW * 0.9;
-        this._gyroBtn.setRect(
+    this._gyroBtn.setRect(
           titleX,
           Math.round(btnY),
           Math.round(btnW),
@@ -131,6 +133,38 @@ export class StartMenuState extends GameState {
       }
     } else {
       this._gyroBtn.setRect(0, 0, 0, 0);
+    }
+    // Footer actions are rendered by drawStartScreen's bottomBar.
+    // Recompute the text metrics here to build hitboxes that match the bottomBar layout.
+    const footerBh = 40;
+    const footerBy = h - footerBh;
+    const footerSz = Math.max(12, Math.min(15, w * 0.032));
+    ctx.font = `700 ${footerSz}px monospace`;
+    const footerCy = footerBy + footerBh * 0.5;
+    let curX = 20;
+    const footerActions = [
+      { icon: "○", label: "INICIAR" },
+      { icon: "△", label: "CONFIG" },
+      { icon: "◉", label: "TUTORIAL" },
+    ];
+    // create or reuse footer buttons
+    this._footerStartBtn = this._footerStartBtn || new Button();
+    this._settingsBtn = this._settingsBtn || new Button();
+    this._tutorialBtn = this._tutorialBtn || new Button();
+    // iterate and set rects
+    for (let i = 0; i < footerActions.length; i++) {
+      const a = footerActions[i];
+      const txt = `${a.icon} ${a.label}`;
+      const wText = Math.ceil(ctx.measureText(txt).width);
+      const padX = 12; // clickable padding around label for better UX
+      const rx = Math.round(curX - padX);
+      const ry = Math.round(footerBy);
+      const rw = Math.round(wText + padX * 2);
+      const rh = Math.round(footerBh);
+      if (a.label === "INICIAR") this._footerStartBtn.setRect(rx, ry, rw, rh);
+      else if (a.label === "CONFIG") this._settingsBtn.setRect(rx, ry, rw, rh);
+      else if (a.label === "TUTORIAL") this._tutorialBtn.setRect(rx, ry, rw, rh);
+      curX += wText + 28;
     }
   }
   onPointerDown(x, y) {
@@ -142,6 +176,20 @@ export class StartMenuState extends GameState {
     if (this._settingsBtn.isHit(x, y)) {
       this._settingsBtn.pressed = true;
       requestAnimationFrame(() => this._deps.callbacks.openSettings());
+      return;
+    }
+    if (this._tutorialBtn && this._tutorialBtn.isHit(x, y)) {
+      this._tutorialBtn.pressed = true;
+      // open tutorial screen
+      requestAnimationFrame(() => {
+        // Some deps may not have direct helper for tutorial; use backToMenu/openSettings as safe nav
+        if (this._deps.callbacks && this._deps.callbacks.openTutorial) {
+          this._deps.callbacks.openTutorial();
+        } else if (this._deps.callbacks && this._deps.callbacks.backToMenu) {
+          // reuse backToMenu to navigate; actual mapping happens in Game
+          this._deps.callbacks.backToMenu();
+        }
+      });
       return;
     }
     const gs = this._deps.getGameState();
@@ -181,6 +229,8 @@ export class StartMenuState extends GameState {
     this._settingsBtn.pressed = false;
     this._gyroBtn.pressed = false;
     this._rankingBtn.pressed = false;
+    if (this._tutorialBtn) this._tutorialBtn.pressed = false;
+    if (this._footerStartBtn) this._footerStartBtn.pressed = false;
   }
 
   onEnter() {
