@@ -324,20 +324,102 @@ function drawGyroscopeWarning(ctx, x, y, w) {
   ctx.fillText("[!] USE SAFARI NO iOS PARA GIROSCOPIO", x, y);
   ctx.restore();
 }
-function drawGyroSettingsButton(ctx, x, y, w, h) {
-  drawButton(ctx, x, y, w, h, "ATIVAR SENSOR DE MOVIMENTO", false);
+// Draws a horizontal segmented selector (radio-button style).
+// options: string[], selectedIndex: number, returns nothing (pure draw).
+function drawSegmentedSelector(ctx, x, y, w, h, options, selectedIndex) {
+  const shadow = 3;
+  const segW = Math.floor(w / options.length);
+  const sz = Math.max(10, Math.min(14, h * 0.42));
+  options.forEach((opt, i) => {
+    const sx = x + i * segW;
+    const isSelected = i === selectedIndex;
+    ctx.fillStyle = R.buttonShadow;
+    ctx.fillRect(sx + shadow, y + shadow, segW - 1, h);
+    ctx.fillStyle = isSelected ? R.gold : R.buttonBody;
+    ctx.fillRect(sx, y, segW - 1, h);
+    ctx.font = `700 ${sz}px ${R.font}`;
+    ctx.fillStyle = isSelected ? R.textHeader : R.text;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(opt, sx + (segW - 1) * 0.5, y + h * 0.5);
+  });
 }
-function getSettingsGyroButtonRect(w, h) {
+// Draws a horizontal slider with label and current value.
+function drawSlider(ctx, x, y, w, h, value, minVal, maxVal, label, unit) {
+  const trackH = Math.max(4, Math.round(h * 0.18));
+  const trackY = y + h * 0.5 - trackH * 0.5;
+  const thumbR = Math.max(8, Math.round(h * 0.38));
+  const t = (value - minVal) / (maxVal - minVal);
+  const trackLeft = x + thumbR;
+  const trackRight = x + w - thumbR;
+  const thumbX = trackLeft + t * (trackRight - trackLeft);
+  // Label row
+  const labelSz = Math.max(10, Math.min(13, h * 0.32));
+  ctx.font = `700 ${labelSz}px ${R.font}`;
+  ctx.fillStyle = R.textHeader;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText(label, x, y - 4);
+  const valStr = `${Math.round(value)}${unit}`;
+  ctx.textAlign = "right";
+  ctx.fillText(valStr, x + w, y - 4);
+  // Track background
+  ctx.fillStyle = R.buttonBody;
+  ctx.fillRect(trackLeft - thumbR, trackY, trackRight - trackLeft + thumbR * 2, trackH);
+  // Track fill
+  ctx.fillStyle = R.gold;
+  ctx.fillRect(trackLeft - thumbR, trackY, (thumbX - trackLeft + thumbR), trackH);
+  // Thumb shadow
+  ctx.fillStyle = R.buttonShadow;
+  ctx.beginPath();
+  ctx.arc(thumbX + 2, trackY + trackH * 0.5 + 2, thumbR, 0, Math.PI * 2);
+  ctx.fill();
+  // Thumb
+  ctx.fillStyle = R.buttonBody;
+  ctx.beginPath();
+  ctx.arc(thumbX, trackY + trackH * 0.5, thumbR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = R.gold;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(thumbX, trackY + trackH * 0.5, thumbR, 0, Math.PI * 2);
+  ctx.stroke();
+}
+function getSettingsLayout(w, h) {
   const pad = Math.max(20, w * 0.05);
   const btnW = Math.min(w - pad * 2, 380);
   const btnH = Math.max(44, Math.round(h * 0.075));
   const btnGap = Math.max(10, Math.round(h * 0.018));
   const titleSz = csz(w, 0.055, 18, 30);
-  const lineSz = csz(w, 0.028, 11, 15);
+  const sectionGap = Math.max(22, Math.round(h * 0.04));
   let curY = pad + titleSz + 24;
-  curY += 16 + 3 * (lineSz + 7) + 20 + 18;
-  curY += 2 * (btnH + btnGap) + btnGap + 8;
-  return { x: pad, y: curY, w: btnW, h: btnH };
+  // Section DIFICULDADE
+  const diffY = curY + 14;
+  const diffH = btnH;
+  curY = diffY + diffH + sectionGap;
+  // Section SENSOR
+  const gyroY = curY + 14;
+  const gyroH = btnH;
+  curY = gyroY + gyroH;
+  // Slider SENSIBILIDADE (shown below gyro)
+  const sliderY = curY + sectionGap + 14 + 16;
+  const sliderH = Math.max(36, Math.round(h * 0.06));
+  return { pad, btnW, btnH, btnGap, titleSz, diffY, diffH, gyroY, gyroH, sliderY, sliderH };
+}
+function getSettingsGyroButtonRect(w, h) {
+  const l = getSettingsLayout(w, h);
+  return { x: l.pad, y: l.gyroY, w: l.btnW, h: l.gyroH };
+}
+function getSettingsDiffButtonRects(w, h) {
+  const l = getSettingsLayout(w, h);
+  const segW = Math.floor(l.btnW / 3);
+  return ["FÁCIL", "NORMAL", "DIFÍCIL"].map((_, i) => ({
+    x: l.pad + i * segW, y: l.diffY, w: segW - 1, h: l.diffH,
+  }));
+}
+function getSettingsSliderRect(w, h) {
+  const l = getSettingsLayout(w, h);
+  return { x: l.pad, y: l.sliderY, w: l.btnW, h: l.sliderH };
 }
 function drawStartScreen(ctx, w, h, gameState, track) {
   const isPortrait = h > w;
@@ -701,15 +783,16 @@ function drawSettingsScreen(ctx, w, h, gameState) {
   const age = gameState ? gameState.screenAge || 0 : 0;
   const fade = Math.min(1, age / 0.5);
   const isPortrait = h > w;
+  const difficultyIndex = (gameState && gameState.settingsDifficulty != null) ? gameState.settingsDifficulty : 1;
+  const gyroSensitivity = (gameState && gameState.settingsGyroSensitivity != null) ? gameState.settingsGyroSensitivity : 17;
+  const gyroActive = gameState && gameState.settingsGyroActive;
   ctx.save();
   ctx.globalAlpha = fade;
   ctx.fillStyle = R.bg;
   ctx.fillRect(0, 0, w, h);
-  const pad = Math.max(20, w * 0.05);
-  const btnW = Math.min(w - pad * 2, 380);
-  const btnH = Math.max(44, Math.round(h * 0.075));
-  const btnGap = Math.max(10, Math.round(h * 0.018));
-  const titleSz = csz(w, 0.055, 18, 30);
+  const l = getSettingsLayout(w, h);
+  const { pad, btnW, btnH, titleSz } = l;
+  // Title
   ctx.fillStyle = R.textHeader;
   ctx.font = `700 ${titleSz}px ${R.font}`;
   ctx.textAlign = "left";
@@ -719,43 +802,22 @@ function drawSettingsScreen(ctx, w, h, gameState) {
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(pad, pad + titleSz + 5);
-  ctx.lineTo(
-    isPortrait ? w - pad : Math.min(w - pad, pad + btnW + 4),
-    pad + titleSz + 5,
-  );
+  ctx.lineTo(isPortrait ? w - pad : Math.min(w - pad, pad + btnW + 4), pad + titleSz + 5);
   ctx.stroke();
-  let curY = pad + titleSz + 24;
-  sectionHeader(ctx, pad, curY, btnW, "CONTROLES");
-  curY += 16;
-  const ctrlLines = [
-    "← ESQUERDA  —  FREIO / ERS",
-    "→ DIREITA   —  BOOST",
-    "Z ou X      —  MODO AERO",
-  ];
-  const lineSz = csz(w, 0.028, 11, 15);
-  ctx.font = `700 ${lineSz}px ${R.font}`;
-  ctx.fillStyle = R.textHeader;
-  ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
-  ctrlLines.forEach((line, i) => {
-    ctx.fillText(line, pad, curY + (lineSz + 7) * i + lineSz);
-  });
-  curY += ctrlLines.length * (lineSz + 7) + 20;
-  sectionHeader(ctx, pad, curY, btnW, "MODO AERO");
-  curY += 18;
-  const aeroItems = [
-    { label: "MODO X  —  ALTA CARGA  (CURVAS)", isSelected: false },
-    { label: "MODO Z  —  BAIXA CARGA  (RETAS)", isSelected: true },
-  ];
-  aeroItems.forEach((item) => {
-    drawButton(ctx, pad, curY, btnW, btnH, item.label, item.isSelected);
-    curY += btnH + btnGap;
-  });
+  // Section: DIFICULDADE
+  sectionHeader(ctx, pad, pad + titleSz + 24, btnW, "DIFICULDADE");
+  drawSegmentedSelector(ctx, pad, l.diffY, btnW, l.diffH, ["FÁCIL", "NORMAL", "DIFÍCIL"], difficultyIndex);
+  // Section: SENSOR DE MOVIMENTO
+  const sectionGap = Math.max(22, Math.round(h * 0.04));
+  sectionHeader(ctx, pad, l.diffY + l.diffH + sectionGap * 0.6, btnW, "SENSOR DE MOVIMENTO");
+  const gyroLabel = gyroActive ? "SENSOR ATIVO ✓" : "ATIVAR SENSOR DE MOVIMENTO";
+  drawButton(ctx, pad, l.gyroY, btnW, btnH, gyroLabel, gyroActive);
   if (gameState && gameState.gyroscopeWarning) {
-    drawGyroscopeWarning(ctx, pad, curY + 8, btnW);
+    drawGyroscopeWarning(ctx, pad, l.gyroY + btnH + 6, btnW);
   }
-  curY += btnGap + 8;
-  drawGyroSettingsButton(ctx, pad, curY, btnW, btnH);
+  // Section: SENSIBILIDADE (slider)
+  sectionHeader(ctx, pad, l.sliderY - 14 - sectionGap * 0.5, btnW, "SENSIBILIDADE DO GIRO");
+  drawSlider(ctx, pad, l.sliderY, btnW, l.sliderH, gyroSensitivity, 8, 28, "ÂNGULO MÁX. DE INCLINAÇÃO", "°");
   bottomBar(ctx, w, h, [{ icon: "✕", label: "VOLTAR" }]);
   ctx.restore();
 }
@@ -766,4 +828,6 @@ export {
   drawTrackPreviewScreen,
   drawSettingsScreen,
   getSettingsGyroButtonRect,
+  getSettingsDiffButtonRects,
+  getSettingsSliderRect,
 };

@@ -41,6 +41,7 @@ import { RaceState } from "../menu/states/RaceState.js";
 import { GameOverState } from "../menu/states/GameOverState.js";
 import { SettingsState } from "../menu/states/SettingsState.js";
 import PhysicsSandboxState from "../menu/states/PhysicsSandboxState.js";
+import { setPhysicsValue } from "../constants/physics-overrides.js";
 const ORIENTATION_POLL_INTERVAL = 50;
 const ORIENTATION_POLL_MAX_MS = 500;
 class Game {
@@ -63,6 +64,17 @@ class Game {
     this._screenChangeTime = Date.now();
     this._gyroscopeWarning = false;
     this._iosPermissionStatus = requiresOrientationPermission ? "prompt" : null;
+    // Load persisted settings
+    try {
+      this._settingsDifficulty = parseInt(localStorage.getItem("cfg_difficulty") ?? "1", 10);
+      this._settingsGyroSensitivity = parseFloat(localStorage.getItem("cfg_gyro_sens") ?? "17");
+      this._settingsGyroActive = localStorage.getItem("cfg_gyro_active") === "1";
+    } catch (_) {
+      this._settingsDifficulty = 1;
+      this._settingsGyroSensitivity = 17;
+      this._settingsGyroActive = false;
+    }
+    this._applyDifficultyPreset(this._settingsDifficulty);
     this.rankingService = createRankingService();
     this.rankings = [];
     this.rankingService
@@ -171,6 +183,11 @@ class Game {
       onGyroPermissionChange: (status) => {
         this._iosPermissionStatus = status;
         if (this.gameState) this.gameState.iosPermissionStatus = status;
+        if (status === "granted") {
+          this._settingsGyroActive = true;
+          if (this.gameState) this.gameState.settingsGyroActive = true;
+          this._saveSettings();
+        }
         this._updateIosTapOverlay();
       },
     });
@@ -285,6 +302,24 @@ class Game {
           this._setScreen(target);
         },
         requestGyroPermission: () => this.input.requestOrientationPermission(),
+        setDifficulty: (index) => {
+          this._settingsDifficulty = index;
+          this._applyDifficultyPreset(index);
+          if (this.gameState) this.gameState.settingsDifficulty = index;
+          this._saveSettings();
+        },
+        setGyroSensitivity: (value) => {
+          this._settingsGyroSensitivity = value;
+          if (this.gameState) this.gameState.settingsGyroSensitivity = value;
+          this._saveSettings();
+          // Apply to input system if available
+          try { setPhysicsValue("STEER_MAX_TILT_DEG", value); } catch (_) {}
+        },
+        onGyroActivated: () => {
+          this._settingsGyroActive = true;
+          if (this.gameState) this.gameState.settingsGyroActive = true;
+          this._saveSettings();
+        },
       },
     };
   }
@@ -426,6 +461,9 @@ class Game {
       pendingName: "",
       gyroscopeWarning: this._gyroscopeWarning,
       iosPermissionStatus: this._iosPermissionStatus,
+      settingsDifficulty: this._settingsDifficulty ?? 1,
+      settingsGyroSensitivity: this._settingsGyroSensitivity ?? 17,
+      settingsGyroActive: this._settingsGyroActive ?? false,
       rivals: createRivals(RIVAL_COUNT, this.track),
       obstacles: createObstacles(this.track),
       collisionCooldown: 0,
@@ -441,8 +479,27 @@ class Game {
       this._setScreen(SCREENS.START);
     }
   }
+  _applyDifficultyPreset(index) {
+    // 0=FÁCIL, 1=NORMAL, 2=DIFÍCIL
+    const presets = [
+      { RIVAL_SPEED_MIN: 11.0, RIVAL_SPEED_MAX: 15.0, COLLISION_RIVAL_SPEED_FACTOR: 0.96, COLLISION_OBSTACLE_SPEED_FACTOR: 0.86 },
+      { RIVAL_SPEED_MIN: 13.5, RIVAL_SPEED_MAX: 18.0, COLLISION_RIVAL_SPEED_FACTOR: 0.92, COLLISION_OBSTACLE_SPEED_FACTOR: 0.78 },
+      { RIVAL_SPEED_MIN: 16.0, RIVAL_SPEED_MAX: 21.5, COLLISION_RIVAL_SPEED_FACTOR: 0.86, COLLISION_OBSTACLE_SPEED_FACTOR: 0.68 },
+    ];
+    const p = presets[index] ?? presets[1];
+    for (const [key, val] of Object.entries(p)) setPhysicsValue(key, val);
+  }
+  _saveSettings() {
+    try {
+      localStorage.setItem("cfg_difficulty", String(this._settingsDifficulty));
+      localStorage.setItem("cfg_gyro_sens", String(this._settingsGyroSensitivity));
+      localStorage.setItem("cfg_gyro_active", this._settingsGyroActive ? "1" : "0");
+    } catch (_) {}
+  }
   _startRace() {
     if (this.gameState.currentScreen === SCREENS.START) {
+      // Recreate rivals so difficulty speed preset takes effect
+      this.gameState.rivals = createRivals(RIVAL_COUNT, this.track);
       this._setScreen(SCREENS.RACE);
       this.gameState.startTime = Date.now();
       this.gameState.lapStartTime = Date.now();

@@ -10,6 +10,7 @@ import {
   STEER_DEADZONE_MS2,
   STEER_MAX_TILT_MS2,
 } from "../constants/index.js";
+import { getPhysicsValue } from "../constants/physics-overrides.js";
 import {
   browserSupportsDeviceOrientation,
   browserSupportsDeviceMotion,
@@ -20,12 +21,13 @@ import {
 function normalizeTilt(raw) {
   const sign = Math.sign(raw);
   const abs = Math.abs(raw);
+  const maxTilt = getPhysicsValue("STEER_MAX_TILT_DEG", STEER_MAX_TILT_DEG);
   if (abs < STEER_DEADZONE_DEG) return 0;
   return (
     sign *
     Math.min(
       1,
-      (abs - STEER_DEADZONE_DEG) / (STEER_MAX_TILT_DEG - STEER_DEADZONE_DEG),
+      (abs - STEER_DEADZONE_DEG) / (maxTilt - STEER_DEADZONE_DEG),
     )
   );
 }

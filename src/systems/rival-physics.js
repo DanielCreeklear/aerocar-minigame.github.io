@@ -9,6 +9,7 @@ import {
   COLLISION_COOLDOWN,
   OBSTACLE_RESET_TIME,
 } from "../constants/index.js";
+import { getPhysicsValue } from "../constants/physics-overrides.js";
 function wrapDelta(a, b, lapLength) {
   let d = b - a;
   while (d > lapLength / 2) d -= lapLength;
@@ -47,8 +48,9 @@ function updateRivals(gameState, track, dt) {
     const zOverlap = 1 - absZ / COLLISION_RIVAL_Z;
     const combinedOverlap = lateralOverlap * zOverlap;
     if (combinedOverlap > 0.05) {
+      const rivalFactor = getPhysicsValue("COLLISION_RIVAL_SPEED_FACTOR", COLLISION_RIVAL_SPEED_FACTOR);
       const penaltyStrength =
-        combinedOverlap * (1 - COLLISION_RIVAL_SPEED_FACTOR);
+        combinedOverlap * (1 - rivalFactor);
       gameState.speed = (gameState.speed || 0) * (1 - penaltyStrength);
     }
     const pushDir = playerLateral >= rival.lateralOffset ? 1 : -1;
@@ -69,7 +71,7 @@ function updateRivals(gameState, track, dt) {
       dLat < COLLISION_OBSTACLE_LATERAL
     ) {
       gameState.speed =
-        (gameState.speed || 0) * COLLISION_OBSTACLE_SPEED_FACTOR;
+        (gameState.speed || 0) * getPhysicsValue("COLLISION_OBSTACLE_SPEED_FACTOR", COLLISION_OBSTACLE_SPEED_FACTOR);
       obs.hitTimer = OBSTACLE_RESET_TIME;
       gameState.collisionCooldown = COLLISION_COOLDOWN * 0.4;
       break;
