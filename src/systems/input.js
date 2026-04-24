@@ -295,6 +295,9 @@ class InputController {
       if (e.code === ACTION_KEYS.KEY_T && !e.repeat) {
         this.handlers.onTelemetryExport?.();
       }
+      if (e.code === ACTION_KEYS.KEY_C && !e.repeat) {
+        this.handlers.onTelemetryExportCSV?.();
+      }
       if (e.code === ACTION_KEYS.KEY_H && !e.repeat) {
         this.handlers.onTelemetryHudToggle?.();
       }

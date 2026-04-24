@@ -161,6 +161,7 @@ class Game {
         this.gameState.steerTarget = v;
       },
       onTelemetryExport: () => this.telemetry.exportJSON(),
+        onTelemetryExportCSV: () => this.telemetry.exportCSV(),
       onTelemetryHudToggle: () => this.telemetry.toggleHUD(),
       isRaceActive: () => this.gameState.currentScreen === SCREENS.RACE,
       onGyroscopeUnavailable: () => {

@@ -85,61 +85,119 @@ class TelemetryManager {
   exportJSON() {
     const samples = this._getSamples();
     if (samples.length === 0) return;
-    const blob = new Blob(
-      [
-        JSON.stringify(
-          {
-            exportedAt: new Date().toISOString(),
-            sampleCount: samples.length,
-            sampleIntervalMs: SAMPLE_INTERVAL_MS,
-            fields: [
-              "t",
-              "z",
-              "x",
-              "trackX",
-              "trackYaw",
-              "vz",
-              "vx",
-              "curvature",
-              "slip",
-              "centrifugalForce",
-              "effectiveGrip",
-              "lateralWarning",
-              "aeroMode",
-              "battery",
-              "isOffTrack",
-              "accel",
-              "jerk",
-              "headingRate",
-              "throttle",
-              "brake",
-              "steer",
-              "steerTarget",
-              "heading",
-              "carVisualHeading",
-              "visualOverDrive",
-              "centrifugalDrift",
-              "isSpinning",
-              "rescueInProgress",
-              "rescuePenaltySpeed",
-              "isDrifting",
-              "segmentIndex",
-              "segmentProgress",
-              "trackPhase",
-              "surfaceType",
-            ],
-            samples,
-          },
-          null,
-          2,
-        ),
-      ],
-      { type: "application/json" },
-    );
+    const blob = new Blob([
+      JSON.stringify(
+        {
+          exportedAt: new Date().toISOString(),
+          sampleCount: samples.length,
+          sampleIntervalMs: SAMPLE_INTERVAL_MS,
+          fields: [
+            "t",
+            "z",
+            "x",
+            "trackX",
+            "trackYaw",
+            "vz",
+            "vx",
+            "curvature",
+            "slip",
+            "centrifugalForce",
+            "effectiveGrip",
+            "lateralWarning",
+            "aeroMode",
+            "battery",
+            "isOffTrack",
+            "accel",
+            "jerk",
+            "headingRate",
+            "throttle",
+            "brake",
+            "steer",
+            "steerTarget",
+            "heading",
+            "carVisualHeading",
+            "visualOverDrive",
+            "centrifugalDrift",
+            "isSpinning",
+            "rescueInProgress",
+            "rescuePenaltySpeed",
+            "isDrifting",
+            "segmentIndex",
+            "segmentProgress",
+            "trackPhase",
+            "surfaceType",
+          ],
+          samples,
+        },
+        null,
+        2,
+      ),
+    ], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `telemetry_${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  exportCSV() {
+    const samples = this._getSamples();
+    if (samples.length === 0) return;
+    const fields = [
+      "t",
+      "z",
+      "x",
+      "trackX",
+      "trackYaw",
+      "vz",
+      "vx",
+      "curvature",
+      "slip",
+      "centrifugalForce",
+      "effectiveGrip",
+      "lateralWarning",
+      "aeroMode",
+      "battery",
+      "isOffTrack",
+      "accel",
+      "jerk",
+      "headingRate",
+      "throttle",
+      "brake",
+      "steer",
+      "steerTarget",
+      "heading",
+      "carVisualHeading",
+      "visualOverDrive",
+      "centrifugalDrift",
+      "isSpinning",
+      "rescueInProgress",
+      "rescuePenaltySpeed",
+      "isDrifting",
+      "segmentIndex",
+      "segmentProgress",
+      "trackPhase",
+      "surfaceType",
+    ];
+    const esc = (v) => (v === null || v === undefined ? "" : String(v));
+    const rows = [fields.join(",")];
+    for (const s of samples) {
+      const row = fields.map((f) => {
+        const v = s[f];
+        // escape quotes
+        const str = esc(v).replace(/"/g, '""');
+        return `"${str}"`;
+      });
+      rows.push(row.join(","));
+    }
+    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `telemetry_${Date.now()}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -443,7 +501,7 @@ class TelemetryManager {
       cy += CHART_H3 + 4;
     }
     ctx.fillStyle = "rgba(127, 140, 141, 0.65)";
-    ctx.fillText("[T] Export JSON", COL, cy);
+    ctx.fillText("[T] Export JSON  [C] Export CSV", COL, cy);
     ctx.restore();
   }
   _getLatest() {
