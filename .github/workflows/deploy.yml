@@ -33,6 +33,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
+          NODE_ENV: production
           VITE_FIREBASE_API_KEY: ${{ secrets.FIREBASEAPIKEY }}
 
       - name: Upload artifact
