@@ -41,6 +41,12 @@ class TelemetryManager {
       effectiveGrip: physicsTelemetry ? physicsTelemetry.effectiveGrip : 0,
       // lateral diagnostics (may be undefined)
       lateral: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral : null,
+      gripRatio: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.gripRatio : 0,
+      steerEffectiveness: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.steerEffectiveness : 0,
+      overDriveFactor: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.overDriveFactor : 0,
+      drift: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.drift : 0,
+      // transient lateral warning field (string or null)
+      lateralWarning: physicsTelemetry && physicsTelemetry.lateralWarning ? physicsTelemetry.lateralWarning : null,
       aeroMode: gameState.aeroMode,
       battery: gameState.battery,
       isOffTrack: gameState.isOffTrack ? 1 : 0,
@@ -50,6 +56,7 @@ class TelemetryManager {
       steer: gameState.steerInput ?? 0,
       steerTarget: gameState.steerTarget ?? 0,
       heading: gameState.carHeading ?? 0,
+      isDrifting: gameState.isDrifting ? 1 : 0,
     };
     this._head = (this._head + 1) % MAX_SAMPLES;
     if (this._count < MAX_SAMPLES) this._count++;
@@ -74,6 +81,7 @@ class TelemetryManager {
               "slip",
               "centrifugalForce",
               "effectiveGrip",
+              "lateralWarning",
               "aeroMode",
               "battery",
               "isOffTrack",
@@ -83,6 +91,7 @@ class TelemetryManager {
               "steer",
               "steerTarget",
               "heading",
+              "isDrifting",
             ],
             samples,
           },

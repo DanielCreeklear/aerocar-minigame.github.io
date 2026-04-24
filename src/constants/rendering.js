@@ -59,4 +59,21 @@ export const RENDER_COLORS = {
   headlight: "#FFD700",
   taillight: "#E60000",
   asphaltModeX: "#1A2838",
-};
+};
+
+// Camera / zoom constants (player-oriented lookahead + dynamic zoom)
+export const CAMERA_LOOKAHEAD_Z = 300; // world units ahead on track
+export const CAMERA_LOOKAHEAD_FACTOR = 0.4; // fraction towards look point
+export const CAMERA_LATERAL_VEL_LOOKAHEAD = 0.12; // scale lateral velocity influence
+export const CAMERA_LERP = 8.0; // higher = snappier
+export const ZOOM_BASE = 1.0; // neutral world zoom
+export const ZOOM_MIN = 0.90;
+export const ZOOM_MAX = 1.06;
+export const ZOOM_RANGE = 0.16; // amount adjustable by speed
+export const ZOOM_LERP = 6.0;
+export const BRAKE_ZOOM_BONUS = 0.06; // extra zoom when braking in Mode Z
+
+// Skid layer default settings
+export const SKID_LAYER_DPR = 1; // relative DPR for skid offscreen canvas (can be lowered for perf)
+export const SKID_SLIP_THRESHOLD = 0.18; // slip threshold to emit skids
+export const SKID_LATERAL_VEL_THRESHOLD = 6; // lateral velocity threshold

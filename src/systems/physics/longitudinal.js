@@ -10,45 +10,63 @@ import {
   OFF_TRACK_ACCEL_FACTOR,
   OVERSPEED_DRAG,
 } from "../../constants/index.js";
+import { getPhysicsValue } from "../../constants/physics-overrides.js";
 let _brakeRamp = 0;
 function computeForwardVelocity(gameState, dt, strategy) {
+  // allow runtime overrides for key longitudinal constants
+  const accelX = getPhysicsValue("VZ_ACCEL_MODE_X", strategy.name === 'X' ? strategy.accel : undefined);
+  const accelZ = getPhysicsValue("VZ_ACCEL_MODE_Z", strategy.name === 'Z' ? strategy.accel : undefined);
+  const dragX = getPhysicsValue("VZ_DRAG_MODE_X", strategy.name === 'X' ? strategy.drag : undefined);
+  const dragZ = getPhysicsValue("VZ_DRAG_MODE_Z", strategy.name === 'Z' ? strategy.drag : undefined);
+  const maxX = getPhysicsValue("VZ_MAX_MODE_X", strategy.name === 'X' ? strategy.maxVz : undefined);
+  const maxZ = getPhysicsValue("VZ_MAX_MODE_Z", strategy.name === 'Z' ? strategy.maxVz : undefined);
+  const boostGain = getPhysicsValue("BOOST_BASE_GAIN", BOOST_BASE_GAIN);
+  const boostDrain = getPhysicsValue("BOOST_BATTERY_DRAIN", BOOST_BASE_GAIN === undefined ? 0.4 : BOOST_BASE_GAIN);
+  const boostMin = getPhysicsValue("BOOST_MIN_EFFECT", BOOST_MIN_EFFECT);
+  const boostSlipFactor = getPhysicsValue("BOOST_SLIP_EFFECT_FACTOR", BOOST_SLIP_EFFECT_FACTOR);
+  const offTrackAccelFactor = getPhysicsValue("OFF_TRACK_ACCEL_FACTOR", OFF_TRACK_ACCEL_FACTOR);
+  const overspeedDrag = getPhysicsValue("OVERSPEED_DRAG", OVERSPEED_DRAG);
+
   let vz = gameState.speed || 0;
   if (!gameState.isSpinning) {
-    const accelFactor = gameState.isOffTrack ? OFF_TRACK_ACCEL_FACTOR : 1;
-    const speedRatio = strategy.maxVz > 0 ? vz / strategy.maxVz : 0;
+    const accelFactor = gameState.isOffTrack ? offTrackAccelFactor : 1;
+    // determine accel/drag/max based on strategy name or fall back to strategy values
+    const maxVz = strategy.name === 'X' ? maxX ?? strategy.maxVz : maxZ ?? strategy.maxVz;
+    const accel = strategy.name === 'X' ? accelX ?? strategy.accel : accelZ ?? strategy.accel;
+    const drag = strategy.name === 'X' ? dragX ?? strategy.drag : dragZ ?? strategy.drag;
+    const speedRatio = maxVz > 0 ? vz / maxVz : 0;
     const accelTaper = Math.max(0, 1 - speedRatio * speedRatio);
-    vz = Math.max(0, vz + strategy.accel * accelFactor * accelTaper * dt);
+    vz = Math.max(0, vz + accel * accelFactor * accelTaper * dt);
+    vz *= Math.pow(drag, dt);
   }
-  vz *= Math.pow(strategy.drag, dt);
   const battery = gameState.battery || 0;
   if (gameState.isBoosting && battery > 0) {
     const slip = Math.max(0, gameState.currentSlip || 0);
-    const slipPenalty = clamp(
-      slip * BOOST_SLIP_EFFECT_FACTOR,
-      0,
-      1 - BOOST_MIN_EFFECT,
-    );
-    const maxBoostVz = strategy.maxVz * BOOST_OVERCAP_RATIO;
+    const slipPenalty = clamp(slip * boostSlipFactor, 0, 1 - boostMin);
+    const maxVz = strategy.name === 'X' ? (maxX ?? strategy.maxVz) : (maxZ ?? strategy.maxVz);
+    const maxBoostVz = maxVz * getPhysicsValue("BOOST_OVERCAP_RATIO", BOOST_OVERCAP_RATIO);
     if (vz < maxBoostVz) {
-      const boostAccel = strategy.accel * (BOOST_BASE_GAIN / 100) * (1 - slipPenalty);
+      const boostAccel = (strategy.accel || 0) * (boostGain / 100) * (1 - slipPenalty);
       const boostRatio = vz / maxBoostVz;
       const boostTaper = Math.max(0, 1 - boostRatio * boostRatio);
       vz = Math.min(maxBoostVz, vz + boostAccel * boostTaper * dt);
     }
+    gameState.battery = Math.max(0, gameState.battery - boostDrain * (gameState.boostThrottle || 1) * dt);
   }
   if (gameState.isBraking && vz > 0) {
     _brakeRamp = Math.min(1, _brakeRamp + dt * BRAKE_RAMP_RATE);
     const expRamp = _brakeRamp * _brakeRamp;
     const effectiveDecel =
-      MANUAL_BRAKE_DECEL_SOFT +
-      (MANUAL_BRAKE_DECEL - MANUAL_BRAKE_DECEL_SOFT) * expRamp;
+      MANUAL_BRAKE_DECEL_SOFT + (MANUAL_BRAKE_DECEL - MANUAL_BRAKE_DECEL_SOFT) * expRamp;
     vz *= Math.pow(effectiveDecel, dt);
   } else {
     _brakeRamp = 0;
   }
-  if (vz > strategy.maxVz) {
-    vz = strategy.maxVz + (vz - strategy.maxVz) * Math.pow(OVERSPEED_DRAG, dt);
+  // overspeed handling
+  const maxVzActive = strategy.name === 'X' ? (maxX ?? strategy.maxVz) : (maxZ ?? strategy.maxVz);
+  if (vz > maxVzActive) {
+    vz = maxVzActive + (vz - maxVzActive) * Math.pow(overspeedDrag, dt);
   }
   return Math.max(0, vz);
 }
-export { computeForwardVelocity };
+export { computeForwardVelocity };

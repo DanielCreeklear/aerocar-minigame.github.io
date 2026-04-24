@@ -281,4 +281,4 @@ function drawCar(ctx, gameState, track, metrics) {
   drawBoostFlame(ctx, gameState, { carWidth, carHeight });
   ctx.restore();
 }
-export { drawCar };
+export { drawCar, computeCarDrawPosition };

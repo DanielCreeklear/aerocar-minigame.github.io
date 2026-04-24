@@ -9,6 +9,9 @@ import {
   MAX_DRIFT_VISUAL_ANGLE,
   DRIFT_ANGLE_LERP,
   UNDERSTEER_FACTOR,
+  TELEMETRY_LATERAL_WARN_ENABLED,
+  TELEMETRY_LATERAL_WARN_GRIP_RATIO,
+  TELEMETRY_LATERAL_WARN_OVERDRIVE,
 } from "../../constants/index.js";
 function resolveTrackState(gameState, currentTrackInfo) {
   gameState.trackType = currentTrackInfo.type;
@@ -77,6 +80,16 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
   // Attach lateral diagnostics if present
   if (lateralResult && lateralResult.diag) {
     physicsTelemetry.lateral = lateralResult.diag;
+  }
+  // Emit a simple lateral warning into telemetry buffer when configured.
+  if (physicsTelemetry.lateral && TELEMETRY_LATERAL_WARN_ENABLED) {
+    const lr = physicsTelemetry.lateral;
+    if (
+      (lr.gripRatio || 0) >= TELEMETRY_LATERAL_WARN_GRIP_RATIO ||
+      (lr.overDriveFactor || 0) >= TELEMETRY_LATERAL_WARN_OVERDRIVE
+    ) {
+      physicsTelemetry.lateralWarning = `GR:${lr.gripRatio.toFixed(2)} OD:${lr.overDriveFactor.toFixed(2)}`;
+    }
   }
   gameState.speed = nextVz;
   gameState.previousCurvature = curvature;

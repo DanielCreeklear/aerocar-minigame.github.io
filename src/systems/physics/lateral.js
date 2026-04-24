@@ -25,7 +25,19 @@ import {
   DRIFT_RECOVERY_RATE,
   CENTRIFUGAL_DRIFT_BUILD_RATE,
   UNDERSTEER_FACTOR,
+  // drift tuning
+  DRIFT_MIN_FRICTION_FACTOR,
+  DRIFT_FRICTION_SCALE,
+  DRIFT_HEADING_AID,
+  DRIFT_VX_REDUCTION,
+  DRIFT_ERS_MIN_SLIP,
+  DRIFT_REWARD_DELAY_S,
+  MAX_OVERDRIVE_FACTOR,
+  TELEMETRY_LATERAL_WARN_ENABLED,
+  TELEMETRY_LATERAL_WARN_GRIP_RATIO,
+  TELEMETRY_LATERAL_WARN_OVERDRIVE,
 } from "../../constants/index.js";
+import { getPhysicsValue } from "../../constants/physics-overrides.js";
 function updateHeadingAndLateral(
   gameState,
   curvature,
@@ -38,25 +50,47 @@ function updateHeadingAndLateral(
   const steerInput = gameState.steerInput || 0;
   let theta = gameState.carHeading || 0;
   const targetTheta = steerInput * MAX_STEER_HEADING;
-  theta += (targetTheta - theta) * Math.min(1, HEADING_ALIGNMENT_RATE * dt);
-  gameState.carHeading = clamp(theta, -Math.PI / 2, Math.PI / 2);
-  const vxDemand = (curvature + theta * 0.5) * vz * CENTRIFUGAL_FACTOR;
-  const gripLimit = lateralFriction + (aeroGripFactor || 0) * vz;
-  // protect against divide-by-zero / NaN
-  const safeGripLimit = Math.max(0.001, Number.isFinite(gripLimit) ? gripLimit : 0.001);
-  const gripRatio = Number.isFinite(vxDemand)
-    ? Math.abs(vxDemand) / safeGripLimit
-    : 0;
+  // theta alignment will be applied after driftIntensity is computed so
+  // we can increase heading alignment during drift (see below)
+  const centrifugalFactorRuntime = getPhysicsValue("CENTRIFUGAL_FACTOR", CENTRIFUGAL_FACTOR);
+  const vxDemand = (curvature + theta * 0.5) * vz * centrifugalFactorRuntime;
+  // base grip estimate including aero contribution
+  const baseGrip = lateralFriction + (aeroGripFactor || 0) * vz;
+  const safeBaseGrip = Math.max(0.001, Number.isFinite(baseGrip) ? baseGrip : 0.001);
+  const naiveGripRatio = Number.isFinite(vxDemand) ? Math.abs(vxDemand) / safeBaseGrip : 0;
+  const rawOverdrive = Math.max(0, naiveGripRatio - 1);
+  const frictionDrop = clamp(rawOverdrive * DRIFT_FRICTION_SCALE, 0, 0.95);
+  const effectiveGripLimit = Math.max(
+    lateralFriction * DRIFT_MIN_FRICTION_FACTOR,
+    safeBaseGrip * (1 - frictionDrop),
+  );
+  const safeEffectiveGrip = Math.max(0.001, effectiveGripLimit);
+  const gripRatio = Number.isFinite(vxDemand) ? Math.abs(vxDemand) / safeEffectiveGrip : 0;
   const overDriveFactor = Math.max(0, gripRatio - 1);
+  // store the computed value
   gameState.overDriveFactor = overDriveFactor;
-  const usf = understeerFactor ?? UNDERSTEER_FACTOR;
-  const steerEffectiveness = clamp(1 - overDriveFactor * usf, 0, 1);
+
+  // Conservative runtime guard
+  const clampedOverDrive = Math.min(overDriveFactor, MAX_OVERDRIVE_FACTOR);
+  const usedOverDrive = clampedOverDrive;
+  const usf = understeerFactor ?? getPhysicsValue("UNDERSTEER_FACTOR", UNDERSTEER_FACTOR);
+  const driftIntensity = Math.max(0, gripRatio - 1);
+  // reduce steering effectiveness during heavy drift to decouple heading from trajectory
+  const steerEffectiveness = clamp(
+    1 - usedOverDrive * usf * (1 + driftIntensity * getPhysicsValue("DRIFT_VX_REDUCTION", DRIFT_VX_REDUCTION)),
+    0,
+    1,
+  );
   const vxSteer = vz * Math.sin(theta) * steerEffectiveness;
+  // increase heading alignment rate while drifting to allow stronger visual rotation
+  const alignmentRate = HEADING_ALIGNMENT_RATE * (1 + driftIntensity * (DRIFT_HEADING_AID || 0));
+  theta += (targetTheta - theta) * Math.min(1, alignmentRate * dt);
+  gameState.carHeading = clamp(theta, -Math.PI / 2, Math.PI / 2);
   let drift = gameState.centrifugalDrift || 0;
   if (gripRatio <= 1) {
-    drift *= Math.pow(DRIFT_RECOVERY_RATE, dt);
+    drift *= Math.pow(getPhysicsValue("DRIFT_RECOVERY_RATE", DRIFT_RECOVERY_RATE), dt);
   } else {
-    const buildRate = CENTRIFUGAL_DRIFT_BUILD_RATE * overDriveFactor * dt;
+    const buildRate = getPhysicsValue("CENTRIFUGAL_DRIFT_BUILD_RATE", CENTRIFUGAL_DRIFT_BUILD_RATE) * overDriveFactor * dt;
     const rawDelta = vxDemand - drift;
     drift += Math.sign(rawDelta) * Math.min(Math.abs(rawDelta), buildRate);
   }
@@ -69,11 +103,14 @@ function updateHeadingAndLateral(
     vx,
     diag: {
       vxDemand,
-      gripLimit: safeGripLimit,
+      gripLimit: safeEffectiveGrip,
       gripRatio,
       overDriveFactor,
       steerEffectiveness,
       drift,
+      // expose the clamped value used for steering so we can correlate
+      // DT behaviour with what we adjusted at runtime
+      runtime: { usedOverDrive },
     },
   };
 }
@@ -190,6 +227,13 @@ function integrateLateralState(
   gameState.lateralOffset = x;
   gameState.lateralVelocity = rawVx;
   gameState.isOffTrack = isOffTrack;
+  // drift timing & flag (sustain requirement before rewarded)
+  if (!gameState.isSpinning && gameState.currentSlip >= DRIFT_ERS_MIN_SLIP && (gameState.overDriveFactor || 0) > 0) {
+    gameState.driftTimer = (gameState.driftTimer || 0) + dt;
+  } else {
+    gameState.driftTimer = 0;
+  }
+  gameState.isDrifting = !gameState.isSpinning && (gameState.driftTimer || 0) >= DRIFT_REWARD_DELAY_S && gameState.currentSlip >= DRIFT_ERS_MIN_SLIP;
   return {
     nextVz: rescuedVz,
     forces: { centrifugalForce: 0, effectiveGrip: strategy.lateralFriction },

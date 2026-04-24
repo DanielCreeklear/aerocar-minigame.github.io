@@ -38,6 +38,15 @@ export class StartMenuState extends GameState {
       this._rankingBtn.setRect(Math.round(hdrBtnX), Math.round(hdrBtnY), Math.round(hdrBtnW), Math.round(hdrBtnH));
     }
     this._rankingBtn.renderPressOverlay(ctx);
+    // dev button for localhost (hidden otherwise)
+    try {
+      const hostname = typeof window !== 'undefined' && window.location && window.location.hostname;
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        ctx.fillStyle = '#ffaa00';
+        ctx.font = '12px monospace';
+        ctx.fillText('[DEV]', 12, h - 12);
+      }
+    } catch (e) {}
     const footerH = 40;
     this._settingsBtn.setRect(w * 0.5, h - footerH, w * 0.5, footerH);
     const gs = this._deps.getGameState();

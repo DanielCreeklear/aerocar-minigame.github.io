@@ -29,6 +29,9 @@ function createCarStateFields() {
     rescueInProgress: false,
     rescuePenaltySpeed: 0,
     centrifugalSlideTimer: 0,
+    // drift tracking
+    isDrifting: false,
+    driftTimer: 0,
   };
 }
 const MODE_TOGGLE_COOLDOWN_MS = 220;
@@ -47,4 +50,4 @@ function setCarBoost(gameState, isBoosting) {
 function setCarBrake(gameState, isBraking) {
   gameState.isBraking = isBraking;
 }
-export { createCarStateFields, toggleCarMode, setCarBoost, setCarBrake };
+export { createCarStateFields, toggleCarMode, setCarBoost, setCarBrake };

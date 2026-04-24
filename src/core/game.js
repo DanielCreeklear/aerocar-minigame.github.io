@@ -50,6 +50,8 @@ class Game {
     this.energyManager = new EnergyManager();
     this.gameLoop = new GameLoop();
     this.telemetry = new TelemetryManager();
+    // expose for sandbox plumbing when running locally
+    window.__AEROCAR_GAME__ = this;
     this.trackSeed = TRACK_SEED;
     this.totalSegments = TOTAL_SEGMENTS;
     this.track.init(this.totalSegments, this.trackSeed);
@@ -261,6 +263,24 @@ class Game {
         return new LeaderboardState(deps);
       case SCREENS.SETTINGS:
         return new SettingsState(deps);
+      case SCREENS.PHYSICS_SANDBOX:
+        // The PhysicsSandboxState expects deps shaped like other states
+        // but it's implemented as a minimal in-DOM UI that uses callbacks
+        // We import lazily to avoid bundling it into the main loop unless used
+        try {
+          const Sandbox = require('../menu/states/PhysicsSandboxState.js').default;
+          return new Sandbox(deps);
+        } catch (e) {
+          // if require isn't available (browser ESM), attempt dynamic import
+          try {
+            // eslint-disable-next-line no-undef
+            const mod = import('../menu/states/PhysicsSandboxState.js');
+            return new (mod.default)(deps);
+          } catch (err) {
+            console.warn('Failed to create PhysicsSandboxState', err);
+            return null;
+          }
+        }
       default:
         return null;
     }

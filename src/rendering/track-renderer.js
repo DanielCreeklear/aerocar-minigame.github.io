@@ -143,13 +143,13 @@ function _drawBarrierCached(ctx, barrierInnerX, dir, sliceZ, y, step, metrics) {
   }
 }
 
-function drawTrack(ctx, gameState, track, metrics) {
+function drawTrack(ctx, gameState, track, metrics, cameraXOpt) {
   const { width, height } = metrics;
   const carY = metrics.carY;
   const halfRoad = metrics.trackWidth * HALF_RATIO;
   const carTrackInfo =
     gameState.currentTrackPoint || track.getTrackPoint(gameState.currentZ);
-  const cameraX = carTrackInfo.x;
+  const cameraX = typeof cameraXOpt === 'number' ? cameraXOpt : carTrackInfo.x;
   // Reusable object to avoid allocating a new track point per scanline
   const _scanInfo = {};
 

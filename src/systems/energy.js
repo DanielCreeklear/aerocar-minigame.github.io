@@ -4,6 +4,7 @@ import {
   BRAKE_REGEN_BASE,
   BRAKE_REGEN_SPEED_FACTOR,
   PASSIVE_REGEN_FACTOR,
+  DRIFT_ERS_REGEN_RATE,
 } from "../constants/index.js";
 class EnergyManager {
   constructor() {
@@ -26,6 +27,9 @@ class EnergyManager {
       const decelDelta = prevSpeed - speed;
       const passiveRegen = decelDelta * PASSIVE_REGEN_FACTOR * dt;
       this.battery = Math.min(BATTERY_MAX, this.battery + passiveRegen);
+    } else if (!isBoosting && gameState.isDrifting) {
+      // grant a small ERS regen while sustaining a controlled drift
+      this.battery = Math.min(BATTERY_MAX, this.battery + DRIFT_ERS_REGEN_RATE * dt);
     }
     this._prevSpeed = speed;
   }
@@ -37,4 +41,4 @@ class EnergyManager {
     return this.battery;
   }
 }
-export { EnergyManager };
+export { EnergyManager };

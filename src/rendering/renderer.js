@@ -1,5 +1,7 @@
 import { drawTrack } from "./track-renderer.js";
-import { drawCar } from "./car-renderer.js";
+import { drawCar, computeCarDrawPosition } from "./car-renderer.js";
+import { createSkidLayer } from "./skid-layer.js";
+import { getAeroStrategy } from "../systems/aero.js";
 import { drawRivals } from "./rival-renderer.js";
 import { drawObstacles } from "./obstacle-renderer.js";
 import { HudRenderer } from "./hud-renderer.js";
@@ -18,7 +20,21 @@ import {
   SCREENS,
   TRACK_WIDTH,
   getViewportProfile,
+  CAMERA_LOOKAHEAD_Z,
+  CAMERA_LOOKAHEAD_FACTOR,
+  CAMERA_LATERAL_VEL_LOOKAHEAD,
+  CAMERA_LERP,
+  ZOOM_BASE,
+  ZOOM_MIN,
+  ZOOM_MAX,
+  ZOOM_RANGE,
+  ZOOM_LERP,
+  BRAKE_ZOOM_BONUS,
+  SKID_LAYER_DPR,
+  SKID_SLIP_THRESHOLD,
+  SKID_LATERAL_VEL_THRESHOLD,
 } from "../constants/index.js";
+import { AERO_MODES } from "../constants/index.js";
 import { isMobile } from "../utils/platform.js";
 const PORTRAIT_SCALE_COMPACT = 0.68;
 const PORTRAIT_SCALE_TABLET = 0.8;
@@ -86,6 +102,11 @@ class Renderer {
     this.canvas = canvas;
     this.ctx = ctx;
     this.hud = new HudRenderer();
+    // Camera state
+    this._cameraX = 0;
+    this._worldZoom = ZOOM_BASE;
+    // Skid layer
+    this._skidLayer = null;
     this._screenRenderers = {
       [SCREENS.PREVIEW]: (ctx, w, h, gs, track) =>
         drawTrackPreviewScreen(ctx, w, h, track, gs),
@@ -125,10 +146,62 @@ class Renderer {
     if (!this._shake) this._shake = { x: 0, y: 0 };
     getCameraShakeOffset(gameState, this._shake);
     ctx.imageSmoothingEnabled = false; // safe to keep; minimal cost
+    // Prepare skid layer for current canvas size
+    const dpr = SKID_LAYER_DPR;
+    if (!this._skidLayer) this._skidLayer = createSkidLayer(metrics.width, metrics.height, dpr);
+    else this._skidLayer.resize(metrics.width, metrics.height, dpr);
+
+    // Camera player-oriented lookahead: shift camera in direction of lateral velocity
+    const carTrackInfo = track.getTrackPoint(gameState.currentZ);
+    const desiredCameraX =
+      carTrackInfo.x + (gameState.lateralVelocity || 0) * CAMERA_LATERAL_VEL_LOOKAHEAD;
+    this._cameraX += (desiredCameraX - this._cameraX) * Math.min(1, CAMERA_LERP * dt);
+
+    // Zoom target based on aero mode and speed (player oriented: speed influences zoom)
+    const strategy = getAeroStrategy(gameState.aeroMode);
+    const speed = gameState.speed || 0;
+    const speedRatio = strategy.maxVz > 0 ? speed / strategy.maxVz : 0;
+    let targetZoom = ZOOM_BASE;
+    if (gameState.aeroMode === undefined || gameState.aeroMode === null) {
+      targetZoom = ZOOM_BASE;
+    } else if (gameState.aeroMode === AERO_MODES.X) {
+      // Mode X: zoom out with speed
+      targetZoom = Math.max(ZOOM_MIN, ZOOM_MAX - speedRatio * ZOOM_RANGE);
+    } else {
+      // Mode Z: slight zoom in when braking for precision
+      targetZoom = ZOOM_BASE - (gameState.isBraking ? BRAKE_ZOOM_BONUS : 0);
+      targetZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, targetZoom));
+    }
+    this._worldZoom += (targetZoom - this._worldZoom) * Math.min(1, ZOOM_LERP * dt);
+
+    // Precompute car draw position (world coords) for skid emission
+    const carDrawPos = computeCarDrawPosition(gameState, metrics.width, metrics.height);
+    const prevCar = this._prevCarDraw || null;
+
+    // Emit skid mark when slip/lat vel thresholds crossed
+    const slipVal = gameState.currentSlip || 0;
+    const latV = Math.abs(gameState.lateralVelocity || 0);
+    if (prevCar && this._skidLayer) {
+      const shouldSkid = slipVal >= SKID_SLIP_THRESHOLD || latV >= SKID_LATERAL_VEL_THRESHOLD;
+      if (shouldSkid) {
+        const intensity = Math.min(1, Math.max(slipVal, latV / 20));
+        const color = gameState.aeroMode === AERO_MODES.X ? 'rgba(30,30,30,0.9)' : 'rgba(60,60,60,0.65)';
+        this._skidLayer.addSkid(prevCar.drawX, prevCar.drawY, carDrawPos.drawX, carDrawPos.drawY, intensity, color);
+      }
+    }
+    this._prevCarDraw = carDrawPos;
+
+    // Apply world transform (scale by metrics.scale * worldZoom). HUD will be drawn separately
     ctx.save();
-    if (scale !== 1) ctx.scale(scale, scale);
+    if (scale !== 1) ctx.scale(scale * this._worldZoom, scale * this._worldZoom);
     ctx.translate(this._shake.x, this._shake.y);
-    drawTrack(ctx, gameState, track, metrics);
+
+    // Draw world layers (track, skid layer, obstacles, rivals, car)
+    drawTrack(ctx, gameState, track, metrics, this._cameraX);
+    // draw skid marks (persistent)
+    if (this._skidLayer) {
+      this._skidLayer.drawTo(ctx);
+    }
     drawObstacles(ctx, gameState, track, metrics);
     drawRivals(ctx, gameState, track, metrics);
     drawCar(ctx, gameState, track, metrics);

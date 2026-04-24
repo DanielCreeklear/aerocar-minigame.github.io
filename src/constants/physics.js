@@ -57,3 +57,18 @@ export const CENTRIFUGAL_SLIDE_CURVE_THRESHOLD = 1.5;
 export const CENTRIFUGAL_SLIDE_DURATION = 2.5;
 export const LATERAL_ACCEL_SCALE = 0.22;
 export const OFF_TRACK_LATERAL_FRICTION = 0.987;
+// Runtime guards and telemetry thresholds
+export const MAX_OVERDRIVE_FACTOR = 1.0;
+export const TELEMETRY_LATERAL_WARN_ENABLED = true;
+export const TELEMETRY_LATERAL_WARN_GRIP_RATIO = 1.5;
+export const TELEMETRY_LATERAL_WARN_OVERDRIVE = 0.5;
+export const LATERAL_WARN_THROTTLE_MS = 5000;
+// Drift tuning constants
+export const DRIFT_MIN_FRICTION_FACTOR = 0.45;
+export const DRIFT_FRICTION_SCALE = 0.85;
+export const DRIFT_HEADING_AID = 2.0;
+export const DRIFT_VX_REDUCTION = 0.65;
+export const DRIFT_ERS_REGEN_RATE = 6.0; // battery units per second while sustaining drift
+export const DRIFT_ERS_MIN_SLIP = 0.18;
+export const DRIFT_ERS_MAX_SLIP = 0.65;
+export const DRIFT_REWARD_DELAY_S = 0.25;
