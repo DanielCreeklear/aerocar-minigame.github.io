@@ -35,6 +35,12 @@ class TelemetryManager {
       vx: gameState.lateralVelocity,
       curvature: gameState.currentCurvature,
       slip: gameState.currentSlip,
+      // extra diagnostics for debugging physics
+      lateralVelocityDemand: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.vxDemand : 0,
+      gripLimit: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.gripLimit : 0,
+      overDriveFactor: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.overDriveFactor : 0,
+      steerEffectiveness: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.steerEffectiveness : 0,
+      driftValue: physicsTelemetry && physicsTelemetry.lateral ? physicsTelemetry.lateral.drift : 0,
       centrifugalForce: physicsTelemetry
         ? physicsTelemetry.centrifugalForce
         : 0,

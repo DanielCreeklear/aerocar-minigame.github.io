@@ -102,12 +102,15 @@ export default class PhysicsSandboxState extends GameState {
 
     // ESC key should close the sandbox and go back to menu
     this._onKeyDownBound = (e) => {
+      // capture phase listener; log for debugging if Esc isn't being received
       if (e.key === 'Escape' || e.key === 'Esc') {
+        try { console.debug && console.debug('[Sandbox] ESC pressed'); } catch (err) {}
         try { this._deps.callbacks.backToMenu(); } catch (err) {}
         this.onExit();
       }
     };
-    window.addEventListener('keydown', this._onKeyDownBound);
+    // Use capture to ensure we receive the key event even if other elements call stopPropagation
+    window.addEventListener('keydown', this._onKeyDownBound, true);
 
     // drag handlers for header
     this._dragState = null;
@@ -342,7 +345,7 @@ export default class PhysicsSandboxState extends GameState {
       window.removeEventListener('scroll', this._repositionBound, true);
     } catch (e) {}
     try {
-      window.removeEventListener('keydown', this._onKeyDownBound);
+      window.removeEventListener('keydown', this._onKeyDownBound, true);
     } catch (e) {}
     try {
       // remove any drag listeners and header pointerdown
