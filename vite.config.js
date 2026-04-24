@@ -5,8 +5,7 @@ import { resolve } from "path";
 
 
 
-const base =
-  process.env.NODE_ENV === "production" ? "/f1-2026-minigame/" : "/";
+const base = "/aerocar-minigame.github.io/";
 
 export default defineConfig({
   base,
