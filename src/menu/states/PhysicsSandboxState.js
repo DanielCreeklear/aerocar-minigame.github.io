@@ -102,11 +102,23 @@ export default class PhysicsSandboxState extends GameState {
 
     // ESC key should close the sandbox and go back to menu
     this._onKeyDownBound = (e) => {
-      // capture phase listener; log for debugging if Esc isn't being received
-      if (e.key === 'Escape' || e.key === 'Esc') {
-        try { console.debug && console.debug('[Sandbox] ESC pressed'); } catch (err) {}
-        try { this._deps.callbacks.backToMenu(); } catch (err) {}
-        this.onExit();
+      // capture phase listener; log for debugging if key isn't being received
+      try {
+        if (e.key === 'Escape' || e.key === 'Esc') {
+          console.debug && console.debug('[Sandbox] ESC pressed');
+          try { this._deps.callbacks.backToMenu(); } catch (err) {}
+          this.onExit();
+          return;
+        }
+        // alternate shortcut: Shift + D (useful when ESC is captured elsewhere)
+        if (e.shiftKey && e.code === 'KeyD') {
+          console.debug && console.debug('[Sandbox] Shift+D pressed (alternate close)');
+          try { this._deps.callbacks.backToMenu(); } catch (err) {}
+          this.onExit();
+          return;
+        }
+      } catch (err) {
+        // swallow
       }
     };
     // Use capture to ensure we receive the key event even if other elements call stopPropagation
