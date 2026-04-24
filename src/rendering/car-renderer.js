@@ -20,19 +20,35 @@ import {
 const TRAIL_MAX = 10;
 const TRAIL_SPEED_THRESHOLD = 250 / 17; // ~14.7 game-units  (250 km/h)
 const SPRAY_SPEED_THRESHOLD = 100 / 17; //  ~5.9 game-units  (100 km/h)
-const _trail = [];
+// Ring buffer for motion trail to avoid push/shift allocations
+const _trail = new Array(TRAIL_MAX);
+let _trailHead = 0; // next write index
+let _trailLen = 0;
 
 function _pushTrail(x, y, angle) {
-  _trail.push({ x, y, angle });
-  if (_trail.length > TRAIL_MAX) _trail.shift();
+  let slot = _trail[_trailHead];
+  if (!slot) {
+    slot = { x: 0, y: 0, angle: 0 };
+    _trail[_trailHead] = slot;
+  }
+  slot.x = x;
+  slot.y = y;
+  slot.angle = angle;
+  _trailHead = (_trailHead + 1) % TRAIL_MAX;
+  if (_trailLen < TRAIL_MAX) _trailLen++;
 }
 
 function _drawMotionTrail(ctx, carWidth, carHeight) {
   const bw = carWidth * 0.72;
   const bh = carHeight * 0.88;
-  for (let i = 0; i < _trail.length - 1; i++) {
+  // iterate ring buffer oldest-first
+  const len = _trailLen;
+  if (len <= 0) return;
+  for (let idx = 0; idx < len - 1; idx++) {
+    const i = (_trailHead + TRAIL_MAX - len + idx) % TRAIL_MAX;
     const t = _trail[i];
-    const alpha = ((i + 1) / _trail.length) * 0.055;
+    if (!t) continue;
+    const alpha = ((idx + 1) / len) * 0.055;
     ctx.save();
     ctx.translate(t.x, t.y);
     ctx.rotate(t.angle);
@@ -190,12 +206,18 @@ function drawBoostFlame(ctx, gameState, metrics) {
   const { carWidth, carHeight } = metrics;
   const bodyW = carWidth * 0.72;
   const bodyH = carHeight * 0.88;
-
-  const glowRadius = bodyW * 0.62 + Math.random() * bodyW * 0.1;
-  const grad = ctx.createRadialGradient(0, 0, bodyW * 0.1, 0, 0, glowRadius);
-  grad.addColorStop(0, `rgba(0,220,255,${0.18 + Math.random() * 0.08})`);
-  grad.addColorStop(0.5, `rgba(0,140,255,${0.1 + Math.random() * 0.05})`);
-  grad.addColorStop(1, `rgba(0,80,200,0)`);
+  const glowRadius = Math.round(bodyW * 0.62 + Math.random() * bodyW * 0.1);
+  // simple per-ctx per-radius gradient cache
+  if (!drawBoostFlame._gradCache) drawBoostFlame._gradCache = {};
+  const cacheKey = `${glowRadius}@${ctx.canvas.width}x${ctx.canvas.height}`;
+  let grad = drawBoostFlame._gradCache[cacheKey];
+  if (!grad) {
+    grad = ctx.createRadialGradient(0, 0, bodyW * 0.1, 0, 0, glowRadius);
+    grad.addColorStop(0, `rgba(0,220,255,0.22)`);
+    grad.addColorStop(0.5, `rgba(0,140,255,0.14)`);
+    grad.addColorStop(1, `rgba(0,80,200,0)`);
+    drawBoostFlame._gradCache[cacheKey] = grad;
+  }
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   ctx.fillStyle = grad;
@@ -225,11 +247,14 @@ function drawCar(ctx, gameState, track, metrics) {
   const { drawX, drawY } = computeCarDrawPosition(gameState, width, height);
 
   const speed = gameState.speed || 0;
+  // Reintroduce roadAngle as a baseline so the car visually follows the track
+  // when the player is neutral, but allow the player's visual heading to
+  // override progressively based on steer input for responsiveness.
   const roadAngle = Math.atan2(carTrackInfo.yaw ?? 0, Z_RESOLUTION);
-  const totalAngle =
-    roadAngle +
-    (gameState.carVisualHeading || 0) * CAR_HEADING_VISUAL_SCALE +
-    (gameState.spinRotation || 0);
+  const visualHeading = (gameState.carVisualHeading || 0) * CAR_HEADING_VISUAL_SCALE;
+  const steerFactor = Math.min(1, Math.abs(gameState.steerInput || 0) * 1.8);
+  const playerInfluence = 0.25 + 0.75 * steerFactor; // 0.25 when neutral -> up to 1.0 with steer
+  const totalAngle = roadAngle + visualHeading * playerInfluence + (gameState.spinRotation || 0);
 
   if (speed >= TRAIL_SPEED_THRESHOLD) {
     _pushTrail(drawX, drawY, totalAngle);
