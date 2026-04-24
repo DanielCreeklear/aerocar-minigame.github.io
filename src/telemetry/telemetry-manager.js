@@ -470,6 +470,74 @@ class TelemetryManager {
       ctx.fillStyle = "rgba(39, 174, 96, 0.85)";
       ctx.fillText("ERS", CX + 3, cy + 2);
       cy += CHART_H3 + 4;
+      // Additional diagnostics chart: gripRatio, vxDemand, visualOverDrive
+      const CHART_H4 = 40;
+      ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+      ctx.fillRect(CX, cy, CHART_W, CHART_H4);
+      if (n > 1) {
+        // compute normalization scales from visible window to keep plots readable
+        let maxVx = 0;
+        let maxGrip = 0;
+        let maxVOD = 0;
+        for (let i = 0; i < n; i++) {
+          const s = chartData[i];
+          maxVx = Math.max(maxVx, Math.abs(s.vxDemand || 0));
+          maxGrip = Math.max(maxGrip, Math.abs(s.gripRatio || 0));
+          maxVOD = Math.max(maxVOD, Math.abs(s.visualOverDrive || s.overDriveGame || 0));
+        }
+        maxVx = Math.max(1e-3, maxVx);
+        maxGrip = Math.max(1e-3, maxGrip);
+        maxVOD = Math.max(1e-3, maxVOD);
+        const midY4 = cy + CHART_H4 * 0.5;
+        // draw gripRatio line (yellow)
+        ctx.beginPath();
+        for (let i = 0; i < n; i++) {
+          const sx = CX + (i / (n - 1)) * CHART_W;
+          const v = (chartData[i].gripRatio || 0) / maxGrip;
+          const sy = midY4 - Math.max(-1, Math.min(1, v)) * (CHART_H4 * 0.45);
+          i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+        }
+        ctx.strokeStyle = "#f1c40f";
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+        // draw vxDemand line (blue)
+        ctx.beginPath();
+        for (let i = 0; i < n; i++) {
+          const sx = CX + (i / (n - 1)) * CHART_W;
+          const v = (chartData[i].vxDemand || 0) / maxVx;
+          const sy = midY4 - Math.max(-1, Math.min(1, v)) * (CHART_H4 * 0.45);
+          i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+        }
+        ctx.strokeStyle = "#3498db";
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        // draw visualOverDrive line (purple)
+        ctx.beginPath();
+        for (let i = 0; i < n; i++) {
+          const sx = CX + (i / (n - 1)) * CHART_W;
+          const v = (chartData[i].visualOverDrive || chartData[i].overDriveGame || 0) / maxVOD;
+          const sy = midY4 - Math.max(-1, Math.min(1, v)) * (CHART_H4 * 0.45);
+          i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+        }
+        ctx.strokeStyle = "#9b59b6";
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        // legend
+        ctx.fillStyle = "#f1c40f";
+        ctx.fillRect(CX + 4, cy + 4, 8, 8);
+        ctx.fillStyle = "#fff";
+        ctx.font = '10px monospace';
+        ctx.fillText('gripRatio', CX + 18, cy + 2);
+        ctx.fillStyle = "#3498db";
+        ctx.fillRect(CX + 86, cy + 4, 8, 8);
+        ctx.fillStyle = "#fff";
+        ctx.fillText('vxDemand', CX + 100, cy + 2);
+        ctx.fillStyle = "#9b59b6";
+        ctx.fillRect(CX + 160, cy + 4, 8, 8);
+        ctx.fillStyle = "#fff";
+        ctx.fillText('visualOD', CX + 174, cy + 2);
+      }
+      cy += CHART_H4 + 6;
       ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
       ctx.fillRect(CX, cy, CHART_W, CHART_H3);
       if (n > 1) {
