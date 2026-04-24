@@ -197,10 +197,8 @@ function integrateLateralState(
   let x = rawX;
   if (x > wall) {
     x = wall;
-    if (gameState.carHeading > 0) gameState.carHeading = 0;
   } else if (x < -wall) {
     x = -wall;
-    if (gameState.carHeading < 0) gameState.carHeading = 0;
   }
   let rescuedVz = nextVz;
   if (gameState.rescueInProgress) {
