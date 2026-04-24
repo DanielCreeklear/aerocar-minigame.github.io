@@ -148,8 +148,11 @@ class Renderer {
     ctx.imageSmoothingEnabled = false; // safe to keep; minimal cost
     // Prepare skid layer for current canvas size
     const dpr = SKID_LAYER_DPR;
-    if (!this._skidLayer) this._skidLayer = createSkidLayer(metrics.width, metrics.height, dpr);
-    else this._skidLayer.resize(metrics.width, metrics.height, dpr);
+    if (!this._skidLayer) {
+      this._skidLayer = createSkidLayer(metrics.width, metrics.height, dpr);
+      // ensure internal canvas is allocated
+      this._skidLayer.resize(metrics.width, metrics.height, dpr);
+    } else this._skidLayer.resize(metrics.width, metrics.height, dpr);
 
     // Camera player-oriented lookahead: shift camera in direction of lateral velocity
     const carTrackInfo = track.getTrackPoint(gameState.currentZ);
