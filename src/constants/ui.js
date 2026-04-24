@@ -160,7 +160,7 @@ export const HUD_FONTS = {
   speedValue: { min: 22, max: 36, ratio: 0.036 },
   speedLabel: { min: 10, max: 13, ratio: 0.013 },
   batteryLabel: { min: 10, max: 13, ratio: 0.013 },
-  badgeMode: { min: 13, max: 17, ratio: 0.016 },
+  badgeMode: { min: 22, max: 22, ratio: 0.016 },
   lapTime: { min: 14, max: 20, ratio: 0.022 },
   lapLabel: { min: 10, max: 13, ratio: 0.013 },
   lapCount: { min: 13, max: 17, ratio: 0.018 },

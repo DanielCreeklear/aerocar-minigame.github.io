@@ -324,6 +324,21 @@ function drawGyroscopeWarning(ctx, x, y, w) {
   ctx.fillText("[!] USE SAFARI NO iOS PARA GIROSCOPIO", x, y);
   ctx.restore();
 }
+function drawGyroSettingsButton(ctx, x, y, w, h) {
+  drawButton(ctx, x, y, w, h, "ATIVAR SENSOR DE MOVIMENTO", false);
+}
+function getSettingsGyroButtonRect(w, h) {
+  const pad = Math.max(20, w * 0.05);
+  const btnW = Math.min(w - pad * 2, 380);
+  const btnH = Math.max(44, Math.round(h * 0.075));
+  const btnGap = Math.max(10, Math.round(h * 0.018));
+  const titleSz = csz(w, 0.055, 18, 30);
+  const lineSz = csz(w, 0.028, 11, 15);
+  let curY = pad + titleSz + 24;
+  curY += 16 + 3 * (lineSz + 7) + 20 + 18;
+  curY += 2 * (btnH + btnGap) + btnGap + 8;
+  return { x: pad, y: curY, w: btnW, h: btnH };
+}
 function drawStartScreen(ctx, w, h, gameState, track) {
   const isPortrait = h > w;
   const age = gameState ? gameState.screenAge || 0 : 0;
@@ -737,14 +752,16 @@ function drawSettingsScreen(ctx, w, h, gameState) {
   if (gameState && gameState.gyroscopeWarning) {
     drawGyroscopeWarning(ctx, pad, curY + 8, btnW);
   }
+  curY += btnGap + 8;
+  drawGyroSettingsButton(ctx, pad, curY, btnW, btnH);
   bottomBar(ctx, w, h, [{ icon: "✕", label: "VOLTAR" }]);
   ctx.restore();
 }
 export {
   drawStartScreen,
-  
   drawLeaderboardScreen,
   drawGameOverScreen,
   drawTrackPreviewScreen,
   drawSettingsScreen,
+  getSettingsGyroButtonRect,
 };

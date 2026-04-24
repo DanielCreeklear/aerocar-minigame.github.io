@@ -15,16 +15,23 @@ export const TUTORIAL_HIGHLIGHTS = {
  
 export const TUTORIAL_STEPS = [
   {
+    id: "enable-gyro",
+    title: "SENSOR DE MOVIMENTO",
+    instruction: "Toque em qualquer lugar da tela para ativar o controle por inclinação do dispositivo.",
+    highlight: null,
+    autoAdvanceOnInput: true,
+  },
+  {
     id: "welcome",
     title: "BEM-VINDO",
-    instruction: "Bem-vindo ao tutorial. Aprenda os controles básicos do aerocar antes de sua primeira corrida.",
+    instruction: "DIREITA=BOOST | ESQUERDA=FREAR | CENTRO=TROCA MODO\n\nGIRO: INCLINE O CELULAR PARA CURVAR",
     highlight: null,
     autoAdvanceOnInput: true,
   },
   {
     id: "boost",
     title: "USO DO BOOST",
-    instruction: "Segure BOOST para acelerar. Observe a barra de bateria no canto superior esquerdo.",
+    instruction: "Toque e SEGURE na DIREITA da tela para acelerar. Observe a barra de bateria no canto superior esquerdo.",
     highlight: TUTORIAL_HIGHLIGHTS.BATTERY,
     
     conditionName: "boostUsed",
@@ -33,7 +40,7 @@ export const TUTORIAL_STEPS = [
   {
     id: "braking",
     title: "FREAR NAS CURVAS",
-    instruction: "Lembre-se de frear antes da curva para não sair da pista.",
+    instruction: "Toque na ESQUERDA para frear. Freie ANTES da curva para não sair da pista.",
     highlight: TUTORIAL_HIGHLIGHTS.CURVE,
     conditionName: "brakedForCurve",
     timeoutMs: 10000,
@@ -41,7 +48,7 @@ export const TUTORIAL_STEPS = [
   {
     id: "mode_z",
     title: "MODO Z (DOWNFORCE)",
-    instruction: "Troque para o modo Z antes de curvas fechadas para ganhar aderência.",
+    instruction: "Toque no CENTRO para trocar para Modo Z. Use antes de curvas fechadas.",
     highlight: TUTORIAL_HIGHLIGHTS.AERO_BADGE,
     conditionName: "usedModeZInCurve",
     timeoutMs: 10000,
@@ -49,7 +56,7 @@ export const TUTORIAL_STEPS = [
   {
     id: "mode_x",
     title: "MODO X (BAIXO DRAG)",
-    instruction: "Use o modo X nas retas longas para atingir maior velocidade.",
+    instruction: "Toque no CENTRO para trocar para Modo X. Use nas retas para atingir maior velocidade.",
     highlight: TUTORIAL_HIGHLIGHTS.AERO_BADGE,
     conditionName: "usedModeXOnStraight",
     timeoutMs: 10000,
@@ -57,7 +64,7 @@ export const TUTORIAL_STEPS = [
   {
     id: "drift",
     title: "DERIVA E REGEN",
-    instruction: "Em velocidade alta e modo X você pode derivar — isso regenera um pouco de bateria.",
+    instruction: "Com Modo X ativado em alta velocidade voce pode derrapar - isso regenera bateria.",
     highlight: null,
     conditionName: "driftDetected",
     timeoutMs: 12000,
@@ -65,7 +72,7 @@ export const TUTORIAL_STEPS = [
   {
     id: "complete",
     title: "PARABÉNS",
-    instruction: "Tutorial concluído! Você está pronto para sua primeira corrida. Toque em CONTINUAR para voltar ao menu.",
+    instruction: "Tutorial concluído! Toque em CONTINUAR para voltar ao menu.",
     highlight: null,
     autoAdvanceOnInput: true,
   },
