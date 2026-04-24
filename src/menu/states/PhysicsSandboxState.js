@@ -29,11 +29,21 @@ export default class PhysicsSandboxState extends GameState {
   }
 
   onEnter() {
-    // build container
-    this.container = el('div', { style: { position: 'absolute', left: '0', top: '0', right: '0', bottom: '0', display: 'flex', gap: '12px', padding: '12px', boxSizing: 'border-box' } });
+    // build container (floating panel positioned relative to game canvas)
+    this.container = el('div', {});
+    // reposition logic bound for events
+    this._repositionBound = this._reposition.bind(this);
 
     const panel = el('div', { style: { width: '360px', background: 'rgba(0,0,0,0.8)', color: '#fff', padding: '12px', borderRadius: '6px', fontFamily: 'monospace', fontSize: '13px' } });
-    panel.appendChild(el('h3', {}, ['Physics Sandbox']));
+    // header with drag handle and auto-position control
+    const header = el('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'grab', marginBottom: '8px', userSelect: 'none' } });
+    const title = el('div', { style: { fontWeight: 'bold', fontSize: '14px' } }, ['Physics Sandbox']);
+    const hdrControls = el('div', { style: { display: 'flex', gap: '6px', alignItems: 'center' } });
+    const autoBtn = el('button', { style: { fontSize: '12px', padding: '4px 6px' } }, ['Auto']);
+    hdrControls.appendChild(autoBtn);
+    header.appendChild(title);
+    header.appendChild(hdrControls);
+    panel.appendChild(header);
 
     const defs = this._sliderDefs();
     defs.forEach(def => {
@@ -74,18 +84,159 @@ export default class PhysicsSandboxState extends GameState {
     btnRow.appendChild(backBtn);
     panel.appendChild(btnRow);
 
-    const simCanvas = el('canvas', { width: '800', height: '480', style: { flex: '1', background: '#222', borderRadius: '6px' } });
+    const simCanvas = el('canvas', { style: { background: '#222', borderRadius: '6px', display: 'block' } });
     this.simCanvas = simCanvas;
 
     this.container.appendChild(panel);
     this.container.appendChild(simCanvas);
     document.body.appendChild(this.container);
 
+    // initial positioning and sizing based on game canvas
+    try {
+      window.requestAnimationFrame(this._repositionBound);
+      window.addEventListener('resize', this._repositionBound);
+      window.addEventListener('scroll', this._repositionBound, true);
+    } catch (e) {
+      // ignore if environment doesn't support
+    }
+
+    // ESC key should close the sandbox and go back to menu
+    this._onKeyDownBound = (e) => {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        try { this._deps.callbacks.backToMenu(); } catch (err) {}
+        this.onExit();
+      }
+    };
+    window.addEventListener('keydown', this._onKeyDownBound);
+
+    // drag handlers for header
+    this._dragState = null;
+    this._manualPosition = false;
+    this._onPointerMoveBound = this._onPointerMove.bind(this);
+    this._onPointerUpBound = this._onPointerUp.bind(this);
+    this._onHeaderPointerDownBound = (e) => this._onHeaderPointerDown(e);
+    header.addEventListener('pointerdown', this._onHeaderPointerDownBound);
+    autoBtn.addEventListener('click', () => {
+      this._manualPosition = false;
+      window.requestAnimationFrame(this._repositionBound);
+    });
+
     // sim state: shallow copy of a car with minimal fields
     this.simState = this._makeSimState();
     this.running = true;
     this._tick = this._tick.bind(this);
     requestAnimationFrame(this._tick);
+  }
+
+  _reposition() {
+    if (this._manualPosition) {
+      // If user manually positioned the panel, don't override it, but ensure
+      // it stays within the viewport.
+      try {
+        const winW = window.innerWidth;
+        const winH = window.innerHeight;
+        const rect = this.container.getBoundingClientRect();
+        let left = rect.left;
+        let top = rect.top;
+        if (left + rect.width > winW - 12) left = Math.max(12, winW - rect.width - 12);
+        if (top + rect.height > winH - 12) top = Math.max(12, winH - rect.height - 12);
+        Object.assign(this.container.style, { left: `${Math.round(left + window.scrollX)}px`, top: `${Math.round(top + window.scrollY)}px` });
+      } catch (e) {}
+      return;
+    }
+    const canvas = (this._deps && this._deps.canvas) || document.querySelector('canvas');
+    const pad = 12;
+    const panelWidth = 360;
+    const winW = window.innerWidth;
+    const winH = window.innerHeight;
+    let rect = { left: 0, top: 0, width: winW, height: winH, right: winW };
+    if (canvas && canvas.getBoundingClientRect) {
+      rect = canvas.getBoundingClientRect();
+    }
+    // desired sim canvas width is up to half of the game canvas width
+    const simWidth = Math.max(320, Math.min(900, Math.round(rect.width * 0.5)));
+    const totalW = panelWidth + simWidth + pad * 2;
+    const totalH = Math.max(360, Math.min(winH - 24, Math.round(rect.height - pad * 2)));
+
+    // prefer placing to the right of the game canvas if space allows, otherwise left, otherwise top-right overlay
+    const spaceRight = Math.max(0, winW - rect.right - pad);
+    const spaceLeft = Math.max(0, rect.left - pad);
+    let left;
+    let top = Math.max(pad, rect.top + pad);
+    if (spaceRight >= totalW) {
+      left = rect.right + pad;
+    } else if (spaceLeft >= totalW) {
+      left = rect.left - totalW - pad;
+    } else {
+      // overlay near top-right of canvas but constrained within viewport
+      left = Math.max(pad, Math.min(winW - totalW - pad, rect.right - totalW));
+      top = Math.max(pad, rect.top + pad);
+    }
+
+    Object.assign(this.container.style, {
+      position: 'absolute',
+      left: `${Math.round(left + window.scrollX)}px`,
+      top: `${Math.round(top + window.scrollY)}px`,
+      width: `${totalW}px`,
+      height: `${totalH}px`,
+      display: 'flex',
+      gap: `${pad}px`,
+      padding: `${pad}px`,
+      boxSizing: 'border-box',
+      zIndex: 11000,
+      background: 'rgba(0,0,0,0.0)'
+    });
+
+    // style panel and sim canvas sizes
+    const panel = this.container.children[0];
+    const sim = this.simCanvas;
+    if (panel) Object.assign(panel.style, { width: `${panelWidth}px`, height: `${totalH - pad * 2}px`, overflow: 'auto' });
+    if (sim) {
+      sim.width = simWidth;
+      sim.height = Math.max(320, totalH - pad * 2);
+      Object.assign(sim.style, { width: `${simWidth}px`, height: `${sim.height}px` });
+    }
+  }
+
+  _onHeaderPointerDown(e) {
+    // start drag
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (err) {}
+    const rect = this.container.getBoundingClientRect();
+    this._dragState = {
+      id: e.pointerId,
+      sx: e.clientX,
+      sy: e.clientY,
+      origLeft: rect.left - window.scrollX,
+      origTop: rect.top - window.scrollY,
+    };
+    window.addEventListener('pointermove', this._onPointerMoveBound);
+    window.addEventListener('pointerup', this._onPointerUpBound);
+    // change cursor
+    try { e.currentTarget.style.cursor = 'grabbing'; } catch (err) {}
+  }
+
+  _onPointerMove(e) {
+    if (!this._dragState || e.pointerId !== this._dragState.id) return;
+    const dx = e.clientX - this._dragState.sx;
+    const dy = e.clientY - this._dragState.sy;
+    let left = Math.max(8, this._dragState.origLeft + dx);
+    let top = Math.max(8, this._dragState.origTop + dy);
+    this._manualPosition = true;
+    Object.assign(this.container.style, { left: `${Math.round(left + window.scrollX)}px`, top: `${Math.round(top + window.scrollY)}px` });
+  }
+
+  _onPointerUp(e) {
+    if (!this._dragState || e.pointerId !== this._dragState.id) return;
+    try {
+      const header = this.container.children[0];
+      if (header && header.releasePointerCapture) header.releasePointerCapture(this._dragState.id);
+      if (header) header.style.cursor = 'grab';
+    } catch (err) {}
+    window.removeEventListener('pointermove', this._onPointerMoveBound);
+    window.removeEventListener('pointerup', this._onPointerUpBound);
+    this._dragState = null;
   }
 
   _sliderDefs() {
@@ -152,8 +303,8 @@ export default class PhysicsSandboxState extends GameState {
 
   _renderSim(sim, telemetry) {
     const c = this.simCanvas.getContext('2d');
-    const w = this.simCanvas.width = Math.max(640, window.innerWidth - 420);
-    const h = this.simCanvas.height = Math.max(360, window.innerHeight - 120);
+    const w = this.simCanvas.width || Math.max(640, window.innerWidth - 420);
+    const h = this.simCanvas.height || Math.max(360, window.innerHeight - 120);
     c.clearRect(0, 0, w, h);
     // draw track center line
     c.fillStyle = '#333';
@@ -186,5 +337,19 @@ export default class PhysicsSandboxState extends GameState {
     this.running = false;
     if (this.container && this.container.parentNode) this.container.parentNode.removeChild(this.container);
     this.container = null;
+    try {
+      window.removeEventListener('resize', this._repositionBound);
+      window.removeEventListener('scroll', this._repositionBound, true);
+    } catch (e) {}
+    try {
+      window.removeEventListener('keydown', this._onKeyDownBound);
+    } catch (e) {}
+    try {
+      // remove any drag listeners and header pointerdown
+      window.removeEventListener('pointermove', this._onPointerMoveBound);
+      window.removeEventListener('pointerup', this._onPointerUpBound);
+      const header = this.container?.children?.[0]?.children?.[0];
+      if (header && this._onHeaderPointerDownBound) header.removeEventListener('pointerdown', this._onHeaderPointerDownBound);
+    } catch (err) {}
   }
 }
