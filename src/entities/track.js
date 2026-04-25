@@ -516,7 +516,7 @@ class Track {
     const b = this.racingLineData[nextIndex];
     return a + (b - a) * t;
   }
-  // Optional `out` parameter can be passed to avoid allocations: getTrackPoint(z, out)
+  
   getTrackPoint(z, out) {
     const lap = this.lapLength || this.totalDistance;
     if (!lap || this.trackData.length === 0) {

@@ -32,7 +32,7 @@ function createCarStateFields() {
     
     isDrifting: false,
     driftTimer: 0,
-    // Per-car brake ramp used by longitudinal brake logic (moved from module-scope)
+    
     brakeRamp: 0,
   };
 }

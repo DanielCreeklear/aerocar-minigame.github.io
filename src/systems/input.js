@@ -52,7 +52,7 @@ class InputController {
     this.handlers = handlers;
     this.isKeyBraking = false;
     this.isKeyBoosting = false;
-    this._lastGyroSteer = null; // track last emitted value to avoid redundant zero-spam
+    this._lastGyroSteer = null; 
     this._activePointers = new Map();
     this._iosPermissionRequested = false;
     this._orientationBound = false;
@@ -76,8 +76,8 @@ class InputController {
     };
   }
   isInModeButton(x, y) {
-    // Mode button only exists during an active race; ignore outside RACE to
-    // avoid swallowing taps on menu footer buttons (CONFIG, TUTORIAL, etc.)
+    
+    
     if (!this.handlers.isRaceActive?.()) return false;
     return (
       x >= this.canvas.width * MODE_BUTTON_X_MIN_RATIO &&
@@ -112,20 +112,20 @@ class InputController {
         0;
       let raw;
       if (screenAngle === 90) {
-        // Landscape left: beta maps to lateral tilt
+        
         raw = -e.beta;
       } else if (screenAngle === -90 || screenAngle === 270) {
-        // Landscape right
+        
         raw = e.beta;
       } else {
-        // Portrait: gamma is lateral tilt, W3C convention is consistent
-        // across Android (including MIUI/Xiaomi) and iOS.
+        
+        
         raw = e.gamma;
       }
       if (raw === null || raw === undefined) return;
       const steerValue = normalizeTilt(raw);
-      // Only emit if value changed, preventing repeated zero-events from the
-      // deadzone from continuously resetting steerTarget mid-race.
+      
+      
       if (steerValue !== this._lastGyroSteer) {
         this._lastGyroSteer = steerValue;
         this.handlers.onSteerChange(steerValue);
@@ -153,20 +153,20 @@ class InputController {
         0;
       let raw;
       if (screenAngle === 90) {
-        // Landscape left
+        
         raw = ag.y != null ? -ag.y : 0;
       } else if (screenAngle === -90 || screenAngle === 270) {
-        // Landscape right
+        
         raw = ag.y != null ? ag.y : 0;
       } else {
-        // Portrait.
-        // Android: ag.x axis points LEFT, so positive = tilt left → negate.
-        // iOS:     ag.x axis points RIGHT, so positive = tilt right → keep.
+        
+        
+        
         raw = ag.x != null ? (isAndroid ? -ag.x : ag.x) : 0;
       }
       const steerValue = normalizeTiltMs2(raw);
-      // Only emit if value changed, preventing repeated zero-events from the
-      // deadzone from continuously resetting steerTarget mid-race.
+      
+      
       if (steerValue !== this._lastGyroSteer) {
         this._lastGyroSteer = steerValue;
         this.handlers.onSteerChange(steerValue);
@@ -358,10 +358,10 @@ class InputController {
       if (isIOSWithoutPermission) {
         this.handlers.onGyroscopeUnavailable?.();
       } else if (isAndroid && browserSupportsDeviceOrientation) {
-        // On Android, deviceorientation (e.gamma) follows the W3C standard
-        // consistently across manufacturers. devicemotion (ag.x) has
-        // inconsistent axis conventions between OEMs (e.g. Xiaomi MIUI vs
-        // stock Android), so we prefer orientation on Android.
+        
+        
+        
+        
         this._bindDeviceOrientationEvent();
       } else if (browserSupportsDeviceMotion) {
         this._bindDeviceMotionEvent();

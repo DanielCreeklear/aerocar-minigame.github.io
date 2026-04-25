@@ -101,7 +101,7 @@ class Renderer {
     this._worldZoom = ZOOM_BASE;
     
     this._skidLayer = null;
-    // Instance-scoped rain flash state to avoid leaking between renderer instances
+    
     this._nextRainFlashAt = 0;
     this._rainFlashActive = false;
     this._screenRenderers = {
@@ -113,12 +113,12 @@ class Renderer {
         drawLeaderboardScreen(ctx, w, h, gs, track),
       [SCREENS.GAME_OVER]: (ctx, w, h, gs) => drawGameOverScreen(ctx, w, h, gs),
     };
-    // Per-renderer trail state reused across frames to avoid module-level
-    // allocations in the car renderer's trail system.
-    // Per-renderer trail state reused across frames to avoid module-level
-    // allocations in the car renderer's trail system.
+    
+    
+    
+    
     this._trailState = createTrailState();
-    // per-renderer caches for heavy bitmap/gradient reuse
+    
     this._renderCaches = {
       barrierCache: new Map(),
       boostGradCache: {},
@@ -161,16 +161,16 @@ class Renderer {
     }
 
     
-    // Prefer reuse of provided currentTrackPoint (often cached on gameState),
-    // but accept an optional out object to avoid allocations when the track
-    // implementation supports it.
+    
+    
+    
     const carTrackInfo = gameState.currentTrackPoint || track.getTrackPoint(gameState.currentZ);
     const desiredCameraX =
       carTrackInfo.x + (gameState.lateralVelocity || 0) * CAMERA_LATERAL_VEL_LOOKAHEAD;
     this._cameraX += (desiredCameraX - this._cameraX) * Math.min(1, CAMERA_LERP * dt);
     const roundedCameraX = Math.round(this._cameraX);
 
-    // Zoom: brake zoom-in on mode Z only. Mode X keeps zoom stable at ZOOM_BASE.
+    
     let targetZoom = ZOOM_BASE;
     if (gameState.aeroMode === AERO_MODES.Z) {
       targetZoom = ZOOM_BASE - (gameState.isBraking ? BRAKE_ZOOM_BONUS : 0);
@@ -202,7 +202,7 @@ class Renderer {
     ctx.save();
     if (scale !== 1) ctx.scale(scale, scale);
     if (this._worldZoom !== ZOOM_BASE) {
-      // Anchor zoom to logical canvas center so zoom-in doesn't shift the track
+      
       ctx.translate(logW * 0.5, logH * 0.5);
       ctx.scale(this._worldZoom, this._worldZoom);
       ctx.translate(-logW * 0.5, -logH * 0.5);
@@ -217,8 +217,8 @@ class Renderer {
     }
     drawObstacles(ctx, gameState, track, metrics);
     drawRivals(ctx, gameState, track, metrics);
-    // Pass the per-renderer trail state into drawCar to ensure trails are
-    // isolated per renderer instance.
+    
+    
     drawCar(ctx, gameState, track, metrics, this._trailState, this._renderCaches);
     ctx.restore();
     ctx.save();
@@ -249,7 +249,7 @@ class Renderer {
 
     ctx.restore();
 
-    // If a tutorial is active, render its overlay on top of the race world
+    
     if (gameState.isTutorial && stateManager) {
       stateManager.render(ctx, width, height);
     }

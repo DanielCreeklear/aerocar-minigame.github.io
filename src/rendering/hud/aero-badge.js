@@ -35,7 +35,7 @@ function drawAeroBadge(ctx, gameState, width, height, touchReserve = 0, caches =
   const glowColor = isX ? HUD_COLORS.badgeModeXGlow : HUD_COLORS.badgeModeZGlow;
   
   const key = `${Math.round(badgeW)}x${Math.round(badgeH)}:${isX ? 1 : 0}`;
-  // prefer instance cache
+  
   let bcache = null;
   if (caches && caches.aeroBadgeCache) bcache = caches.aeroBadgeCache;
   else bcache = _badgeCache;
@@ -76,7 +76,7 @@ function drawAeroBadge(ctx, gameState, width, height, touchReserve = 0, caches =
     bmp = canvas;
   }
   ctx.drawImage(bmp, x, y);
-  // tutorial highlight for aero-badge
+  
   if (gameState && gameState._tutorialHighlight === "aero-badge") {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";

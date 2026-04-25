@@ -102,7 +102,7 @@ function bottomBar(ctx, w, h, actions) {
   ctx.font = `700 ${sz}px ${R.font}`;
   ctx.textBaseline = "middle";
   const cy = by + bh * 0.5;
-  // layout actions left-to-right (consistent with original UI)
+  
   const startX = 20;
   let curX = startX;
   ctx.fillStyle = R.textHeader;
@@ -135,7 +135,7 @@ function topStripe(ctx, w, leftTxt, rightTxt) {
   ctx.fillText(rightTxt, w - 20, sh * 0.5);
   ctx.restore();
 }
-// Unified rank list renderer: supports optional paging via `offset`
+
 function drawRankList(ctx, x, y, w, rowH, rankings, slotCount, offset = 0) {
   for (let i = 0; i < slotCount; i++) {
     const ry = y + i * (rowH + 4);
@@ -321,12 +321,12 @@ function drawGyroscopeWarning(ctx, x, y, w) {
   ctx.textAlign = "left";
   ctx.fillStyle = R.textHeader;
   ctx.font = `700 ${sz}px ${R.font}`;
-  // Mensagem genérica instruindo o usuário a ativar/permitir o sensor de movimento
+  
   ctx.fillText("[!] ATIVE O SENSOR DE MOVIMENTO / GIROSCÓPIO NO NAVEGADOR", x, y);
   ctx.restore();
 }
-// Draws a horizontal segmented selector (radio-button style).
-// options: string[], selectedIndex: number, returns nothing (pure draw).
+
+
 function drawSegmentedSelector(ctx, x, y, w, h, options, selectedIndex) {
   const shadow = 3;
   const segW = Math.floor(w / options.length);
@@ -345,7 +345,7 @@ function drawSegmentedSelector(ctx, x, y, w, h, options, selectedIndex) {
     ctx.fillText(opt, sx + (segW - 1) * 0.5, y + h * 0.5);
   });
 }
-// Draws a horizontal slider with label and current value.
+
 function drawSlider(ctx, x, y, w, h, value, minVal, maxVal, label, unit) {
   const trackH = Math.max(4, Math.round(h * 0.18));
   const trackY = y + h * 0.5 - trackH * 0.5;
@@ -354,7 +354,7 @@ function drawSlider(ctx, x, y, w, h, value, minVal, maxVal, label, unit) {
   const trackLeft = x + thumbR;
   const trackRight = x + w - thumbR;
   const thumbX = trackLeft + t * (trackRight - trackLeft);
-  // Label row
+  
   const labelSz = Math.max(10, Math.min(13, h * 0.32));
   ctx.font = `700 ${labelSz}px ${R.font}`;
   ctx.fillStyle = R.textHeader;
@@ -364,18 +364,18 @@ function drawSlider(ctx, x, y, w, h, value, minVal, maxVal, label, unit) {
   const valStr = `${Math.round(value)}${unit}`;
   ctx.textAlign = "right";
   ctx.fillText(valStr, x + w, y - 4);
-  // Track background
+  
   ctx.fillStyle = R.buttonBody;
   ctx.fillRect(trackLeft - thumbR, trackY, trackRight - trackLeft + thumbR * 2, trackH);
-  // Track fill
+  
   ctx.fillStyle = R.gold;
   ctx.fillRect(trackLeft - thumbR, trackY, (thumbX - trackLeft + thumbR), trackH);
-  // Thumb shadow
+  
   ctx.fillStyle = R.buttonShadow;
   ctx.beginPath();
   ctx.arc(thumbX + 2, trackY + trackH * 0.5 + 2, thumbR, 0, Math.PI * 2);
   ctx.fill();
-  // Thumb
+  
   ctx.fillStyle = R.buttonBody;
   ctx.beginPath();
   ctx.arc(thumbX, trackY + trackH * 0.5, thumbR, 0, Math.PI * 2);
@@ -394,15 +394,15 @@ function getSettingsLayout(w, h) {
   const titleSz = csz(w, 0.055, 18, 30);
   const sectionGap = Math.max(22, Math.round(h * 0.04));
   let curY = pad + titleSz + 24;
-  // Section DIFICULDADE
+  
   const diffY = curY + 14;
   const diffH = btnH;
   curY = diffY + diffH + sectionGap;
-  // Section SENSOR
+  
   const gyroY = curY + 14;
   const gyroH = btnH;
   curY = gyroY + gyroH;
-  // Slider SENSIBILIDADE (shown below gyro)
+  
   const sliderY = curY + sectionGap + 14 + 16;
   const sliderH = Math.max(36, Math.round(h * 0.06));
   return { pad, btnW, btnH, btnGap, titleSz, diffY, diffH, gyroY, gyroH, sliderY, sliderH };
@@ -454,7 +454,7 @@ function drawStartScreen(ctx, w, h, gameState, track) {
     ctx.moveTo(pad, h * 0.14 + titleSz * 2.7);
     ctx.lineTo(w - pad, h * 0.14 + titleSz * 2.7);
     ctx.stroke();
-    // Nudge the main CTA slightly upward so it sits a bit higher on the screen
+    
     const btnStartY = h * 0.42;
     drawButton(ctx, pad, btnStartY, btnW, btnH, "INICIAR CORRIDA", blink);
     if (gameState && gameState.iosPermissionStatus === "prompt") {
@@ -501,7 +501,7 @@ function drawStartScreen(ctx, w, h, gameState, track) {
     const subSz = csz(w, 0.02, 10, 13);
     ctx.font = `700 ${subSz}px ${R.font}`;
     ctx.fillText("TIME ATTACK", pad, h * 0.28 + titleSz * 2.35);
-    // Nudge the main CTA slightly upward in landscape as well
+    
     const btnStartY = h * 0.60;
     drawButton(
       ctx,
@@ -721,7 +721,7 @@ function drawTrackPreviewScreen(ctx, w, h, track, gameState) {
   ctx.restore();
 }
 
-// drawRankListPaged removed; use drawRankList(ctx, x, y, w, rowH, rankings, slotCount, offset)
+
 
 function drawLeaderboardScreen(ctx, w, h, gameState) {
   const isPortrait = h > w;
@@ -756,12 +756,12 @@ function drawLeaderboardScreen(ctx, w, h, gameState) {
   const prevBtnX = nextBtnX - (ctrlBtnW + gap);
   const ctrlBtnY = Math.round(lineY + 6);
 
-  // calcula área disponível para a lista
+  
   const topY = pad + titleSz + ctrlBtnH + 18;
   const bottomH = 40;
   const availH = h - topY - bottomH - pad;
 
-  // tamanho de linha e page size calculados pelo espaço real da tela
+  
   const minRowH = isPortrait ? 22 : 20;
   const maxRowH = isPortrait ? 44 : 40;
   const rowH = Math.max(minRowH, Math.min(maxRowH, Math.round(availH / 8)));
@@ -795,7 +795,7 @@ function drawSettingsScreen(ctx, w, h, gameState) {
   ctx.fillRect(0, 0, w, h);
   const l = getSettingsLayout(w, h);
   const { pad, btnW, btnH, titleSz } = l;
-  // Title
+  
   ctx.fillStyle = R.textHeader;
   ctx.font = `700 ${titleSz}px ${R.font}`;
   ctx.textAlign = "left";
@@ -807,10 +807,10 @@ function drawSettingsScreen(ctx, w, h, gameState) {
   ctx.moveTo(pad, pad + titleSz + 5);
   ctx.lineTo(isPortrait ? w - pad : Math.min(w - pad, pad + btnW + 4), pad + titleSz + 5);
   ctx.stroke();
-  // Section: DIFICULDADE
+  
   sectionHeader(ctx, pad, pad + titleSz + 24, btnW, "DIFICULDADE");
   drawSegmentedSelector(ctx, pad, l.diffY, btnW, l.diffH, ["FÁCIL", "NORMAL", "DIFÍCIL"], difficultyIndex);
-  // Section: SENSOR DE MOVIMENTO
+  
   const sectionGap = Math.max(22, Math.round(h * 0.04));
   sectionHeader(ctx, pad, l.diffY + l.diffH + sectionGap * 0.6, btnW, "SENSOR DE MOVIMENTO");
   const gyroLabel = gyroActive ? "SENSOR ATIVO ✓" : "ATIVAR SENSOR DE MOVIMENTO";
@@ -818,7 +818,7 @@ function drawSettingsScreen(ctx, w, h, gameState) {
   if (gameState && gameState.gyroscopeWarning) {
     drawGyroscopeWarning(ctx, pad, l.gyroY + btnH + 6, btnW);
   }
-  // Section: SENSIBILIDADE (slider)
+  
   sectionHeader(ctx, pad, l.sliderY - 14 - sectionGap * 0.5, btnW, "SENSIBILIDADE DO GIRO");
   drawSlider(ctx, pad, l.sliderY, btnW, l.sliderH, gyroSensitivity, 8, 28, "ÂNGULO MÁX. DE INCLINAÇÃO", "°");
   bottomBar(ctx, w, h, [{ icon: "✕", label: "VOLTAR" }]);

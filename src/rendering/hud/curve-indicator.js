@@ -17,7 +17,7 @@ function drawCurveIndicator(ctx, gameState, width) {
   }
   const fontSize = responsiveSize(width, HUD_FONTS.curveArrow);
   ctx.save();
-  // highlight if requested by tutorial
+  
   const tutorialHighlight = gameState && gameState._tutorialHighlight;
   if (tutorialHighlight === "curve-indicator") {
     ctx.shadowColor = "rgba(255,255,255,0.9)";

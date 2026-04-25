@@ -128,7 +128,7 @@ function _drawBarrierCached(ctx, barrierInnerX, dir, sliceZ, y, step, metrics, c
   const stripePhase = Math.floor(sliceZ / HAZARD_PERIOD) % 2;
   const dots = (y & 3) === 0;
   const barrierShadowW = Math.round(metrics.trackWidth * 0.07);
-  // prefer instance cache when provided
+  
   let bcache = _barrierCache;
   if (caches && caches.barrierCache) bcache = caches.barrierCache;
   const canvas = _getBarrierCanvas(bcache, step, barrierShadowW, beat, stripePhase, dir, dots);
