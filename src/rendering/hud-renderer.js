@@ -7,6 +7,7 @@ import { drawCurveIndicator } from "./hud/curve-indicator.js";
 import { createWindState, drawWindStreaks } from "./hud/wind-streaks.js";
 import { drawCentrifugalSlideEffect } from "./hud/centrifugal-slide.js";
 import { SPEED_KMH_SCALE } from "../constants/rendering.js";
+import { isMobile } from "../utils/platform.js";
 const SPEEDOMETER_SCALE_TO_KMH = SPEED_KMH_SCALE;
 const SPEEDOMETER_MAX_KMH = 399;
 const SPEEDOMETER_SMOOTHING = 0.18;
@@ -17,12 +18,54 @@ const R4_FONT =
 
 
 function drawScanlines(ctx, width, height) {
-  
   ctx.save();
   ctx.globalAlpha = 0.04;
   ctx.fillStyle = "#000000";
   ctx.fillRect(0, 0, width, height);
   ctx.restore();
+}
+
+const BACK_BTN_LABEL = "✕ MENU";
+function _backBtnRect(width, height) {
+  const isPortrait = height > width;
+  const sz = Math.max(10, Math.min(13, width * 0.028));
+  const pad = Math.max(6, Math.min(10, width * 0.018));
+  const bh = sz + pad * 2;
+  // landscape: top-left; portrait: top-right to avoid overlap with input bars
+  const bx = isPortrait ? width - Math.round(width * 0.28) - pad : pad;
+  const by = pad;
+  const bw = Math.round(width * 0.28);
+  return { bx, by, bw, bh, sz };
+}
+function drawBackButton(ctx, width, height, pressed) {
+  const { bx, by, bw, bh, sz } = _backBtnRect(width, height);
+  ctx.save();
+  ctx.globalAlpha = pressed ? 0.85 : 0.55;
+  ctx.fillStyle = pressed ? "#CC0000" : "#1a1a1a";
+  const r = 6;
+  ctx.beginPath();
+  ctx.moveTo(bx + r, by);
+  ctx.lineTo(bx + bw - r, by);
+  ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + r);
+  ctx.lineTo(bx + bw, by + bh - r);
+  ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - r, by + bh);
+  ctx.lineTo(bx + r, by + bh);
+  ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - r);
+  ctx.lineTo(bx, by + r);
+  ctx.quadraticCurveTo(bx, by, bx + r, by);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = pressed ? "#FF4444" : "#555555";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.globalAlpha = pressed ? 1.0 : 0.75;
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = `bold ${sz}px ${R4_FONT}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(BACK_BTN_LABEL, bx + bw / 2, by + bh / 2);
+  ctx.restore();
+  return { x: bx, y: by, w: bw, h: bh };
 }
 
 
@@ -120,6 +163,8 @@ class HudRenderer {
     this.displayedSpeedKmh = 0;
     this._warningTick = 0;
     this._windState = createWindState();
+    this._backBtnPressed = false;
+    this._backBtnRect = null;
     // instance scoped caches for HUD drawing resources (gradients, bitmaps)
     this._caches = {
       aeroBadgeCache: new Map(),
@@ -132,11 +177,20 @@ class HudRenderer {
     this.displayedSpeedKmh = 0;
     this._warningTick = 0;
     this._windState = createWindState();
+    this._backBtnPressed = false;
+    this._backBtnRect = null;
     // clear instance caches
     this._caches.aeroBadgeCache.clear();
     this._caches.gripWarningCache.clear();
     this._caches.windVignetteCache = {};
     this._caches.centrifugalGradCache = {};
+  }
+  isBackBtnHit(x, y) {
+    const r = this._backBtnRect;
+    if (!r) return false;
+    const ex = r.w * 0.1;
+    const ey = r.h * 0.1;
+    return x >= r.x - ex && x <= r.x + r.w + ex && y >= r.y - ey && y <= r.y + r.h + ey;
   }
   draw(ctx, gameState, width, height, dt = 1 / 60) {
     const rawSpeed = Math.max(0, gameState.speed || 0);
@@ -166,6 +220,9 @@ class HudRenderer {
     drawSpeedometer(ctx, this.displayedSpeedKmh, width, height, isPortrait, 0);
     drawAeroBadge(ctx, gameState, width, height, 0, this._caches);
     drawRescueBanner(ctx, gameState, width, height);
+    if (isMobile) {
+      this._backBtnRect = drawBackButton(ctx, width, height, this._backBtnPressed);
+    }
     drawScanlines(ctx, width, height);
   }
 }
