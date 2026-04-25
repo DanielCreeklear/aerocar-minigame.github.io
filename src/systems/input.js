@@ -112,15 +112,14 @@ class InputController {
         0;
       let raw;
       if (screenAngle === 90) {
-        // Landscape left: beta maps to lateral tilt; negate for correct dir
-        raw = isAndroid ? e.beta : -e.beta;
+        // Landscape left: beta maps to lateral tilt
+        raw = -e.beta;
       } else if (screenAngle === -90 || screenAngle === 270) {
         // Landscape right
-        raw = isAndroid ? -e.beta : e.beta;
+        raw = e.beta;
       } else {
-        // Portrait: gamma is lateral tilt.
-        // Android: positive gamma = tilt right (correct, no negation needed).
-        // iOS:     positive gamma = tilt right as well, same convention.
+        // Portrait: gamma is lateral tilt, W3C convention is consistent
+        // across Android (including MIUI/Xiaomi) and iOS.
         raw = e.gamma;
       }
       if (raw === null || raw === undefined) return;
@@ -358,6 +357,12 @@ class InputController {
     if (!requiresMotionPermission && !requiresOrientationPermission) {
       if (isIOSWithoutPermission) {
         this.handlers.onGyroscopeUnavailable?.();
+      } else if (isAndroid && browserSupportsDeviceOrientation) {
+        // On Android, deviceorientation (e.gamma) follows the W3C standard
+        // consistently across manufacturers. devicemotion (ag.x) has
+        // inconsistent axis conventions between OEMs (e.g. Xiaomi MIUI vs
+        // stock Android), so we prefer orientation on Android.
+        this._bindDeviceOrientationEvent();
       } else if (browserSupportsDeviceMotion) {
         this._bindDeviceMotionEvent();
       } else if (browserSupportsDeviceOrientation) {

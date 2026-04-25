@@ -27,7 +27,6 @@ import {
   ZOOM_MIN,
   ZOOM_LERP,
   BRAKE_ZOOM_BONUS,
-  SKID_LAYER_DPR,
   SKID_SLIP_THRESHOLD,
   SKID_LATERAL_VEL_THRESHOLD,
 } from "../constants/index.js";
@@ -157,12 +156,9 @@ class Renderer {
     this._shake.y = Math.round(this._shake.y);
     ctx.imageSmoothingEnabled = false; 
     
-    const dpr = SKID_LAYER_DPR;
     if (!this._skidLayer) {
-      this._skidLayer = createSkidLayer(metrics.width, metrics.height, dpr);
-      
-      this._skidLayer.resize(metrics.width, metrics.height, dpr);
-    } else this._skidLayer.resize(metrics.width, metrics.height, dpr);
+      this._skidLayer = createSkidLayer();
+    }
 
     
     // Prefer reuse of provided currentTrackPoint (often cached on gameState),
@@ -184,20 +180,23 @@ class Renderer {
 
     
     const carDrawPos = computeCarDrawPosition(gameState, metrics.width, metrics.height);
-    const prevCar = this._prevCarDraw || null;
 
-    
     const slipVal = gameState.currentSlip || 0;
     const latV = Math.abs(gameState.lateralVelocity || 0);
-    if (prevCar && this._skidLayer) {
+    if (this._prevCarZ !== undefined && this._skidLayer) {
       const shouldSkid = slipVal >= SKID_SLIP_THRESHOLD || latV >= SKID_LATERAL_VEL_THRESHOLD;
       if (shouldSkid) {
         const intensity = Math.min(1, Math.max(slipVal, latV / 20));
         const color = gameState.aeroMode === AERO_MODES.X ? 'rgba(30,30,30,0.9)' : 'rgba(60,60,60,0.65)';
-        this._skidLayer.addSkid(prevCar.drawX, prevCar.drawY, carDrawPos.drawX, carDrawPos.drawY, intensity, color);
+        this._skidLayer.addSkid(
+          this._prevCarZ, this._prevCarLat,
+          gameState.currentZ, gameState.lateralOffset || 0,
+          intensity, color,
+        );
       }
     }
-    this._prevCarDraw = carDrawPos;
+    this._prevCarZ = gameState.currentZ;
+    this._prevCarLat = gameState.lateralOffset || 0;
 
     
     ctx.save();
@@ -214,7 +213,7 @@ class Renderer {
     drawTrack(ctx, gameState, track, metrics, roundedCameraX, this._renderCaches);
     
     if (this._skidLayer) {
-      this._skidLayer.drawTo(ctx);
+      this._skidLayer.drawTo(ctx, gameState, track, metrics, roundedCameraX);
     }
     drawObstacles(ctx, gameState, track, metrics);
     drawRivals(ctx, gameState, track, metrics);
