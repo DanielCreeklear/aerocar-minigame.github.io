@@ -11,6 +11,13 @@ if (playBtn) {
   playBtn.href = import.meta.env.BASE_URL + 'play/';
 }
 
+// Ensure the Spotify link points to the episode URL (keeps HTML and JS consistent)
+const spotifyLink = document.getElementById('spotify-link');
+if (spotifyLink) {
+  // canonical episode URL (without extra querystring params)
+  spotifyLink.href = 'https://open.spotify.com/episode/5SRXstwZdXWuUTi51n6bDD';
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
   const el = document.getElementById('spotify-embed');
