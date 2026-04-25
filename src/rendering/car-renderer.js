@@ -21,8 +21,8 @@ const TRAIL_MAX = 10;
 const TRAIL_SPEED_THRESHOLD = 250 / 17; 
 const SPRAY_SPEED_THRESHOLD = 100 / 17; 
 
-// Trail state is now pluggable so it can be owned by the Renderer instance
-// and avoid module-level state leaking between renderers or simulations.
+
+
 function createTrailState() {
   return { buf: new Array(TRAIL_MAX), head: 0, len: 0 };
 }
@@ -215,7 +215,7 @@ function drawBoostFlame(ctx, gameState, metrics, caches = null) {
   const bodyW = carWidth * 0.72;
   const bodyH = carHeight * 0.88;
   const glowRadius = Math.round(bodyW * 0.62 + Math.random() * bodyW * 0.1);
-  // prefer instance cache for gradients when available
+  
   let gcache = null;
   if (caches && caches.boostGradCache) gcache = caches.boostGradCache;
   else {
@@ -269,9 +269,9 @@ function drawCar(ctx, gameState, track, metrics, trailState, caches = null) {
   const playerInfluence = 0.25 + 0.75 * steerFactor; 
   const totalAngle = roadAngle + visualHeading * playerInfluence + (gameState.spinRotation || 0);
 
-  // Ensure there is a trailState to use; if none provided fall back to a
-  // per-function default (preserves backward compatibility for callers that
-  // don't provide a trail), but primary usage should pass an owned state.
+  
+  
+  
   if (!trailState) {
     if (!drawCar._defaultTrail) drawCar._defaultTrail = createTrailState();
     trailState = drawCar._defaultTrail;

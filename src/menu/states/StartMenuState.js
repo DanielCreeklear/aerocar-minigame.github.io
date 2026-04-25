@@ -30,7 +30,7 @@ export class StartMenuState extends GameState {
     this._lastW = w;
     this._lastH = h;
     const isPortrait = h > w;
-    // Nudge the main CTA slightly upward (um pouquinho)
+    
     const btnStartY = isPortrait ? h * 0.42 : h * 0.60;
     const btnH = Math.max(44, Math.round(h * 0.075));
     this._ctaBtn.setRect(0, btnStartY, w, btnH);
@@ -60,7 +60,7 @@ export class StartMenuState extends GameState {
     try {
       const hostname = typeof window !== 'undefined' && window.location && window.location.hostname;
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        // hide dev pill on small viewports to avoid blocking bottom controls on mobile
+        
         const cssW = (typeof window !== 'undefined' && window.devicePixelRatio)
           ? Math.round(w / (window.devicePixelRatio || 1))
           : w;
@@ -70,7 +70,7 @@ export class StartMenuState extends GameState {
           const devW = Math.min(180, Math.max(110, w * 0.18));
           const devH = 40;
           const devX = 12;
-          // ensure the dev pill sits above the footer so it doesn't block footer taps
+          
           const footerBh = 40;
           const devY = Math.max(12, Math.round(h - devH - 12 - footerBh));
         
@@ -107,7 +107,7 @@ export class StartMenuState extends GameState {
       this._devRect = { x: 0, y: 0, w: 0, h: 0 };
     }
     const footerH = 40;
-    // footer buttons hitboxes are computed below to match renderer.bottomBar
+    
     this._settingsBtn.setRect(0, 0, 0, 0);
     const gs = this._deps.getGameState();
     if (gs && gs.iosPermissionStatus === "prompt") {
@@ -118,8 +118,8 @@ export class StartMenuState extends GameState {
         const sz = Math.max(11, Math.min(15, availW * 0.034));
         const btnH = sz + 16;
         const btnW = availW * 0.9;
-        // Keep the gyro/button alignment in sync with the renderer: place it
-        // just below the CTA. Use the same gap used in the renderer.
+        
+        
         const btnGap = Math.max(10, Math.round(h * 0.018));
         const gyroY = Math.round(btnStartY + btnH + btnGap + 4);
         this._gyroBtn.setRect(
@@ -149,9 +149,9 @@ export class StartMenuState extends GameState {
     } else {
       this._gyroBtn.setRect(0, 0, 0, 0);
     }
-    // Footer hitboxes: mirror exactly the bottomBar() logic in screen-renderer.js
-    // bottomBar: sz = max(12, min(15, w*0.032)), font = '700 {sz}px monospace',
-    //            startX = 20, curX += measureText(txt).width + 28
+    
+    
+    
     const footerBh = 40;
     const footerBy = h - footerBh;
     const footerSz = Math.max(12, Math.min(15, w * 0.032));
@@ -171,7 +171,7 @@ export class StartMenuState extends GameState {
     for (const a of footerActions) {
       const txt = `${a.icon} ${a.label}`;
       const wText = ctx.measureText(txt).width;
-      // expand hit area horizontally by 10px on each side for easier tapping
+      
       const padX = 10;
       a.btn.setRect(Math.round(curX - padX), Math.round(footerBy), Math.round(wText + padX * 2), footerBh);
       curX += wText + 28;
@@ -183,7 +183,7 @@ export class StartMenuState extends GameState {
       requestAnimationFrame(() => this._deps.callbacks.openLeaderboard());
       return;
     }
-    // Footer primary actions: START, SETTINGS, TUTORIAL (check in that order)
+    
     if (this._footerStartBtn && this._footerStartBtn.isHit(x, y)) {
       this._footerStartBtn.pressed = true;
       requestAnimationFrame(() => this._deps.callbacks.startRace());

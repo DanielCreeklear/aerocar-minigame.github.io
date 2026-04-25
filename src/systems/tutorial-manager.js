@@ -7,7 +7,7 @@ export class TutorialManager {
     this.current = 0;
     this.startTime = Date.now();
     this.stepStartTime = Date.now();
-    // snapshot battery at construction so we detect a real drop, not a pre-existing value
+    
     this._batteryAtStepStart = typeof gameState?.battery === "number" ? gameState.battery : 100;
     this._flags = {
       boostUsed:          false,
@@ -32,10 +32,10 @@ export class TutorialManager {
     if (this.current < this.steps.length - 1) {
       this.current += 1;
       this.stepStartTime = Date.now();
-      // snapshot battery when entering a new step so boost detection is relative
+      
       const gs = this.gameState;
       this._batteryAtStepStart = typeof gs?.battery === "number" ? gs.battery : 100;
-      // reset the flag for the incoming step so it must be earned fresh
+      
       const incoming = this.steps[this.current];
       if (incoming?.conditionName) {
         this._flags[incoming.conditionName] = false;
@@ -59,11 +59,11 @@ export class TutorialManager {
     const step = this.getStep();
     if (!step) return;
 
-    // ── Detect the condition for the CURRENT step only ──────────────────────
-    // This prevents a flag earned early from skipping a later step instantly.
+    
+    
     switch (step.conditionName) {
       case "boostUsed":
-        // battery dropped at least 3 points from when this step started
+        
         if (!this._flags.boostUsed && typeof gs.battery === "number") {
           if (gs.battery < this._batteryAtStepStart - 3) {
             this._flags.boostUsed = true;
@@ -72,7 +72,7 @@ export class TutorialManager {
         break;
 
       case "brakedForCurve":
-        // player is near a curve AND speed is low (braking)
+        
         if (!this._flags.brakedForCurve) {
           const upcomingCurv = gs.upcomingCurvature || 0;
           if (Math.abs(upcomingCurv) > 1.5 && (gs.speed || 0) < 14) {
@@ -105,9 +105,9 @@ export class TutorialManager {
         break;
     }
 
-    // ── Evaluate advancement ─────────────────────────────────────────────────
-    // autoAdvanceOnInput is handled by TutorialState.onPointerDown directly,
-    // but keep the lastInputAt path as a fallback for keyboard users
+    
+    
+    
     if (step.autoAdvanceOnInput && gs.lastInputAt && gs.lastInputAt > this.stepStartTime) {
       this.advance();
       return;
@@ -118,7 +118,7 @@ export class TutorialManager {
       return;
     }
 
-    // timeout fallback
+    
     if (step.timeoutMs) {
       const elapsed = Date.now() - this.stepStartTime;
       if (elapsed >= step.timeoutMs) {

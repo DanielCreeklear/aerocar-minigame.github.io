@@ -20,9 +20,9 @@ function drawCentrifugalSlideEffect(ctx, gameState, width, height, caches = null
   const baseAlpha = 0.15 + progress * 0.45 + flashIntensity * 0.25;
   ctx.save();
   
-  // Use instance-scoped cache when available, fall back to function-scoped cache
+  
   const side = slideLeft ? "L" : "R";
-  const alphaKey = Math.round(baseAlpha * 20); // quantize to 0.05 steps
+  const alphaKey = Math.round(baseAlpha * 20); 
   const key = `${width}x${height}@${side}@${alphaKey}`;
   let gcache = null;
   if (caches && caches.centrifugalGradCache) gcache = caches.centrifugalGradCache;

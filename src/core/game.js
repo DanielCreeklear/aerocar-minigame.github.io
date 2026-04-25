@@ -65,11 +65,11 @@ class Game {
     this._screenChangeTime = Date.now();
     this._gyroscopeWarning = false;
     this._iosPermissionStatus = requiresOrientationPermission ? "prompt" : null;
-    // If permission is granted as a direct result of the overlay tap, we should
-    // NOT auto-start the race by replaying the tap. This flag prevents a
-    // single immediate auto-start; user must press START again.
+    
+    
+    
     this._justGrantedGyroPermission = false;
-    // Load persisted settings
+    
     try {
       this._settingsDifficulty = parseInt(localStorage.getItem("cfg_difficulty") ?? "1", 10);
       this._settingsGyroSensitivity = parseFloat(localStorage.getItem("cfg_gyro_sens") ?? "17");
@@ -245,7 +245,7 @@ class Game {
     this._handleViewportResize();
     this.reset(SCREENS.START);
     this._initStateManager();
-    // auto-start tutorial on first run
+    
     try {
       const seen = localStorage.getItem('aerocar_tutorial_done');
       if (!seen) {
@@ -279,7 +279,7 @@ class Game {
         },
       changeLeaderboardPage: (delta) => {
         if (!this.gameState) return;
-        // Replica o mesmo cálculo de effectivePageSize do screen-renderer
+        
         const isPortrait = window.innerHeight > window.innerWidth;
         const h = window.innerHeight;
         const w = window.innerWidth;
@@ -301,7 +301,7 @@ class Game {
         this.gameState.leaderboardPage = next;
         },
         backToMenu: () => {
-          // If returning from tutorial, restore the normal track then do a clean reset
+          
           if (this.gameState && this.gameState.isTutorial) {
             this.track.init(this.totalSegments, this.trackSeed);
             this.reset(SCREENS.START);
@@ -313,22 +313,22 @@ class Game {
         },
         requestGyroPermission: () => this.input.requestOrientationPermission(),
         startRace: () => {
-          // Enforce gyro permission / availability on mobile devices.
-          // Do NOT auto-start after permission is granted — user must press START again.
+          
+          
           try {
             if (!isMobile) {
               this._startRace();
               return;
             }
 
-            // If platform requires an explicit permission API (iOS), only allow start
-            // when permission status is granted.
+            
+            
             if (requiresMotionPermission || requiresOrientationPermission) {
               if (this._iosPermissionStatus === "granted") {
-                // If permission was just granted as part of the tap that
-                // triggered the permission flow, do NOT auto-start — require
-                // the user to press START again. Clear the transient flag and
-                // return.
+                
+                
+                
+                
                 if (this._justGrantedGyroPermission) {
                   this._justGrantedGyroPermission = false;
                   this._gyroscopeWarning = false;
@@ -339,31 +339,31 @@ class Game {
                 return;
               }
 
-              // Trigger the permission prompt (this is a user gesture) but do not
-              // automatically start the race after the user responds — they must
-              // press START again. The InputController will update iosPermissionStatus
-              // via the onGyroPermissionChange handler.
+              
+              
+              
+              
               try {
                 this.input.requestOrientationPermission();
               } catch (e) {
-                // best-effort: mark warning so UI informs the user
+                
                 this._gyroscopeWarning = true;
                 if (this.gameState) this.gameState.gyroscopeWarning = true;
               }
               return;
             }
 
-            // For platforms that don't require an explicit permission API (Android/others)
-            // require the gyroscope to have emitted at least one event (indicated by
-            // InputController._gyroscopeActive) before allowing the race to start.
+            
+            
+            
             if (this.input && this.input._gyroscopeActive) {
               this._startRace();
               return;
             }
 
-            // Attempt to bind motion/orientation listeners so the sensor may activate,
-            // but do not start automatically — show the generic warning and require
-            // the user to press START again after the sensor becomes available.
+            
+            
+            
             if (this.input) {
               try {
                 if (requiresMotionPermission && this.input._bindDeviceMotionEvent)
@@ -375,7 +375,7 @@ class Game {
             this._gyroscopeWarning = true;
             if (this.gameState) this.gameState.gyroscopeWarning = true;
           } catch (err) {
-            // defensive fallback: do not start the race
+            
             this._gyroscopeWarning = true;
             if (this.gameState) this.gameState.gyroscopeWarning = true;
           }
@@ -390,7 +390,7 @@ class Game {
           this._settingsGyroSensitivity = value;
           if (this.gameState) this.gameState.settingsGyroSensitivity = value;
           this._saveSettings();
-          // Apply to input system if available
+          
           try { setPhysicsValue("STEER_MAX_TILT_DEG", value); } catch (_) {}
         },
         onGyroActivated: () => {
@@ -560,7 +560,7 @@ class Game {
     }
   }
   _applyDifficultyPreset(index) {
-    // 0=FÁCIL, 1=NORMAL, 2=DIFÍCIL
+    
     const presets = [
       { RIVAL_SPEED_MIN: 11.0, RIVAL_SPEED_MAX: 15.0, COLLISION_RIVAL_SPEED_FACTOR: 0.96, COLLISION_OBSTACLE_SPEED_FACTOR: 0.86 },
       { RIVAL_SPEED_MIN: 13.5, RIVAL_SPEED_MAX: 18.0, COLLISION_RIVAL_SPEED_FACTOR: 0.92, COLLISION_OBSTACLE_SPEED_FACTOR: 0.78 },
@@ -578,7 +578,7 @@ class Game {
   }
   _startRace() {
     if (this.gameState.currentScreen === SCREENS.START) {
-      // Recreate rivals so difficulty speed preset takes effect
+      
       this.gameState.rivals = createRivals(RIVAL_COUNT, this.track);
       this._setScreen(SCREENS.RACE);
       this.gameState.startTime = Date.now();
@@ -593,7 +593,7 @@ class Game {
     this.gameState.pendingName = this._nameInput
       ? this._nameInput.value.toUpperCase()
       : "";
-    // Always update the active state (tutorial, menus, etc. need their update tick)
+    
     this.stateManager?.update(dt);
     if (this.gameState.currentScreen !== SCREENS.RACE) return;
     if (this.gameState.lastLapFlashTimer > 0) {
@@ -604,10 +604,10 @@ class Game {
     }
     this.gameState.currentTime = Date.now() - this.gameState.startTime;
     this.energyManager.update(this.gameState, dt);
-    // EnergyManager is the authoritative owner of battery state; sync after update
+    
     this.gameState.battery = this.energyManager.getCurrentCharge();
-    // cache the current track point onto gameState to allow renderers and
-    // physics to reuse the object and avoid repeated allocations
+    
+    
     const currentTrackPoint = this.track.getTrackPoint(this.gameState.currentZ);
     this.gameState.currentTrackPoint = currentTrackPoint;
     this.gameState.currentCurvature = currentTrackPoint.rawCurve ?? currentTrackPoint.curve ?? 0;
@@ -632,11 +632,11 @@ class Game {
       const current = this.gameState.steerInput || 0;
       const dir = Math.sign(target - current);
       this.gameState.steerInput = clamp(current + dir * STEER_RATE * dt, -1, 1);
-      // Snap to zero only when target is neutral AND the ramp has genuinely
-      // crossed zero (sign changed). Using a product-sign check is equivalent
-      // to the original Math.sign comparison but also handles the gyroscope
-      // case: _lastGyroSteer deduplication in input.js prevents repeated
-      // zero-events from re-triggering this guard every frame.
+      
+      
+      
+      
+      
       if (
         target === 0 &&
         current !== 0 &&
@@ -651,9 +651,9 @@ class Game {
       dt,
       currentTrackPoint,
     );
-    // updateCarPhysics may advance gameState.currentZ; refresh the cached
-    // track point so renderers and subsequent logic read the post-advance
-    // position (prevents camera/road scanline temporal mismatch).
+    
+    
+    
     this.gameState.currentTrackPoint = this.track.getTrackPoint(
       this.gameState.currentZ,
     );
@@ -674,8 +674,8 @@ class Game {
       }
     }
 
-    // Ensure centrifugal drift is cleared when rescue is requested from the
-    // general game-level check so both paths behave the same.
+    
+    
     if (this.gameState.rescueInProgress) {
       this.gameState.centrifugalDrift = 0;
     }

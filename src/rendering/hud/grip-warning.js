@@ -19,7 +19,7 @@ function drawGripWarning(ctx, gameState, width, height, warningTick, caches = nu
     : HUD_COLORS.warningGlow;
   
   const key = `${Math.round(width)}x${Math.round(height)}:${isOffTrack ? 1 : 0}`;
-  // prefer instance-scoped cache if provided
+  
   let gcache = null;
   if (caches && caches.gripWarningCache) gcache = caches.gripWarningCache;
   else {

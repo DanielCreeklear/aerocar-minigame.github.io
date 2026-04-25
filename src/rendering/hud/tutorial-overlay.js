@@ -1,4 +1,4 @@
-// Renders a simple tutorial overlay panel and optional highlight
+
 export function drawTutorialOverlay(ctx, step, w, h, highlightCallback) {
   if (!step) return;
   const pad = Math.max(14, Math.round(w * 0.035));
@@ -7,22 +7,22 @@ export function drawTutorialOverlay(ctx, step, w, h, highlightCallback) {
   const baseH = hasAction ? 155 : 135;
   const panelH = Math.min(baseH, h * 0.26);
   const x = Math.round((w - panelW) / 2);
-  // Center vertically in the top 40% so it doesn't cover the whole screen
+  
   const y = Math.round(h * 0.08);
 
   ctx.save();
 
-  // Drop shadow
+  
   ctx.shadowColor = "rgba(0,0,0,0.6)";
   ctx.shadowBlur = 18;
   ctx.shadowOffsetY = 4;
 
-  // Backdrop
+  
   ctx.fillStyle = "rgba(10,10,20,0.88)";
   roundRect(ctx, x, y, panelW, panelH, 14);
   ctx.fill();
 
-  // Accent top border line
+  
   ctx.shadowColor = "transparent";
   ctx.shadowBlur = 0;
   ctx.strokeStyle = "rgba(255,200,0,0.7)";
@@ -32,7 +32,7 @@ export function drawTutorialOverlay(ctx, step, w, h, highlightCallback) {
   ctx.lineTo(x + panelW - 14, y + 1);
   ctx.stroke();
 
-  // Title
+  
   ctx.fillStyle = "#FFD700";
   const titleSz = Math.max(13, Math.min(18, w * 0.036));
   ctx.font = `700 ${titleSz}px 'Barlow Condensed', monospace`;
@@ -41,7 +41,7 @@ export function drawTutorialOverlay(ctx, step, w, h, highlightCallback) {
   const titleY = y + pad + titleSz + 6;
   ctx.fillText(step.title || "", titleX, titleY);
 
-  // Instruction (wrap)
+  
   const instrSz = Math.max(11, Math.min(15, w * 0.030));
   ctx.font = `${instrSz}px 'Segoe UI', sans-serif`;
   ctx.fillStyle = "rgba(255,255,255,0.95)";
@@ -49,7 +49,7 @@ export function drawTutorialOverlay(ctx, step, w, h, highlightCallback) {
   const instrMaxW = panelW - pad * 2;
   wrapText(ctx, step.instruction || "", x + pad, instrY, instrMaxW, instrSz + 6);
 
-  // Skip button (top-right corner, small)
+  
   const skipW = 58;
   const skipH = 20;
   const skipX = x + panelW - skipW - 10;
@@ -66,13 +66,13 @@ export function drawTutorialOverlay(ctx, step, w, h, highlightCallback) {
   ctx.textAlign = "center";
   ctx.fillText("PULAR", skipX + skipW / 2, skipY + skipH / 2 + 4);
 
-  // "CONTINUAR" button for autoAdvanceOnInput steps
+  
   if (hasAction) {
     const btnW = Math.min(140, panelW * 0.42);
     const btnH = 32;
     const btnX = x + Math.round((panelW - btnW) / 2);
     const btnY = y + panelH - btnH - 10;
-    // button glow/fill
+    
     const g = ctx.createLinearGradient(btnX, btnY, btnX, btnY + btnH);
     g.addColorStop(0, "#FFD700");
     g.addColorStop(1, "#e6a800");
@@ -91,13 +91,13 @@ export function drawTutorialOverlay(ctx, step, w, h, highlightCallback) {
 
   ctx.restore();
 
-  // optional highlight callback
+  
   if (highlightCallback && typeof highlightCallback === "function") {
     try { highlightCallback(step.highlight); } catch (e) {}
   }
 }
 
-/** Returns the hitbox of the CONTINUAR button for the given canvas dimensions, or null */
+
 export function getContinuarButtonRect(step, w, h) {
   if (!step || !step.autoAdvanceOnInput) return null;
   const pad = Math.max(14, Math.round(w * 0.035));
@@ -113,7 +113,7 @@ export function getContinuarButtonRect(step, w, h) {
   return { x: btnX, y: btnY, w: btnW, h: btnH };
 }
 
-/** Returns the hitbox of the PULAR (skip) button for the given canvas dimensions */
+
 export function getSkipButtonRect(w, h) {
   const pad = Math.max(14, Math.round(w * 0.035));
   const panelW = Math.min(400, w - pad * 2);

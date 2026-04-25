@@ -64,7 +64,7 @@ function drawWindStreaks(ctx, gameState, width, height, state, dt = 1 / 60, cach
   const diag = Math.hypot(width, height);
   const tp = gameState.currentTrackPoint;
   const targetAngle = Math.atan2(tp?.yaw ?? 0, Z_RESOLUTION);
-  // Smooth the wind angle to avoid abrupt HUD rotation jumps at high speed
+  
   const ANGLE_LERP = 0.08;
   state.smoothAngle += (targetAngle - state.smoothAngle) * Math.min(1, ANGLE_LERP * dt * 60);
   const windAngle = state.smoothAngle;
@@ -167,7 +167,7 @@ function _renderVignette(ctx, intensity, width, height, diag, caches = null) {
   const cy = height * 0.5;
   
   const key = `${Math.round(diag)}@${width}x${height}@${Math.round(vigAlpha * 1000)}`;
-  // prefer instance cache if provided
+  
   let vcache = null;
   if (caches && caches.windVignetteCache) vcache = caches.windVignetteCache;
   else {

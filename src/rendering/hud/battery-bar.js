@@ -14,7 +14,7 @@ function drawBatteryBar(ctx, gameState, width, height) {
   const rx = margin;
   const ry = margin;
   ctx.save();
-  // if tutorial requests highlight for the battery, add glow
+  
   if (tutorialHighlight === "battery-bar") {
     ctx.shadowColor = "rgba(255,200,80,0.9)";
     ctx.shadowBlur = 14;
@@ -86,7 +86,7 @@ function drawBatteryBar(ctx, gameState, width, height) {
   ctx.fillText(tag, ersX + 4, ersY + ersBarH + 3);
   ctx.restore();
 
-  // clear transient tutorial highlight so it doesn't persist next frame
+  
   if (gameState && gameState._tutorialHighlight) delete gameState._tutorialHighlight;
 }
 export { drawBatteryBar };

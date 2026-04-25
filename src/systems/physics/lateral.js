@@ -71,7 +71,7 @@ function updateHeadingAndLateral(
   
   const usedOverDrive = Math.min(overDriveFactor, MAX_OVERDRIVE_FACTOR);
   const usf = understeerFactor ?? getPhysicsValue("UNDERSTEER_FACTOR", UNDERSTEER_FACTOR);
-  const driftIntensity = overDriveFactor; // same metric, use the canonical name
+  const driftIntensity = overDriveFactor; 
   
   const steerEffectiveness = clamp(
     1 - usedOverDrive * usf * (1 + driftIntensity * getPhysicsValue("DRIFT_VX_REDUCTION", DRIFT_VX_REDUCTION)),
@@ -84,8 +84,8 @@ function updateHeadingAndLateral(
   theta += (targetTheta - theta) * Math.min(1, alignmentRate * dt);
   gameState.carHeading = clamp(theta, -Math.PI / 2, Math.PI / 2);
   let drift = gameState.centrifugalDrift || 0;
-  // If there's effectively no curvature, clear residual centrifugal drift to
-  // avoid sliding on straights caused by previous corner buildup.
+  
+  
   if (Math.abs(curvature) < 0.001 && gripRatio <= 1) {
     drift = 0;
   } else if (gripRatio <= 1) {
@@ -190,8 +190,8 @@ function integrateLateralState(
     curvature,
   );
 
-  // Only apply longitudinal overdrive penalty when we're actually on a curve.
-  // Heading residual on a straight should not cause a speed penalty.
+  
+  
   const effectiveCurvature = Math.abs(curvature) || 0;
   const overDrive = effectiveCurvature > 0.0005 ? (gameState.overDriveFactor || 0) : 0;
   const nextVz = !offTrack && overDrive > 0
@@ -237,14 +237,14 @@ function integrateLateralState(
   }
   gameState.isDrifting = !gameState.isSpinning && (gameState.driftTimer || 0) >= DRIFT_REWARD_DELAY_S && gameState.currentSlip >= DRIFT_ERS_MIN_SLIP;
   
-  // include aero contribution in reported effective grip when available
+  
   const effectiveGripReported = diag && Number.isFinite(diag.gripLimit)
     ? diag.gripLimit
     : strategy.lateralFriction + (strategy.aeroGripFactor || 0) * vz;
 
   const forces = {
     effectiveGrip: effectiveGripReported,
-    // report a velocity-like centripetal demand (named for UI/backwards compatibility)
+    
     centrifugalForce: diag && Number.isFinite(diag.vxDemand) ? Math.abs(diag.vxDemand) : 0,
   };
 

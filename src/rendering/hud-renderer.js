@@ -31,7 +31,7 @@ function _backBtnRect(width, height) {
   const sz = Math.max(10, Math.min(13, width * 0.028));
   const pad = Math.max(6, Math.min(10, width * 0.018));
   const bh = sz + pad * 2;
-  // landscape: top-left; portrait: top-right to avoid overlap with input bars
+  
   const bx = isPortrait ? width - Math.round(width * 0.28) - pad : pad;
   const by = pad;
   const bw = Math.round(width * 0.28);
@@ -165,7 +165,7 @@ class HudRenderer {
     this._windState = createWindState();
     this._backBtnPressed = false;
     this._backBtnRect = null;
-    // instance scoped caches for HUD drawing resources (gradients, bitmaps)
+    
     this._caches = {
       aeroBadgeCache: new Map(),
       gripWarningCache: new Map(),
@@ -179,7 +179,7 @@ class HudRenderer {
     this._windState = createWindState();
     this._backBtnPressed = false;
     this._backBtnRect = null;
-    // clear instance caches
+    
     this._caches.aeroBadgeCache.clear();
     this._caches.gripWarningCache.clear();
     this._caches.windVignetteCache = {};

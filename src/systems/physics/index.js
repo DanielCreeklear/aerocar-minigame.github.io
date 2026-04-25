@@ -15,9 +15,9 @@ import {
 } from "../../constants/index.js";
 function resolveTrackState(gameState, currentTrackInfo) {
   gameState.trackType = currentTrackInfo.type;
-  // currentSlip is intentionally NOT reset here so that computeForwardVelocity
-  // can read the previous frame's slip value for boost penalty calculations.
-  // It will be overwritten by integrateLateralState later in the same frame.
+  
+  
+  
   return {
     curvature: currentTrackInfo.rawCurve ?? currentTrackInfo.curve ?? 0,
   };
@@ -69,7 +69,7 @@ function updateCarPhysics(gameState, track, dt = 1, sampledTrackPoint = null) {
   gameState.visualOverDrive =
     _prevVisualOD + (_overDrive - _prevVisualOD) * Math.min(1, _buildRate * dt);
   const _visualOD = gameState.visualOverDrive;
-  // Use the current aero strategy's understeerFactor (visual should reflect physics)
+  
   const visualUndersteer = strategy.understeerFactor ?? UNDERSTEER_FACTOR;
   const _steerEff = clamp(1 - _visualOD * visualUndersteer, 0, 1);
   const _targetVisualHeading = (gameState.carHeading || 0) * _steerEff;

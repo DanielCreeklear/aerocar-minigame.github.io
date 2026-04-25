@@ -7,8 +7,8 @@ const MIN_STRAIGHT_LENGTH = 1500;
 const SEGMENT_MARGIN = 300;
 function createObstacles(track) {
   const obstacles = [];
-  // Per-call id counter to avoid module-level mutable state that can leak
-  // between runs or tests.
+  
+  
   let obstacleIdCounter = 0;
   const straights = track.segments.filter(
     (s) => s.classification === "straight" && s.length >= MIN_STRAIGHT_LENGTH,

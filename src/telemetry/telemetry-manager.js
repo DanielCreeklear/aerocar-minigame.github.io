@@ -9,7 +9,7 @@ function _isDevMode() {
   try {
     if (typeof window === 'undefined') return false;
     const host = window.location && window.location.hostname;
-    // delegate to the shared platform helper first (centralises logic)
+    
     if (typeof isDevMode === 'function' && isDevMode()) return true;
     return false;
   } catch (e) {
@@ -500,12 +500,12 @@ class TelemetryManager {
       ctx.fillStyle = "rgba(39, 174, 96, 0.85)";
       ctx.fillText("ERS", CX + 3, cy + 2);
       cy += CHART_H3 + 4;
-      // Additional diagnostics chart: gripRatio, vxDemand, visualOverDrive
+      
       const CHART_H4 = 40;
       ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
       ctx.fillRect(CX, cy, CHART_W, CHART_H4);
       if (n > 1) {
-        // compute normalization scales from visible window to keep plots readable
+        
         let maxVx = 0;
         let maxGrip = 0;
         let maxVOD = 0;
@@ -519,7 +519,7 @@ class TelemetryManager {
         maxGrip = Math.max(1e-3, maxGrip);
         maxVOD = Math.max(1e-3, maxVOD);
         const midY4 = cy + CHART_H4 * 0.5;
-        // draw gripRatio line (yellow)
+        
         ctx.beginPath();
         for (let i = 0; i < n; i++) {
           const sx = CX + (i / (n - 1)) * CHART_W;
@@ -530,7 +530,7 @@ class TelemetryManager {
         ctx.strokeStyle = "#f1c40f";
         ctx.lineWidth = 1.6;
         ctx.stroke();
-        // draw vxDemand line (blue)
+        
         ctx.beginPath();
         for (let i = 0; i < n; i++) {
           const sx = CX + (i / (n - 1)) * CHART_W;
@@ -541,7 +541,7 @@ class TelemetryManager {
         ctx.strokeStyle = "#3498db";
         ctx.lineWidth = 1.2;
         ctx.stroke();
-        // draw visualOverDrive line (purple)
+        
         ctx.beginPath();
         for (let i = 0; i < n; i++) {
           const sx = CX + (i / (n - 1)) * CHART_W;
@@ -552,7 +552,7 @@ class TelemetryManager {
         ctx.strokeStyle = "#9b59b6";
         ctx.lineWidth = 1.2;
         ctx.stroke();
-        // legend
+        
         ctx.fillStyle = "#f1c40f";
         ctx.fillRect(CX + 4, cy + 4, 8, 8);
         ctx.fillStyle = "#fff";

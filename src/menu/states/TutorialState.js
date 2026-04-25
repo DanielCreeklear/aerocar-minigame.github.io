@@ -22,7 +22,7 @@ export class TutorialState extends GameState {
   }
 
   onEnter() {
-    // Build the dedicated tutorial track (hard-coded segments)
+    
     try {
       const t = new Track();
       const segments = [];
@@ -41,7 +41,7 @@ export class TutorialState extends GameState {
         zOffset = endZ;
       };
 
-      // Layout: long straight (boost) → gentle curve (braking) → straight → tight curve (mode Z) → long straight (mode X)
+      
       pushSeg(1, TRACK_TYPES.STRAIGHT, 700, 0);
       pushSeg(2, TRACK_TYPES.CURVE,    480, 4);
       pushSeg(3, TRACK_TYPES.STRAIGHT, 500, 0);
@@ -83,16 +83,16 @@ export class TutorialState extends GameState {
       dst.gridRows       = t.gridRows;
       dst.gridMinX       = t.gridMinX;
     } catch (e) {
-      // silent fallback
+      
     }
 
-    // Put the game into RACE mode so the full physics/renderer pipeline runs
+    
     const gs = this._deps.getGameState();
     gs.currentScreen   = SCREENS.RACE;
     gs.isRunning       = true;
     gs.isWaitingToStart = false;
     gs.isGameOver      = false;
-    gs.isTutorial      = true;   // suppresses game-over and lap completion
+    gs.isTutorial      = true;   
     gs.startTime       = Date.now();
     gs.lapStartTime    = Date.now();
     gs.lapCount        = 0;
@@ -101,8 +101,8 @@ export class TutorialState extends GameState {
     gs.lateralOffset   = 0;
     gs.lateralVelocity = 0;
     gs.carHeading      = 0;
-    gs.rivals          = [];    // no rivals during tutorial
-    gs.obstacles       = [];    // no obstacles
+    gs.rivals          = [];    
+    gs.obstacles       = [];    
 
     this._tm = new TutorialManager(gs);
     gs.tutorial = this._tm;
@@ -119,7 +119,7 @@ export class TutorialState extends GameState {
     }
   }
 
-  // render() only draws the tutorial overlay — the main renderer already drew the RACE world
+  
   render(ctx, w, h) {
     this._lastW = w;
     this._lastH = h;
@@ -135,7 +135,7 @@ export class TutorialState extends GameState {
   }
 
   onPointerDown(x, y) {
-    // PULAR
+    
     if (this._skipHitRect) {
       const r = this._skipHitRect;
       if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
@@ -144,7 +144,7 @@ export class TutorialState extends GameState {
         return;
       }
     }
-    // CONTINUAR (autoAdvanceOnInput steps)
+    
     if (this._continuarHitRect) {
       const r = this._continuarHitRect;
       if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
@@ -152,7 +152,7 @@ export class TutorialState extends GameState {
         return;
       }
     }
-    // tap anywhere else also advances autoAdvanceOnInput steps
+    
     if (this._tm?.getStep()?.autoAdvanceOnInput) {
       const step = this._tm.getStep();
       if (step.id === "enable-gyro") {
@@ -168,7 +168,7 @@ export class TutorialState extends GameState {
     if (!this._tm) return;
     this._tm.update(dt);
     if (this._tm.finished) {
-      // reset screen to START before leaving so game.update() guard is correct
+      
       const gs = this._deps.getGameState();
       if (gs) gs.currentScreen = SCREENS.START;
       this._deps.callbacks?.backToMenu?.();

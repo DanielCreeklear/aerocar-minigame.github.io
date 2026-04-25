@@ -278,10 +278,10 @@ export default class PhysicsSandboxState extends GameState {
   }
 
   _makeSimState() {
-    // The physics system expects a flat gameState object similar to the real one.
-    // Provide a minimal compatible shape so updateCarPhysics works correctly.
+    
+    
     return {
-      // minimal fields used by physics
+      
       aeroMode: 'X',
       isBoosting: false,
       isBraking: false,
@@ -313,7 +313,7 @@ export default class PhysicsSandboxState extends GameState {
       isDrifting: false,
       driftTimer: 0,
       brakeRamp: 0,
-      // tiny track shim used by the sandbox drawing logic
+      
       track: {
         lapLength: 10000,
         sample: (z) => ({ curvature: Math.sin(z * 0.008) * 0.004 }),
@@ -343,7 +343,7 @@ export default class PhysicsSandboxState extends GameState {
     
     const dt = 1 / 60;
     const sim = this.simState;
-    // updateCarPhysics expects (gameState, track, dt, sampledTrackPoint?)
+    
     const sampled = sim.track.getTrackPoint(sim.currentZ || sim.currentZ === 0 ? sim.currentZ : 0);
     const { lapCompleted, physicsTelemetry } = updateCarPhysics(sim, sim.track, dt, sampled);
 
