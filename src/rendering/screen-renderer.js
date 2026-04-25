@@ -453,7 +453,8 @@ function drawStartScreen(ctx, w, h, gameState, track) {
     ctx.moveTo(pad, h * 0.14 + titleSz * 2.7);
     ctx.lineTo(w - pad, h * 0.14 + titleSz * 2.7);
     ctx.stroke();
-    const btnStartY = h * 0.44;
+    // Nudge the main CTA slightly upward so it sits a bit higher on the screen
+    const btnStartY = h * 0.42;
     drawButton(ctx, pad, btnStartY, btnW, btnH, "INICIAR CORRIDA", blink);
     if (gameState && gameState.iosPermissionStatus === "prompt") {
       drawIOSPermissionButton(
@@ -499,7 +500,8 @@ function drawStartScreen(ctx, w, h, gameState, track) {
     const subSz = csz(w, 0.02, 10, 13);
     ctx.font = `700 ${subSz}px ${R.font}`;
     ctx.fillText("TIME ATTACK", pad, h * 0.28 + titleSz * 2.35);
-    const btnStartY = h * 0.62;
+    // Nudge the main CTA slightly upward in landscape as well
+    const btnStartY = h * 0.60;
     drawButton(
       ctx,
       pad,
