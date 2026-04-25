@@ -17,6 +17,8 @@ import {
   requiresOrientationPermission,
   requiresMotionPermission,
   isIOSWithoutPermission,
+  isAndroid,
+  isIOS,
 } from "../utils/platform.js";
 function normalizeTilt(raw) {
   const sign = Math.sign(raw);
@@ -110,10 +112,15 @@ class InputController {
         0;
       let raw;
       if (screenAngle === 90) {
-        raw = -e.beta;
+        // Landscape left: beta maps to lateral tilt; negate for correct dir
+        raw = isAndroid ? e.beta : -e.beta;
       } else if (screenAngle === -90 || screenAngle === 270) {
-        raw = e.beta;
+        // Landscape right
+        raw = isAndroid ? -e.beta : e.beta;
       } else {
+        // Portrait: gamma is lateral tilt.
+        // Android: positive gamma = tilt right (correct, no negation needed).
+        // iOS:     positive gamma = tilt right as well, same convention.
         raw = e.gamma;
       }
       if (raw === null || raw === undefined) return;
@@ -147,11 +154,16 @@ class InputController {
         0;
       let raw;
       if (screenAngle === 90) {
+        // Landscape left
         raw = ag.y != null ? -ag.y : 0;
       } else if (screenAngle === -90 || screenAngle === 270) {
+        // Landscape right
         raw = ag.y != null ? ag.y : 0;
       } else {
-        raw = ag.x != null ? ag.x : 0;
+        // Portrait.
+        // Android: ag.x axis points LEFT, so positive = tilt left → negate.
+        // iOS:     ag.x axis points RIGHT, so positive = tilt right → keep.
+        raw = ag.x != null ? (isAndroid ? -ag.x : ag.x) : 0;
       }
       const steerValue = normalizeTiltMs2(raw);
       // Only emit if value changed, preventing repeated zero-events from the
@@ -318,6 +330,11 @@ class InputController {
       }
       if (e.code === ACTION_KEYS.KEY_H && !e.repeat) {
         this.handlers.onTelemetryHudToggle?.();
+      }
+      if ((e.key === "Escape" || e.key === "Esc") && !e.repeat) {
+        if (this.handlers.isRaceActive?.()) {
+          this.handlers.onBackToMenu?.();
+        }
       }
     });
     window.addEventListener("keyup", (e) => {

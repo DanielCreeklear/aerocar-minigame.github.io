@@ -179,9 +179,14 @@ class Game {
         this.gameState.steerTarget = v;
       },
       onTelemetryExport: () => this.telemetry.exportJSON(),
-        onTelemetryExportCSV: () => this.telemetry.exportCSV(),
+      onTelemetryExportCSV: () => this.telemetry.exportCSV(),
       onTelemetryHudToggle: () => this.telemetry.toggleHUD(),
       isRaceActive: () => this.gameState.currentScreen === SCREENS.RACE,
+      onBackToMenu: () => {
+        if (this.gameState.currentScreen === SCREENS.RACE) {
+          this._setScreen(SCREENS.START);
+        }
+      },
       onGyroscopeUnavailable: () => {
         this._gyroscopeWarning = true;
       },
@@ -252,6 +257,7 @@ class Game {
     return {
       getGameState: () => this.gameState,
       canvas: this.canvas,
+      getHud: () => this.renderer?.hud,
       track: this.track,
       callbacks: {
         advance: () => this._advanceIntroScreen(),
