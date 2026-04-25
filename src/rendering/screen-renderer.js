@@ -321,7 +321,8 @@ function drawGyroscopeWarning(ctx, x, y, w) {
   ctx.textAlign = "left";
   ctx.fillStyle = R.textHeader;
   ctx.font = `700 ${sz}px ${R.font}`;
-  ctx.fillText("[!] USE SAFARI NO iOS PARA GIROSCOPIO", x, y);
+  // Mensagem genérica instruindo o usuário a ativar/permitir o sensor de movimento
+  ctx.fillText("[!] ATIVE O SENSOR DE MOVIMENTO / GIROSCÓPIO NO NAVEGADOR", x, y);
   ctx.restore();
 }
 // Draws a horizontal segmented selector (radio-button style).
