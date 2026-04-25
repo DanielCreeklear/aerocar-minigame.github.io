@@ -30,7 +30,8 @@ export class StartMenuState extends GameState {
     this._lastW = w;
     this._lastH = h;
     const isPortrait = h > w;
-    const btnStartY = isPortrait ? h * 0.44 : h * 0.62;
+    // Nudge the main CTA slightly upward (um pouquinho)
+    const btnStartY = isPortrait ? h * 0.42 : h * 0.60;
     const btnH = Math.max(44, Math.round(h * 0.075));
     this._ctaBtn.setRect(0, btnStartY, w, btnH);
     this._ctaBtn.renderPressOverlay(ctx);
@@ -117,9 +118,13 @@ export class StartMenuState extends GameState {
         const sz = Math.max(11, Math.min(15, availW * 0.034));
         const btnH = sz + 16;
         const btnW = availW * 0.9;
+        // Keep the gyro/button alignment in sync with the renderer: place it
+        // just below the CTA. Use the same gap used in the renderer.
+        const btnGap = Math.max(10, Math.round(h * 0.018));
+        const gyroY = Math.round(btnStartY + btnH + btnGap + 4);
         this._gyroBtn.setRect(
           tx,
-          Math.round(h * 0.54),
+          gyroY,
           Math.round(btnW),
           Math.round(btnH),
         );

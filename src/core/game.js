@@ -24,6 +24,7 @@ import {
 } from "../constants/index.js";
 import { clamp } from "../utils/math.js";
 import {
+  isMobile,
   requiresOrientationPermission,
   requiresMotionPermission,
 } from "../utils/platform.js";
@@ -64,6 +65,10 @@ class Game {
     this._screenChangeTime = Date.now();
     this._gyroscopeWarning = false;
     this._iosPermissionStatus = requiresOrientationPermission ? "prompt" : null;
+    // If permission is granted as a direct result of the overlay tap, we should
+    // NOT auto-start the race by replaying the tap. This flag prevents a
+    // single immediate auto-start; user must press START again.
+    this._justGrantedGyroPermission = false;
     // Load persisted settings
     try {
       this._settingsDifficulty = parseInt(localStorage.getItem("cfg_difficulty") ?? "1", 10);
@@ -250,7 +255,6 @@ class Game {
       track: this.track,
       callbacks: {
         advance: () => this._advanceIntroScreen(),
-        startRace: () => this._startRace(),
         retry: () => this.reset(SCREENS.START),
         focusNameInput: () => this._nameInput.focus(),
         onRaceEnter: () => {},
@@ -302,6 +306,74 @@ class Game {
           this._setScreen(target);
         },
         requestGyroPermission: () => this.input.requestOrientationPermission(),
+        startRace: () => {
+          // Enforce gyro permission / availability on mobile devices.
+          // Do NOT auto-start after permission is granted — user must press START again.
+          try {
+            if (!isMobile) {
+              this._startRace();
+              return;
+            }
+
+            // If platform requires an explicit permission API (iOS), only allow start
+            // when permission status is granted.
+            if (requiresMotionPermission || requiresOrientationPermission) {
+              if (this._iosPermissionStatus === "granted") {
+                // If permission was just granted as part of the tap that
+                // triggered the permission flow, do NOT auto-start — require
+                // the user to press START again. Clear the transient flag and
+                // return.
+                if (this._justGrantedGyroPermission) {
+                  this._justGrantedGyroPermission = false;
+                  this._gyroscopeWarning = false;
+                  if (this.gameState) this.gameState.gyroscopeWarning = false;
+                  return;
+                }
+                this._startRace();
+                return;
+              }
+
+              // Trigger the permission prompt (this is a user gesture) but do not
+              // automatically start the race after the user responds — they must
+              // press START again. The InputController will update iosPermissionStatus
+              // via the onGyroPermissionChange handler.
+              try {
+                this.input.requestOrientationPermission();
+              } catch (e) {
+                // best-effort: mark warning so UI informs the user
+                this._gyroscopeWarning = true;
+                if (this.gameState) this.gameState.gyroscopeWarning = true;
+              }
+              return;
+            }
+
+            // For platforms that don't require an explicit permission API (Android/others)
+            // require the gyroscope to have emitted at least one event (indicated by
+            // InputController._gyroscopeActive) before allowing the race to start.
+            if (this.input && this.input._gyroscopeActive) {
+              this._startRace();
+              return;
+            }
+
+            // Attempt to bind motion/orientation listeners so the sensor may activate,
+            // but do not start automatically — show the generic warning and require
+            // the user to press START again after the sensor becomes available.
+            if (this.input) {
+              try {
+                if (requiresMotionPermission && this.input._bindDeviceMotionEvent)
+                  this.input._bindDeviceMotionEvent();
+                else if (this.input._bindDeviceOrientationEvent)
+                  this.input._bindDeviceOrientationEvent();
+              } catch (e) {}
+            }
+            this._gyroscopeWarning = true;
+            if (this.gameState) this.gameState.gyroscopeWarning = true;
+          } catch (err) {
+            // defensive fallback: do not start the race
+            this._gyroscopeWarning = true;
+            if (this.gameState) this.gameState.gyroscopeWarning = true;
+          }
+        },
         setDifficulty: (index) => {
           this._settingsDifficulty = index;
           this._applyDifficultyPreset(index);
@@ -401,6 +473,7 @@ class Game {
     if (requiresMotionPermission) {
       DeviceMotionEvent.requestPermission()
         .then((state) => {
+          if (state === "granted") this._justGrantedGyroPermission = true;
           const status = state === "granted" ? "granted" : "denied";
           this._iosPermissionStatus = status;
           if (this.gameState) this.gameState.iosPermissionStatus = status;
@@ -415,6 +488,7 @@ class Game {
     } else if (requiresOrientationPermission) {
       DeviceOrientationEvent.requestPermission()
         .then((state) => {
+          if (state === "granted") this._justGrantedGyroPermission = true;
           const status = state === "granted" ? "granted" : "denied";
           this._iosPermissionStatus = status;
           if (this.gameState) this.gameState.iosPermissionStatus = status;
